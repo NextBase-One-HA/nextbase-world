@@ -368,7 +368,7 @@
         <div class="pricing-box">
             <h2 id="t-pricing-h2">$2.99 / month</h2>
             <ul>
-                <li id="t-pricing-li1"><strong>$2.99/mo</strong> — Unlimited when subscribed. Free tier: <strong>3 translations per day</strong>; subscribe to remove the cap.</li>
+                <li id="t-pricing-li1"><strong>$2.99/mo</strong> — Unlimited when subscribed. Free tier: <strong>10 translations per day</strong>; subscribe to remove the cap.</li>
             </ul>
             <p class="note" id="t-pricing-note"></p>
         </div>
@@ -405,7 +405,7 @@
 
         var CURRENT_LANG = 'en';
         var DICT_LOADED_OK = false;
-        var GLB_FREE_DAILY = 3;
+        var GLB_FREE_DAILY = 10;
         var LS_GLB_QUOTA = 'glb_translate_quota_v1';
 
         /** 150k.csv: source,target,from,to — exact-match local routes (0 API). */
@@ -503,7 +503,7 @@
                 labelLangTo: 'To',
                 langFlowHint: 'English pivot: every pair routes through English (e.g. JA→EN→FR). Set app language, choose From → To, tap GLB.',
                 pricingH2: '$2.99 / month',
-                pricingLi1: '<strong>$2.99/mo</strong> — Unlimited when subscribed. Free tier: <strong>3 translations per day</strong>; subscribe to remove the cap.',
+                pricingLi1: '<strong>$2.99/mo</strong> — Unlimited when subscribed. Free tier: <strong>10 translations per day</strong>; subscribe to remove the cap.',
                 pricingNote: 'Designed for phones — three free tries per day, then unlock unlimited below.',
                 linkTerms: 'Terms of Service',
                 linkPrivacy: 'Privacy Policy',
@@ -533,8 +533,8 @@
                 btnFlip: 'Flip',
                 flipTitle: 'Rotate the result 180° for the person across from you. Tap again to restore.',
                 freeQuotaUnlimited: 'Unlimited (subscriber)',
-                freeLeft: '{{n}} free left today (max 3/day) · $2.99/mo unlimited',
-                freeLimitExceeded: 'Free limit: 3/day. Tap Subscribe below — $2.99/mo unlimited.'
+                freeLeft: '{{n}} free left today (max 10/day) · $2.99/mo unlimited',
+                freeLimitExceeded: 'Free limit: 10/day. Tap Subscribe below — $2.99/mo unlimited.'
             },
             ja: {
                 labelUiLang: '言語',
@@ -543,7 +543,7 @@
                 labelLangTo: '訳文',
                 langFlowHint: '英語ピボット固定：必ず英語を経由（例：日→英→仏）。アプリ言語を選び、原文→訳文を選んで GLB。',
                 pricingH2: '月額 $2.99',
-                pricingLi1: '<strong>$2.99/月</strong> — 購読でクラウド翻訳は無制限。無料は<strong>1日3回まで</strong>（お試し）。',
+                pricingLi1: '<strong>$2.99/月</strong> — 購読でクラウド翻訳は無制限。無料は<strong>1日10回まで</strong>（お試し）。',
                 pricingNote: 'スマホ前提で見やすく。毎日3回まで無料 → 続けたら月額で無制限。',
                 linkTerms: '利用規約',
                 linkPrivacy: 'プライバシーポリシー',
@@ -573,8 +573,8 @@
                 btnFlip: '反転',
                 flipTitle: '向かいに相手がいるとき、結果を180°回転。もう一度押すと元に戻ります。',
                 freeQuotaUnlimited: '購読中（無制限）',
-                freeLeft: '本日の無料 残り{{n}}回（1日3回まで）· $2.99/月で無制限',
-                freeLimitExceeded: '無料は本日おしまい（1日3回）。下の購読で無制限にできます。'
+                freeLeft: '本日の無料 残り{{n}}回（1日10回まで）· $2.99/月で無制限',
+                freeLimitExceeded: '無料は本日おしまい（1日10回）。下の購読で無制限にできます。'
             },
             zh: {
                 labelUiLang: '界面语言', labelRegion: '地区', labelLangFrom: '原文', labelLangTo: '译文',
