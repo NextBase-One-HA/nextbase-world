@@ -146,29 +146,6 @@
             word-break: break-word;
         }
         .free-quota-line.is-warn { color: #ffe08a; text-shadow: 0 0 10px var(--gold-glow-mid); }
-        .glb-status-chip {
-            margin: 10px auto 0;
-            padding: 10px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            line-height: 1.45;
-            text-align: center;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
-            color: #cfcfcf;
-            display: none;
-        }
-        .glb-status-chip.is-show { display: block; }
-        .glb-status-chip.is-ok {
-            color: #d8ffd8;
-            border-color: rgba(140,255,160,0.28);
-            box-shadow: 0 0 14px rgba(120,255,160,0.08);
-        }
-        .glb-status-chip.is-warn {
-            color: #ffe8aa;
-            border-color: rgba(255,220,120,0.28);
-            box-shadow: 0 0 14px rgba(255,220,120,0.08);
-        }
         .flipped-mode {
             transform: rotate(180deg) !important;
             font-size: 5rem !important;
@@ -382,7 +359,6 @@
         <div class="tr-run-wrap">
             <button type="button" id="tr-run" class="btn glb-main-btn">GLB</button>
             <p class="free-quota-line" id="t-free-quota" role="status"></p>
-            <div class="glb-status-chip" id="glb-status-chip" aria-live="polite"></div>
         </div>
     </div>
 
@@ -396,8 +372,7 @@
             </ul>
             <p class="note" id="t-pricing-note"></p>
         </div>
-        <!-- Stripe success URL example: https://your-domain.example/?subscribed=1 -->
-        <!-- Stripe cancel URL example: https://your-domain.example/?billing=cancelled -->
+        <!-- Stripe success URL can end with ?subscribed=1 to unlock unlimited in-app (localStorage). -->
         <a href="https://buy.stripe.com/bJedRbefH5yogzZfuDasg09" class="btn glb-subscribe-btn" style="font-size:18px; padding:18px 20px; border-radius:999px; margin-top:4px;" id="t-btn-monthly">
             Subscribe ($2.99/mo)
         </a>
@@ -410,13 +385,13 @@
 
     <footer class="footer legal-footer" id="glb-legal-footer" lang="en">
         <div class="legal-links">
-            <a href="/terms.html" id="link-terms">Terms of Service</a>
+            <a href="terms.html" id="link-terms">Terms of Service</a>
             <span class="legal-sep" aria-hidden="true">|</span>
-            <a href="/privacy.html" id="link-privacy">Privacy Policy</a>
+            <a href="privacy.html" id="link-privacy">Privacy Policy</a>
             <span class="legal-sep" aria-hidden="true">|</span>
-            <a href="/legal.html" id="link-legal">Legal</a>
+            <a href="legal.html" id="link-legal">Legal</a>
             <span class="legal-sep" aria-hidden="true">|</span>
-            <a href="/support.html" id="link-support">Support</a>
+            <a href="support.html" id="link-support">Support</a>
         </div>
         <p class="footer-copy" id="footer-copyright">&copy; 2026 NEXT BASE. All Rights Reserved.</p>
     </footer>
@@ -427,14 +402,6 @@
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
         /** App UI + translation hub languages (English pivot). */
         var GLB_UI_LANGS = ['en', 'ja', 'zh', 'ko', 'vi', 'th', 'hi', 'pt', 'fr', 'es', 'de', 'it', 'ru'];
-        function buildAssetPath(relPath) {
-            var clean = String(relPath || '').replace(/^\/+/, '');
-            try {
-                return new URL(clean, window.location.href).toString();
-            } catch (e) {
-                return './' + clean;
-            }
-        }
 
         var CURRENT_LANG = 'en';
         var DICT_LOADED_OK = false;
@@ -516,7 +483,17 @@
             }
             return null;
         }
-        applySubscriptionFromQuery();
+
+        (function glbSubscriberFromQuery() {
+            try {
+                var u = new URL(window.location.href);
+                if (u.searchParams.get('subscribed') === '1') {
+                    localStorage.setItem('glb_subscribed', '1');
+                    u.searchParams.delete('subscribed');
+                    history.replaceState({}, '', u.pathname + u.search + u.hash);
+                }
+            } catch (e) { /* ignore */ }
+        })();
 
         var I18N = {
             en: {
@@ -711,62 +688,10 @@
                 freeLeft: 'Còn {{n}} lượt miễn phí hôm nay (tối đa 3/ngày) · $2.99/tháng không giới hạn',
                 freeLimitExceeded: 'Miễn phí 3/ngày — đã hết. Đăng ký bên dưới để không giới hạn.'
             },
-            hi: {
-                labelUiLang: 'भाषा', labelRegion: 'क्षेत्र', labelLangFrom: 'से', labelLangTo: 'में',
-                langFlowHint: 'अंग्रेज़ी पिवट: हर जोड़ी अंग्रेज़ी से होकर जाती है (जैसे JA→EN→FR)। भाषा चुनें और GLB दबाएँ।',
-                pricingH2: '$2.99 / माह', pricingLi1: '<strong>$2.99/माह</strong> — सदस्यता पर असीमित। मुफ़्त: प्रतिदिन अधिकतम 3 बार।', pricingNote: 'मोबाइल के लिए बनाया गया — रोज़ 3 मुफ़्त प्रयास, फिर सदस्यता से असीमित।',
-                linkTerms: 'सेवा की शर्तें', linkPrivacy: 'गोपनीयता नीति', linkLegal: 'कानूनी', linkSupport: 'सहायता',
-                footerCopyright: '© 2026 NEXT BASE. All Rights Reserved.',
-                btnMonthly: 'सदस्यता लें ($2.99/माह)', stripeHint: 'Stripe से सुरक्षित भुगतान',
-                dictPlaceholder: 'शब्दकोश खोजें…', dictResult: 'परिणाम यहाँ दिखेंगे', dictLoaded: 'लोड हो गया', dictFail: 'लोड विफल', noMatch: 'कोई मिलान नहीं',
-                transHead: 'अनुवाद', phNormal: 'अनुवाद हेतु पाठ दर्ज करें', sendBtn: 'GLB', idle: 'तैयार',
-                apiChecking: 'NextBase API: जाँच हो रही है…', apiOk: 'NextBase API:', apiNoResponse: 'NextBase API: कोई प्रतिक्रिया नहीं', sending: 'अनुवाद हो रहा है…', sendingPivot: 'अंग्रेज़ी के माध्यम से…',
-                failHttp: 'विफल HTTP', netErr: 'नेटवर्क त्रुटि:', title: 'GLOBAL LANGUAGE BREAKER', btnFlip: 'फ्लिप',
-                flipTitle: 'सामने वाले व्यक्ति के लिए परिणाम 180° घुमाएँ। फिर दबाएँ तो सामान्य हो जाएगा।',
-                freeQuotaUnlimited: 'असीमित (सदस्य)', freeLeft: 'आज {{n}} मुफ़्त शेष (अधिकतम 3/दिन) · $2.99/माह असीमित', freeLimitExceeded: 'मुफ़्त सीमा 3/दिन पूरी हुई। नीचे सदस्यता लें — असीमित।'
-            },
-            pt: {
-                labelUiLang: 'Idioma', labelRegion: 'Região', labelLangFrom: 'De', labelLangTo: 'Para',
-                langFlowHint: 'Pivô em inglês: todos os pares passam por EN (ex.: JA→EN→FR). Escolha os idiomas e toque em GLB.',
-                pricingH2: '$2.99 / mês', pricingLi1: '<strong>$2.99/mês</strong> — Ilimitado com assinatura. Grátis: até 3 traduções por dia.', pricingNote: 'Feito para celular — 3 usos grátis por dia, depois assinatura ilimitada.',
-                linkTerms: 'Termos de Serviço', linkPrivacy: 'Política de Privacidade', linkLegal: 'Legal', linkSupport: 'Suporte',
-                footerCopyright: '© 2026 NEXT BASE. All Rights Reserved.',
-                btnMonthly: 'Assinar ($2.99/mês)', stripeHint: 'Pagamento seguro com Stripe',
-                dictPlaceholder: 'Pesquisar dicionário…', dictResult: 'Os resultados aparecem aqui', dictLoaded: 'Carregado', dictFail: 'Falha ao carregar', noMatch: 'Sem resultado',
-                transHead: 'Tradução', phNormal: 'Texto para traduzir', sendBtn: 'GLB', idle: 'Pronto',
-                apiChecking: 'NextBase API: verificando…', apiOk: 'NextBase API:', apiNoResponse: 'NextBase API: sem resposta', sending: 'Traduzindo…', sendingPivot: 'Via inglês…',
-                failHttp: 'Falha HTTP', netErr: 'Erro de rede:', title: 'GLOBAL LANGUAGE BREAKER', btnFlip: 'Virar',
-                flipTitle: 'Gira o resultado 180° para a pessoa à frente. Toque novamente para restaurar.',
-                freeQuotaUnlimited: 'Ilimitado (assinante)', freeLeft: '{{n}} grátis restantes hoje (máx. 3/dia) · $2.99/mês ilimitado', freeLimitExceeded: 'Limite grátis: 3/dia. Assine abaixo — ilimitado.'
-            },
-            it: {
-                labelUiLang: 'Lingua', labelRegion: 'Regione', labelLangFrom: 'Da', labelLangTo: 'A',
-                langFlowHint: 'Pivot inglese: ogni coppia passa per EN (es. JA→EN→FR). Scegli le lingue e tocca GLB.',
-                pricingH2: '$2.99 / mese', pricingLi1: '<strong>$2.99/mese</strong> — Illimitato con abbonamento. Gratis: fino a 3 traduzioni al giorno.', pricingNote: 'Ottimizzato per telefono — 3 prove gratis al giorno, poi abbonamento illimitato.',
-                linkTerms: 'Termini di servizio', linkPrivacy: 'Privacy Policy', linkLegal: 'Note legali', linkSupport: 'Supporto',
-                footerCopyright: '© 2026 NEXT BASE. All Rights Reserved.',
-                btnMonthly: 'Abbonati ($2.99/mese)', stripeHint: 'Pagamento sicuro con Stripe',
-                dictPlaceholder: 'Cerca nel dizionario…', dictResult: 'I risultati appaiono qui', dictLoaded: 'Caricato', dictFail: 'Caricamento fallito', noMatch: 'Nessun risultato',
-                transHead: 'Traduzione', phNormal: 'Testo da tradurre', sendBtn: 'GLB', idle: 'Pronto',
-                apiChecking: 'NextBase API: controllo…', apiOk: 'NextBase API:', apiNoResponse: 'NextBase API: nessuna risposta', sending: 'Traduzione…', sendingPivot: 'Via inglese…',
-                failHttp: 'Errore HTTP', netErr: 'Errore di rete:', title: 'GLOBAL LANGUAGE BREAKER', btnFlip: 'Capovolgi',
-                flipTitle: 'Ruota il risultato di 180° per la persona di fronte. Tocca di nuovo per ripristinare.',
-                freeQuotaUnlimited: 'Illimitato (abbonato)', freeLeft: '{{n}} gratuiti rimasti oggi (max 3/giorno) · $2.99/mese illimitato', freeLimitExceeded: 'Limite gratuito: 3/giorno. Abbonati qui sotto — illimitato.'
-            },
-            ru: {
-                labelUiLang: 'Язык', labelRegion: 'Регион', labelLangFrom: 'Из', labelLangTo: 'В',
-                langFlowHint: 'Английский как узел: все пары идут через EN (например JA→EN→FR). Выберите языки и нажмите GLB.',
-                pricingH2: '$2.99 / месяц', pricingLi1: '<strong>$2.99/мес</strong> — Безлимитно по подписке. Бесплатно: до 3 переводов в день.', pricingNote: 'Оптимизировано для телефона — 3 бесплатных попытки в день, затем безлимит по подписке.',
-                linkTerms: 'Условия использования', linkPrivacy: 'Политика конфиденциальности', linkLegal: 'Правовая информация', linkSupport: 'Поддержка',
-                footerCopyright: '© 2026 NEXT BASE. All Rights Reserved.',
-                btnMonthly: 'Подписаться ($2.99/мес)', stripeHint: 'Безопасная оплата через Stripe',
-                dictPlaceholder: 'Поиск по словарю…', dictResult: 'Результаты появятся здесь', dictLoaded: 'Загружено', dictFail: 'Ошибка загрузки', noMatch: 'Ничего не найдено',
-                transHead: 'Перевод', phNormal: 'Введите текст для перевода', sendBtn: 'GLB', idle: 'Готово',
-                apiChecking: 'NextBase API: проверка…', apiOk: 'NextBase API:', apiNoResponse: 'NextBase API: нет ответа', sending: 'Перевод…', sendingPivot: 'Через английский…',
-                failHttp: 'Ошибка HTTP', netErr: 'Ошибка сети:', title: 'GLOBAL LANGUAGE BREAKER', btnFlip: 'Повернуть',
-                flipTitle: 'Повернуть результат на 180° для собеседника напротив. Нажмите ещё раз, чтобы вернуть назад.',
-                freeQuotaUnlimited: 'Безлимит (подписка)', freeLeft: 'Сегодня осталось {{n}} бесплатных попыток (макс. 3/день) · $2.99/мес безлимит', freeLimitExceeded: 'Бесплатный лимит: 3/день. Подпишитесь ниже — безлимит.'
-            }
+            hi: {},
+            pt: {},
+            it: {},
+            ru: {}
         };
 
         var GLB_UI_LANG_KEY = 'glb_ui_lang_v2';
@@ -793,37 +718,6 @@
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;');
-        }
-
-        function setStatusChip(message, tone) {
-            var el = document.getElementById('glb-status-chip');
-            if (!el) return;
-            if (!message) {
-                el.textContent = '';
-                el.className = 'glb-status-chip';
-                return;
-            }
-            el.textContent = message;
-            el.className = 'glb-status-chip is-show ' + (tone === 'ok' ? 'is-ok' : 'is-warn');
-        }
-
-        function applySubscriptionFromQuery() {
-            try {
-                var u = new URL(window.location.href);
-                var subscribed = u.searchParams.get('subscribed');
-                if (subscribed === '1') {
-                    localStorage.setItem('glb_subscribed', '1');
-                    setStatusChip('Subscription unlocked on this device.', 'ok');
-                    u.searchParams.delete('subscribed');
-                    history.replaceState({}, '', u.pathname + u.search + u.hash);
-                    return;
-                }
-                if (u.searchParams.get('billing') === 'cancelled') {
-                    setStatusChip('Checkout was cancelled. Free mode remains active.', 'warn');
-                    u.searchParams.delete('billing');
-                    history.replaceState({}, '', u.pathname + u.search + u.hash);
-                }
-            } catch (e) { /* ignore */ }
         }
 
         function setBrandTitleHtml(rawTitle) {
@@ -1000,7 +894,7 @@
             async init() {
                 var ra = document.getElementById('result-area');
                 try {
-                    const res = await fetch(buildAssetPath('dictionary/150k.csv'));
+                    const res = await fetch('dictionary/150k.csv');
                     const text = await res.text();
                     const lines = text.split('\n');
                     GLB_ROUTE_INDEX = new Map();
@@ -1084,23 +978,12 @@
             var stage = document.getElementById('glb-result-stage');
             if (!btn || !stage) return;
             btn.setAttribute('aria-pressed', 'false');
-            function runTranslation() {
+            btn.addEventListener('click', function () {
                 var result = document.getElementById('translate-measure-result');
                 stage.classList.toggle('is-flipped');
                 if (result) result.classList.toggle('flipped-mode', stage.classList.contains('is-flipped'));
                 btn.setAttribute('aria-pressed', stage.classList.contains('is-flipped') ? 'true' : 'false');
-            }
-
-            btn.addEventListener('click', runTranslation);
-            var textInput = document.getElementById('tr-text');
-            if (textInput) {
-                textInput.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        runTranslation();
-                    }
-                });
-            }
+            });
         })();
 
         (function glbLangFlow() {
@@ -1375,7 +1258,7 @@
                 typeNext();
             }
 
-            fetch(buildAssetPath('data/phrases.json'), { cache: 'no-store' })
+            fetch('data/phrases.json', { cache: 'no-store' })
                 .then(r => r.ok ? r.json() : Promise.reject())
                 .then(json => {
                     if (Array.isArray(json) && json.length) {
