@@ -16,43 +16,6 @@
             --noir-red: #ff0000;
         }
         body { background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 0; padding-bottom: env(safe-area-inset-bottom, 0); text-align: center; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; -webkit-tap-highlight-color: rgba(255, 230, 100, 0.15); }
-        #noir-tv {
-            width: 100%;
-            min-height: 52px;
-            background: #000;
-            color: var(--noir-red);
-            font-weight: 700;
-            font-size: 13px;
-            padding: 12px 16px;
-            text-align: left;
-            position: relative;
-            overflow: hidden;
-            border-bottom: 2px solid rgba(255,0,0,0.5);
-            box-shadow: 0 0 20px rgba(255,0,0,0.15);
-        }
-        #noir-tv::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 3px);
-            pointer-events: none;
-        }
-        #noir-tv::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: rgba(255,0,0,0.02);
-            animation: noir-flicker 2.5s ease-in-out infinite;
-            pointer-events: none;
-        }
-        @keyframes noir-flicker {
-            0%, 90%, 100% { opacity: 1; }
-            95% { opacity: 0.92; }
-        }
-        #noir-tv .live-tag { color: var(--noir-red); text-shadow: 0 0 8px var(--noir-red); margin-right: 8px; }
-        #noir-tv .typing-text { display: inline; }
-        #noir-tv .cursor { display: inline-block; width: 2px; height: 1em; background: var(--noir-red); animation: blink 0.8s step-end infinite; vertical-align: text-bottom; margin-left: 1px; }
-        @keyframes blink { 50% { opacity: 0; } }
         .cockpit { padding: 20px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); max-width: min(600px, 100%); margin: 0 auto; box-sizing: border-box; }
         .header { margin-bottom: 22px; padding: 0 6px; }
         .gold-text { color: var(--gold); letter-spacing: 4px; font-weight: bold; }
@@ -281,9 +244,6 @@
     </style>
 </head>
 <body>
-    <div id="noir-tv">
-        <span class="live-tag">[ LIVE ]</span><span class="typing-text" id="noir-typing"></span><span class="cursor" id="noir-cursor"></span>
-    </div>
     <div class="cockpit">
     <div class="header">
         <h1 class="gold-text app-brand-title" id="app-brand-title"><span class="brand-line">GLOBAL LANGUAGE</span><span class="brand-line">BREAKER</span></h1>
@@ -1221,48 +1181,6 @@
                         setResultText(T('netErr') + ' ' + (err && err.message ? err.message : String(err)), '#c99', '0');
                     });
             });
-        })();
-
-        (function initNoirTV() {
-            const typingEl = document.getElementById('noir-typing');
-            const cursorEl = document.getElementById('noir-cursor');
-            const DEFAULT_PHRASE = 'NOIR TV — on air.';
-            let phrases = [DEFAULT_PHRASE];
-            let phraseIndex = 0;
-            let typingIndex = 0;
-            let currentText = '';
-            let timer = null;
-
-            function typeNext() {
-                if (!typingEl) return;
-                currentText = phrases[phraseIndex % phrases.length] || DEFAULT_PHRASE;
-                if (typingIndex >= currentText.length) {
-                    typingIndex = 0;
-                    phraseIndex++;
-                    setTimeout(typeNext, 2200);
-                    return;
-                }
-                typingEl.textContent = currentText.slice(0, typingIndex + 1);
-                typingIndex++;
-                timer = setTimeout(typeNext, 80 + Math.random() * 40);
-            }
-
-            function start() {
-                typingIndex = 0;
-                if (timer) clearTimeout(timer);
-                typeNext();
-            }
-
-            fetch('data/phrases.json', { cache: 'no-store' })
-                .then(r => r.ok ? r.json() : Promise.reject())
-                .then(json => {
-                    if (Array.isArray(json) && json.length) {
-                        phrases = json.filter(x => typeof x === 'string' && x.trim().length > 0);
-                        if (phrases.length === 0) phrases = [DEFAULT_PHRASE];
-                    }
-                    start();
-                })
-                .catch(() => { start(); });
         })();
     </script>
 </body>
