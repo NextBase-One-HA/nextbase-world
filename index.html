@@ -398,16 +398,8 @@
     </div>
 
     <script>
-        /** 正本: NEXTBASE_ENDPOINT_MAP.md — nextbase-app（rev 00008 以降もこのオリジン） */
-        const NEXTBASE_APP_ORIGIN = (function () {
-            try {
-                var h = location.hostname || '';
-                if (h === 'localhost' || h === '127.0.0.1') {
-                    return 'http://127.0.0.1:8889';
-                }
-            } catch (e) { /* ignore */ }
-            return 'https://nextbase-app-125142687526.asia-northeast1.run.app';
-        })();
+        /** Translate /health: smile-friend-engine (us-central1) */
+        const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
         /** App UI + translation hub languages (English pivot). */
         var GLB_UI_LANGS = ['en', 'ja', 'zh', 'ko', 'vi', 'th', 'hi', 'pt', 'fr', 'es', 'de', 'it', 'ru'];
 
@@ -1124,7 +1116,7 @@
             }
 
             function fetchTranslate(text, source, target) {
-                var payload = { text: text, source: source, target: target };
+                var payload = { text: text, source: source, target: target, caller_id: 'prod' };
                 return fetch(NEXTBASE_APP_ORIGIN + '/translate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
