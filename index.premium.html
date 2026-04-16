@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- glb-noir: index.premium.html — ORE_LAYER 3 (travel). $14.99 success landing; entitlements sync same as LIFE. -->
+<!-- glb-noir: travel landing -->
 <html lang="en" class="notranslate" translate="no">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-    <title>GLB-Noir — Smile Friend travel</title>
+    <title>GLB-Noir</title>
     <style>
         :root {
             --gold: #ffe566;
@@ -422,7 +422,6 @@
     <div id="gateway-pulse" style="display:none;" aria-hidden="true" data-i18n-placeholder="apiChecking"></div>
 
     <div id="subscribe-area" style="max-width: min(600px, 100%); margin: 0 auto 20px;">
-        <!-- ORE_LAYER LIFE: no $2.99 here — purchase starts at index.html (Entry). -->
         <div id="glb-coreflow-entry-cta" style="display:none;">
             <p class="note" id="t-entry-cta-text" style="text-align:left; line-height:1.5; margin:0 0 12px;"></p>
             <a href="https://nextbase-one-ha.github.io/glb-noir/index.html" class="btn glb-subscribe-btn" style="font-size:16px; padding:14px 18px; border-radius:999px;" id="t-btn-back-entry">Open Entry (subscribe LIFE)</a>
@@ -433,13 +432,11 @@
                 <h3 id="t-travel-layer-h3" style="font-size:1rem; margin:0 0 8px; color:#f5e6b8; text-align:left;">Smile Friend travel</h3>
                 <p id="t-travel-layer-body" style="font-size:12px; color:#aaa; text-align:left; margin:0 0 12px; line-height:1.45;"></p>
             </div>
-            <!-- Travel Payment Link: set Stripe success URL → https://nextbase-one-ha.github.io/glb-noir/index.premium.html?session_id={CHECKOUT_SESSION_ID} -->
             <div id="glb-travel-mini-row" class="glb-travel-mini-row" style="display:none;">
                 <a href="https://buy.stripe.com/14AcN7c7z0e46ZpfuDasg0v" class="glb-travel-mini-link" id="t-btn-travel-mini" style="font-size:12px;">$14.99</a>
                 <span class="glb-travel-mini-hint" id="t-travel-mini-hint"></span>
             </div>
         </div>
-        <!-- Ops: Stripe Dashboard → Payment Links Live. LIFE checkout success → index.coreflow.html ; travel → index.premium.html -->
     </div>
     <div id="manage-subscription-wrap" style="display:none; max-width:min(600px, 100%); margin: 0 auto 20px;">
         <button type="button" class="btn" id="manage-subscription-btn" style="font-size:16px; padding:14px 18px; border-radius:999px;">
@@ -467,10 +464,8 @@
 
     <script>
         if (typeof window.__GLB_PAGE_LAYER === 'undefined') window.__GLB_PAGE_LAYER = 'coreflow';
-        /** Translate /health: smile-friend-engine (us-central1) */
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
-        const APP_VERSION = '2026.04.16.premium.1';
-        /** 事務長ステラ CONFIG（API_BASE / STRIPE / LS_KEY は正本と一致） */
+        const APP_VERSION = '2026.04.16.premium.2';
         var GLB_COREFLOW_CONFIG = {
             API_BASE: 'https://smile-friend-engine-125142687526.us-central1.run.app',
             STRIPE_CORE: 'https://buy.stripe.com/bJedRbefH5yogzZfuDasg09',
@@ -624,8 +619,8 @@
             el.textContent = T('travelDaysLeft').replace(/\{\{n\}\}/g, String(days)).replace(/\{\{date\}\}/g, dateStr);
             el.style.display = '';
             if (expDisp) {
-                expDisp.textContent = 'Travel Pass active until ' + dateStr + ' (' + GLB_TRAVEL_EXPIRES_AT + ')';
-                expDisp.style.display = '';
+                expDisp.style.display = 'none';
+                expDisp.textContent = '';
             }
         }
 
@@ -854,16 +849,16 @@
                 labelRegion: 'Region settings',
                 labelLangFrom: 'From',
                 labelLangTo: 'To',
-                langFlowHint: 'English pivot: every pair routes through English (e.g. JA→EN→FR). Set app language, choose From → To, tap GLB.',
+                langFlowHint: '',
                 pricingH2: 'LIFE layer',
                 pricingLi1: '',
                 pricingNote: '',
-                entryCtaText: 'Purchase Smile Friend LIFE ($2.99/mo) from the Entry page first. This LIFE app layer is for subscribers.',
-                btnBackEntry: 'Open Entry (subscribe LIFE)',
-                lifeLayerBlurb: '<strong>Smile Friend LIFE</strong> — Cloud API fair use: <strong>30 uses / calendar month</strong>, <strong>max 1 / day</strong> (ORE_LAYER).',
-                travelLayerH3: 'Smile Friend travel',
-                travelLayerBody: 'Higher <strong>travel API</strong> tier: <strong>10 uses / day</strong>, <strong>300 / month</strong> (ORE_LAYER). One-time purchase — success returns to <strong>index.premium.html</strong>.',
-                premiumTravelBlurb: '<strong>Smile Friend travel</strong> — You are on the <strong>travel API</strong> tier: <strong>10 / day · 300 / month</strong> (ORE_LAYER).',
+                entryCtaText: 'Subscribe from the home page, then return here.',
+                btnBackEntry: 'Home',
+                lifeLayerBlurb: '',
+                travelLayerH3: 'Travel',
+                travelLayerBody: '',
+                premiumTravelBlurb: 'Welcome.',
                 linkTerms: 'Terms of Service',
                 linkPrivacy: 'Privacy Policy',
                 linkLegal: 'Legal',
@@ -871,10 +866,10 @@
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
                 btnMonthly: '',
                 travelMiniLink: '$14.99',
-                travelMiniHint: 'One-time travel tier. Requires active LIFE subscription.',
+                travelMiniHint: 'Requires LIFE subscription.',
                 travelExtendLink: 'Extend +30 days',
                 travelExtendHint: 'Adds 30 days from your current expiry (stacking).',
-                travelDaysLeft: 'Travel Pass active through {{date}} ({{n}} days left)',
+                travelDaysLeft: 'Through {{date}}',
                 stripeHint: 'Secure checkout with Stripe.',
                 dictPlaceholder: 'Search 150k dictionary…',
                 dictResult: 'Results appear here',
@@ -886,35 +881,35 @@
                 sendBtn: 'GLB',
                 idle: 'Idle',
                 modelBadge: '',
-                apiChecking: 'Smile Friend API: checking…',
-                apiOk: 'Smile Friend API:',
-                apiNoResponse: 'Smile Friend API: no response (CORS or network)',
+                apiChecking: '',
+                apiOk: '',
+                apiNoResponse: '',
                 sending: 'Translating…',
-                sendingPivot: 'Via English…',
-                failHttp: 'Failed HTTP',
+                sendingPivot: '',
+                failHttp: "Couldn't complete that.",
                 netErr: 'Network error:',
                 title: 'GLOBAL LANGUAGE BREAKER',
                 btnFlip: 'Flip',
                 flipTitle: 'Rotate the result 180° for the person across from you. Tap again to restore.',
-                freeQuotaUnlimited: 'LIFE API (fair use: 30/mo · 1/day)',
-                freeLeft: 'Trial: {{n}} left today (max 10/day) · subscribe LIFE from Entry',
-                freeLimitExceeded: 'Open Entry (index.html) to purchase LIFE ($2.99/mo).'
+                freeQuotaUnlimited: 'Ready.',
+                freeLeft: '{{n}} left today',
+                freeLimitExceeded: 'Use the home page to subscribe.'
             },
             ja: {
                 labelUiLang: '言語',
                 labelRegion: '地域設定',
                 labelLangFrom: '原文',
                 labelLangTo: '訳文',
-                langFlowHint: '英語ピボット固定：必ず英語を経由（例：日→英→仏）。アプリ言語を選び、原文→訳文を選んで GLB。',
+                langFlowHint: '',
                 pricingH2: 'LIFE 層',
                 pricingLi1: '',
                 pricingNote: '',
-                entryCtaText: 'LIFE（$2.99/月）は Entry（index.html）から購入してください。いまは未購読のため Entry に戻れます。',
-                btnBackEntry: 'Entry を開く（LIFE を購入）',
-                lifeLayerBlurb: '<strong>Smile Friend LIFE</strong> — クラウドAPI：フェアユース <strong>月30回・1日最大1回</strong>（ORE_LAYER）。',
-                travelLayerH3: 'Smile Friend travel',
-                travelLayerBody: '上位の <strong>travel API</strong>：<strong>1日10回・月300回</strong>（ORE_LAYER）。買い切り。成功時は <strong>index.premium.html</strong> へ。',
-                premiumTravelBlurb: '<strong>Smile Friend travel</strong> — <strong>トラベルAPI</strong>層（<strong>1日10回・月300回</strong>、ORE_LAYER）で利用中です。',
+                entryCtaText: 'ホームから購入のうえ、こちらへ戻ってください。',
+                btnBackEntry: 'ホーム',
+                lifeLayerBlurb: '',
+                travelLayerH3: 'トラベル',
+                travelLayerBody: '',
+                premiumTravelBlurb: 'ようこそ。',
                 linkTerms: '利用規約',
                 linkPrivacy: 'プライバシーポリシー',
                 linkLegal: '法的情報',
@@ -922,10 +917,10 @@
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
                 btnMonthly: '',
                 travelMiniLink: '$14.99',
-                travelMiniHint: 'トラベル層は買い切り。有効な LIFE 購読が必要です。',
+                travelMiniHint: 'LIFE 購読が必要です。',
                 travelExtendLink: '延長 +30日',
                 travelExtendHint: '現在の期限から30日追加（累積延長）。',
-                travelDaysLeft: 'Travel Pass 有効：{{date}}まで（残り{{n}}日）',
+                travelDaysLeft: '{{date}} まで',
                 stripeHint: 'Stripe で安全に決済',
                 dictPlaceholder: '15万語辞書を検索…',
                 dictResult: '結果がここに表示されます',
@@ -937,23 +932,23 @@
                 sendBtn: 'GLB',
                 idle: '待機中',
                 modelBadge: '',
-                apiChecking: 'Smile Friend API: 確認中…',
-                apiOk: 'Smile Friend API:',
-                apiNoResponse: 'Smile Friend API: 応答なし（CORS またはネットワーク）',
+                apiChecking: '',
+                apiOk: '',
+                apiNoResponse: '',
                 sending: '翻訳中…',
-                sendingPivot: '英語経由…',
-                failHttp: '失敗 HTTP',
+                sendingPivot: '',
+                failHttp: '完了できませんでした。',
                 netErr: 'ネットワークエラー:',
                 title: 'GLOBAL LANGUAGE BREAKER',
                 btnFlip: '反転',
                 flipTitle: '向かいに相手がいるとき、結果を180°回転。もう一度押すと元に戻ります。',
-                freeQuotaUnlimited: 'LIFE API（月30・1日1まで）',
-                freeLeft: 'お試し 残り{{n}}回（1日10回まで）· LIFE は Entry から購入',
-                freeLimitExceeded: 'index.html（Entry）から LIFE（$2.99/月）を購入してください。'
+                freeQuotaUnlimited: '準備完了',
+                freeLeft: '本日 残り {{n}} 回',
+                freeLimitExceeded: 'ホームから購入してください。'
             },
             zh: {
                 labelUiLang: '界面语言', labelRegion: '地区', labelLangFrom: '原文', labelLangTo: '译文',
-                langFlowHint: '英语中转：所有翻译经英语（例：日→英→法）。选择语言后点 GLB。',
+                langFlowHint: '',
                 pricingH2: '$2.99 / 月', pricingLi1: '<strong>$2.99/月</strong> — 订阅后云端翻译无限制。免费每日最多 3 次（试用）。', pricingNote: '为手机优化；每日 3 次免费，需要无限制可订阅。',
                 linkTerms: '服务条款', linkPrivacy: '隐私政策', linkLegal: '法律信息', linkSupport: '支持',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -969,7 +964,7 @@
             },
             ko: {
                 labelUiLang: '앱 언어', labelRegion: '지역', labelLangFrom: '출발', labelLangTo: '도착',
-                langFlowHint: '영어 피벗: 모든 경로는 영어 경유(예: 일→영→프). 언어 선택 후 GLB.',
+                langFlowHint: '',
                 pricingH2: '$2.99 / 월', pricingLi1: '<strong>$2.99/월</strong> — 구독 시 클라우드 번역 무제한. 무료는 하루 최대 3회.', pricingNote: '모바일 화면에 맞춤. 매일 3회 무료 → 무제한은 구독.',
                 linkTerms: '이용약관', linkPrivacy: '개인정보 처리방침', linkLegal: '법적 고지', linkSupport: '지원',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -985,7 +980,7 @@
             },
             es: {
                 labelUiLang: 'Idioma', labelRegion: 'Región', labelLangFrom: 'De', labelLangTo: 'A',
-                langFlowHint: 'Pivote inglés: todo pasa por inglés (ej. JA→EN→FR). Elige idiomas y GLB.',
+                langFlowHint: '',
                 pricingH2: '$2.99 / mes', pricingLi1: '<strong>$2.99/mes</strong> — Ilimitado con suscripción. Gratis: hasta 3/día.', pricingNote: 'Pensado para móvil: 3 pruebas/día, luego $2.99/mes ilimitado.',
                 linkTerms: 'Términos', linkPrivacy: 'Privacidad', linkLegal: 'Legal', linkSupport: 'Soporte',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -1001,7 +996,7 @@
             },
             fr: {
                 labelUiLang: 'Langue', labelRegion: 'Région', labelLangFrom: 'De', labelLangTo: 'Vers',
-                langFlowHint: 'Pivot anglais : tout passe par l’anglais (ex. JA→EN→FR). Puis GLB.',
+                langFlowHint: '',
                 pricingH2: '$2.99 / mois', pricingLi1: '<strong>$2.99/mois</strong> — Illimité avec abonnement. Gratuit : jusqu’à 3/jour.', pricingNote: 'Mobile : 3 essais/jour, puis abonnement illimité.',
                 linkTerms: 'Conditions', linkPrivacy: 'Confidentialité', linkLegal: 'Mentions légales', linkSupport: 'Assistance',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -1017,7 +1012,7 @@
             },
             de: {
                 labelUiLang: 'Sprache', labelRegion: 'Region', labelLangFrom: 'Von', labelLangTo: 'Nach',
-                langFlowHint: 'Englisch-Pivot: alles über Englisch (z. B. JA→EN→FR). Sprachen wählen, GLB.',
+                langFlowHint: '',
                 pricingH2: '$2.99 / Monat', pricingLi1: '<strong>$2.99/Monat</strong> — Mit Abo unbegrenzt. Kostenlos: bis zu 3× pro Tag.', pricingNote: 'Fürs Handy: 3 Tests/Tag, dann Abo.',
                 linkTerms: 'AGB', linkPrivacy: 'Datenschutz', linkLegal: 'Impressum', linkSupport: 'Support',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -1033,7 +1028,7 @@
             },
             th: {
                 labelUiLang: 'ภาษา', labelRegion: 'ภูมิภาค', labelLangFrom: 'จาก', labelLangTo: 'เป็น',
-                langFlowHint: 'ใช้อังกฤษเป็นฮับ: ทุกคู่ผ่าน EN (เช่น JA→EN→FR) แล้วกด GLB',
+                langFlowHint: '',
                 pricingH2: '$2.99 / เดือน', pricingLi1: '<strong>$2.99/เดือน</strong> — สมาชิกแปลไม่จำกัด ฟรีวันละสูงสุด 3 ครั้ง', pricingNote: 'ออกแบบให้มือถือ — ฟรี 3 ครั้ง/วัน แล้วสมัครได้',
                 linkTerms: 'ข้อกำหนด', linkPrivacy: 'ความเป็นส่วนตัว', linkLegal: 'กฎหมาย', linkSupport: 'ช่วยเหลือ',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -1049,7 +1044,7 @@
             },
             vi: {
                 labelUiLang: 'Ngôn ngữ', labelRegion: 'Khu vực', labelLangFrom: 'Từ', labelLangTo: 'Sang',
-                langFlowHint: 'Trục tiếng Anh: mọi cặp đi qua EN (vd: JA→EN→FR). Chọn ngôn ngữ rồi GLB.',
+                langFlowHint: '',
                 pricingH2: '$2.99 / tháng', pricingLi1: '<strong>$2.99/tháng</strong> — Thuê bao thì không giới hạn. Miễn phí tối đa 3 lần/ngày.', pricingNote: 'Tối ưu cho điện thoại — 3 lần miễn phí/ngày, sau đó đăng ký.',
                 linkTerms: 'Điều khoản', linkPrivacy: 'Riêng tư', linkLegal: 'Pháp lý', linkSupport: 'Hỗ trợ',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -1269,7 +1264,11 @@
             if (lr) lr.textContent = T('labelRegion');
             if (lf) lf.textContent = T('labelLangFrom');
             if (lt) lt.textContent = T('labelLangTo');
-            if (lfh) lfh.textContent = T('langFlowHint');
+            if (lfh) {
+                var flow = T('langFlowHint');
+                lfh.textContent = flow;
+                lfh.style.display = flow ? 'block' : 'none';
+            }
 
             var ect = document.getElementById('t-entry-cta-text');
             var ebtn = document.getElementById('t-btn-back-entry');
@@ -1278,11 +1277,24 @@
             var tbody = document.getElementById('t-travel-layer-body');
             if (ect) ect.textContent = T('entryCtaText');
             if (ebtn) ebtn.textContent = T('btnBackEntry');
-            if (lb) lb.innerHTML = T('lifeLayerBlurb');
+            if (lb) {
+                var lifeTxt = T('lifeLayerBlurb');
+                if (lifeTxt) {
+                    lb.innerHTML = lifeTxt;
+                    lb.style.display = '';
+                } else {
+                    lb.innerHTML = '';
+                    lb.style.display = 'none';
+                }
+            }
             var prb = document.getElementById('t-premium-travel-blurb');
             if (prb) prb.innerHTML = T('premiumTravelBlurb');
             if (th3) th3.textContent = T('travelLayerH3');
-            if (tbody) tbody.innerHTML = T('travelLayerBody');
+            if (tbody) {
+                var tb = T('travelLayerBody');
+                tbody.innerHTML = tb;
+                tbody.style.display = tb ? 'block' : 'none';
+            }
             updateTravelOfferLabels();
 
             var q = document.getElementById('q');
@@ -1393,43 +1405,12 @@
         STELLA_BUS.init();
 
         function runGatewayPulse() {
-            const el = document.getElementById('gateway-pulse');
-            if (!el) return;
-            var chk = T('apiChecking');
-            if (!chk) {
+            var el = document.getElementById('gateway-pulse');
+            if (el) {
                 el.style.display = 'none';
+                el.textContent = '';
                 el.dataset.healthDone = '1';
-                return;
             }
-            el.style.display = '';
-            el.textContent = chk;
-            el.dataset.healthDone = '';
-            fetch(NEXTBASE_APP_ORIGIN + '/health', { method: 'GET', cache: 'no-store' })
-                .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-                .then(function (j) {
-                    if (!el) return;
-                    el.dataset.healthDone = '1';
-                    var ok = (j.ok === true) || (j.check === 'OK');
-                    el.style.color = ok ? '#7a9e7a' : '#888';
-                    var line = j.ts ? String(j.ts) : (j.status || '') + ' · ' + (j.layer || '');
-                    var prefix = T('apiOk');
-                    if (!prefix) {
-                        el.style.display = 'none';
-                        return;
-                    }
-                    el.textContent = prefix + ' ' + (ok ? 'OK' : '?') + (line ? ' · ' + line : '');
-                })
-                .catch(function () {
-                    if (!el) return;
-                    el.dataset.healthDone = '1';
-                    var msg = T('apiNoResponse');
-                    if (!msg) {
-                        el.style.display = 'none';
-                        return;
-                    }
-                    el.style.color = '#966';
-                    el.textContent = msg;
-                });
         }
         runGatewayPulse();
 
@@ -1590,7 +1571,7 @@
             }
 
             function applyError(x) {
-                setResultText(T('failHttp') + ' ' + x.status + ' · ' + (x.body || ''), '#c99', '0');
+                setResultText(T('failHttp'), '#c99', '0');
             }
 
             btn.addEventListener('click', function () {
@@ -1660,8 +1641,7 @@
                             else applyError(x);
                         })
                         .catch(function (err) {
-                            console.error('[translate] network', err);
-                            setResultText(T('netErr') + ' ' + (err && err.message ? err.message : String(err)), '#c99', '0');
+                            setResultText(T('netErr'), '#c99', '0');
                         });
                     return;
                 }
@@ -1673,7 +1653,7 @@
                             applyError(x1);
                             return null;
                         }
-                        setResultText(T('sendingPivot'), '#eaeaea', '1');
+                        setResultText(T('sending'), '#eaeaea', '1');
                         return fetchTranslate(p1.text, 'en', target);
                     })
                     .then(function (x2) {
@@ -1683,17 +1663,12 @@
                         else applyError(x2);
                     })
                     .catch(function (err) {
-                        console.error('[translate] network', err);
-                        setResultText(T('netErr') + ' ' + (err && err.message ? err.message : String(err)), '#c99', '0');
+                        setResultText(T('netErr'), '#c99', '0');
                     });
             });
         })();
     </script>
     <script>
-/**
- * APP_VERSION: 2026.04.16.coreflow.3.1 (STABLE)
- * 事務長ステラ・三層防壁: CONFIG / 補助 API（権利の正本は直上メイン: syncEntitlements / syncEntitlementsWithCheckoutRetry）
- */
 (function () {
     var CONFIG = window.GLB_COREFLOW_CONFIG || {
         API_BASE: 'https://smile-friend-engine-125142687526.us-central1.run.app',
@@ -1719,11 +1694,14 @@
             showElements('.ui-travel-active');
             hideElements('.ui-unsubscribed, .ui-core-active');
             var expiryEl = document.getElementById('travel-expiry-display');
-            if (expiryEl && ent.travel_pass_expires_at) expiryEl.innerText = String(ent.travel_pass_expires_at);
+            if (expiryEl) {
+                expiryEl.innerText = '';
+                expiryEl.style.display = 'none';
+            }
         }
     }
     window.__GLB_COREFLOW331__ = { CONFIG: CONFIG, showElements: showElements, hideElements: hideElements, applyCoreflowUI: applyCoreflowUI };
-    document.documentElement.setAttribute('data-glb-coreflow', '3.1');
+    document.documentElement.setAttribute('data-glb-coreflow', '5');
 })();
 (function () {
     document.body.style.opacity = '0.96';

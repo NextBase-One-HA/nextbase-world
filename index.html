@@ -426,14 +426,11 @@
                 </ul>
                 <p class="note" id="t-pricing-note"></p>
             </div>
-            <!-- ORE_LAYER Entry → LIFE: Stripe Payment Link success URL must land on index.coreflow.html?session_id={CHECKOUT_SESSION_ID} -->
             <a href="https://buy.stripe.com/bJedRbefH5yogzZfuDasg09" class="btn glb-subscribe-btn" style="font-size:18px; padding:18px 20px; border-radius:999px; margin-top:4px;" id="t-btn-monthly">
                 Subscribe ($2.99/mo)
             </a>
             <p class="stripe-hint" id="t-stripe-hint">Secure checkout with Stripe.</p>
         </div>
-        <!-- Entry layer: no $14.99 here — travel upsell lives on index.coreflow.html (LIFE) after Core purchase. -->
-        <!-- Ops: Stripe Dashboard → Payment Links must be Live (not test) or customers cannot pay. -->
     </div>
     <div id="manage-subscription-wrap" style="display:none; max-width:min(600px, 100%); margin: 0 auto 20px;">
         <button type="button" class="btn" id="manage-subscription-btn" style="font-size:16px; padding:14px 18px; border-radius:999px;">
@@ -462,7 +459,7 @@
     <script>
         /** Translate /health: smile-friend-engine (us-central1) */
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
-        const APP_VERSION = '2026.04.16.entry.1';
+        const APP_VERSION = '2026.04.16.entry.2';
         const MAINTENANCE_DEFAULT = 'We are currently enhancing the system for a better experience. Please check back shortly.';
         const LS_CUSTOMER_ID = 'GLB_CUSTOMER_ID';
         const LS_TRAVEL_PENDING = 'glb_travel_pending';
@@ -775,10 +772,10 @@
                 labelRegion: 'Region settings',
                 labelLangFrom: 'From',
                 labelLangTo: 'To',
-                langFlowHint: 'English pivot: every pair routes through English (e.g. JA→EN→FR). Set app language, choose From → To, tap GLB.',
-                pricingH2: 'Smile Friend LIFE — $2.99 / month',
-                pricingLi1: '<strong>Entry (free)</strong>: <strong>10 translations per day</strong> using the <strong>built-in dictionary</strong> (no cloud API). <strong>LIFE</strong> ($2.99/mo): cloud API fair use <strong>30 / month · max 1 / day</strong> (ORE_LAYER).',
-                pricingNote: 'Start here. After checkout you are sent to the LIFE layer (index.coreflow.html).',
+                langFlowHint: '',
+                pricingH2: '$2.99 / month',
+                pricingLi1: 'Try free, then subscribe for cloud translation.',
+                pricingNote: '',
                 linkTerms: 'Terms of Service',
                 linkPrivacy: 'Privacy Policy',
                 linkLegal: 'Legal',
@@ -801,29 +798,29 @@
                 sendBtn: 'GLB',
                 idle: 'Idle',
                 modelBadge: '',
-                apiChecking: 'Smile Friend API: checking…',
-                apiOk: 'Smile Friend API:',
-                apiNoResponse: 'Smile Friend API: no response (CORS or network)',
+                apiChecking: '',
+                apiOk: '',
+                apiNoResponse: '',
                 sending: 'Translating…',
-                sendingPivot: 'Via English…',
-                failHttp: 'Failed HTTP',
+                sendingPivot: '',
+                failHttp: "Couldn't complete that.",
                 netErr: 'Network error:',
                 title: 'GLOBAL LANGUAGE BREAKER',
                 btnFlip: 'Flip',
                 flipTitle: 'Rotate the result 180° for the person across from you. Tap again to restore.',
-                freeQuotaUnlimited: 'LIFE API active (fair use limits apply)',
-                freeLeft: '{{n}} free left today (max 10/day, dictionary · no API) · LIFE $2.99/mo below',
-                freeLimitExceeded: 'Free limit: 10/day (dictionary). Subscribe below for LIFE cloud API.'
+                freeQuotaUnlimited: 'Ready.',
+                freeLeft: '{{n}} left today',
+                freeLimitExceeded: 'Subscribe below.'
             },
             ja: {
                 labelUiLang: '言語',
                 labelRegion: '地域設定',
                 labelLangFrom: '原文',
                 labelLangTo: '訳文',
-                langFlowHint: '英語ピボット固定：必ず英語を経由（例：日→英→仏）。アプリ言語を選び、原文→訳文を選んで GLB。',
-                pricingH2: 'Smile Friend LIFE — 月額 $2.99',
-                pricingLi1: '<strong>Entry（無料）</strong>：<strong>1日10回</strong>・<strong>内蔵辞書のみ</strong>（クラウドAPIなし）。<strong>LIFE</strong>（$2.99/月）：API <strong>月30回・1日最大1回</strong>（ORE_LAYER）。',
-                pricingNote: '起点はここ。決済後は LIFE 層（index.coreflow.html）へ遷移します。',
+                langFlowHint: '',
+                pricingH2: '月額 $2.99',
+                pricingLi1: '無料で試してから、クラウド翻訳にご登録ください。',
+                pricingNote: '',
                 linkTerms: '利用規約',
                 linkPrivacy: 'プライバシーポリシー',
                 linkLegal: '法的情報',
@@ -846,23 +843,23 @@
                 sendBtn: 'GLB',
                 idle: '待機中',
                 modelBadge: '',
-                apiChecking: 'Smile Friend API: 確認中…',
-                apiOk: 'Smile Friend API:',
-                apiNoResponse: 'Smile Friend API: 応答なし（CORS またはネットワーク）',
+                apiChecking: '',
+                apiOk: '',
+                apiNoResponse: '',
                 sending: '翻訳中…',
-                sendingPivot: '英語経由…',
-                failHttp: '失敗 HTTP',
+                sendingPivot: '',
+                failHttp: '完了できませんでした。',
                 netErr: 'ネットワークエラー:',
                 title: 'GLOBAL LANGUAGE BREAKER',
                 btnFlip: '反転',
                 flipTitle: '向かいに相手がいるとき、結果を180°回転。もう一度押すと元に戻ります。',
-                freeQuotaUnlimited: 'LIFE API 利用中（フェアユース上限あり）',
-                freeLeft: '本日の無料 残り{{n}}回（1日10回・辞書のみ／APIなし）· LIFE $2.99/月は下へ',
-                freeLimitExceeded: '無料上限（1日10回・辞書）。LIFE でクラウドAPIへ。'
+                freeQuotaUnlimited: '準備完了',
+                freeLeft: '本日 残り {{n}} 回',
+                freeLimitExceeded: '下からご購入ください。'
             },
             zh: {
                 labelUiLang: '界面语言', labelRegion: '地区', labelLangFrom: '原文', labelLangTo: '译文',
-                langFlowHint: '英语中转：所有翻译经英语（例：日→英→法）。选择语言后点 GLB。',
+                langFlowHint: '',
                 pricingH2: '$2.99 / 月', pricingLi1: '<strong>$2.99/月</strong> — 订阅后云端翻译无限制。免费每日最多 3 次（试用）。', pricingNote: '为手机优化；每日 3 次免费，需要无限制可订阅。',
                 linkTerms: '服务条款', linkPrivacy: '隐私政策', linkLegal: '法律信息', linkSupport: '支持',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -878,7 +875,7 @@
             },
             ko: {
                 labelUiLang: '앱 언어', labelRegion: '지역', labelLangFrom: '출발', labelLangTo: '도착',
-                langFlowHint: '영어 피벗: 모든 경로는 영어 경유(예: 일→영→프). 언어 선택 후 GLB.',
+                langFlowHint: '',
                 pricingH2: '$2.99 / 월', pricingLi1: '<strong>$2.99/월</strong> — 구독 시 클라우드 번역 무제한. 무료는 하루 최대 3회.', pricingNote: '모바일 화면에 맞춤. 매일 3회 무료 → 무제한은 구독.',
                 linkTerms: '이용약관', linkPrivacy: '개인정보 처리방침', linkLegal: '법적 고지', linkSupport: '지원',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -894,7 +891,7 @@
             },
             es: {
                 labelUiLang: 'Idioma', labelRegion: 'Región', labelLangFrom: 'De', labelLangTo: 'A',
-                langFlowHint: 'Pivote inglés: todo pasa por inglés (ej. JA→EN→FR). Elige idiomas y GLB.',
+                langFlowHint: '',
                 pricingH2: '$2.99 / mes', pricingLi1: '<strong>$2.99/mes</strong> — Ilimitado con suscripción. Gratis: hasta 3/día.', pricingNote: 'Pensado para móvil: 3 pruebas/día, luego $2.99/mes ilimitado.',
                 linkTerms: 'Términos', linkPrivacy: 'Privacidad', linkLegal: 'Legal', linkSupport: 'Soporte',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -910,7 +907,7 @@
             },
             fr: {
                 labelUiLang: 'Langue', labelRegion: 'Région', labelLangFrom: 'De', labelLangTo: 'Vers',
-                langFlowHint: 'Pivot anglais : tout passe par l’anglais (ex. JA→EN→FR). Puis GLB.',
+                langFlowHint: '',
                 pricingH2: '$2.99 / mois', pricingLi1: '<strong>$2.99/mois</strong> — Illimité avec abonnement. Gratuit : jusqu’à 3/jour.', pricingNote: 'Mobile : 3 essais/jour, puis abonnement illimité.',
                 linkTerms: 'Conditions', linkPrivacy: 'Confidentialité', linkLegal: 'Mentions légales', linkSupport: 'Assistance',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -926,7 +923,7 @@
             },
             de: {
                 labelUiLang: 'Sprache', labelRegion: 'Region', labelLangFrom: 'Von', labelLangTo: 'Nach',
-                langFlowHint: 'Englisch-Pivot: alles über Englisch (z. B. JA→EN→FR). Sprachen wählen, GLB.',
+                langFlowHint: '',
                 pricingH2: '$2.99 / Monat', pricingLi1: '<strong>$2.99/Monat</strong> — Mit Abo unbegrenzt. Kostenlos: bis zu 3× pro Tag.', pricingNote: 'Fürs Handy: 3 Tests/Tag, dann Abo.',
                 linkTerms: 'AGB', linkPrivacy: 'Datenschutz', linkLegal: 'Impressum', linkSupport: 'Support',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -942,7 +939,7 @@
             },
             th: {
                 labelUiLang: 'ภาษา', labelRegion: 'ภูมิภาค', labelLangFrom: 'จาก', labelLangTo: 'เป็น',
-                langFlowHint: 'ใช้อังกฤษเป็นฮับ: ทุกคู่ผ่าน EN (เช่น JA→EN→FR) แล้วกด GLB',
+                langFlowHint: '',
                 pricingH2: '$2.99 / เดือน', pricingLi1: '<strong>$2.99/เดือน</strong> — สมาชิกแปลไม่จำกัด ฟรีวันละสูงสุด 3 ครั้ง', pricingNote: 'ออกแบบให้มือถือ — ฟรี 3 ครั้ง/วัน แล้วสมัครได้',
                 linkTerms: 'ข้อกำหนด', linkPrivacy: 'ความเป็นส่วนตัว', linkLegal: 'กฎหมาย', linkSupport: 'ช่วยเหลือ',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -958,7 +955,7 @@
             },
             vi: {
                 labelUiLang: 'Ngôn ngữ', labelRegion: 'Khu vực', labelLangFrom: 'Từ', labelLangTo: 'Sang',
-                langFlowHint: 'Trục tiếng Anh: mọi cặp đi qua EN (vd: JA→EN→FR). Chọn ngôn ngữ rồi GLB.',
+                langFlowHint: '',
                 pricingH2: '$2.99 / tháng', pricingLi1: '<strong>$2.99/tháng</strong> — Thuê bao thì không giới hạn. Miễn phí tối đa 3 lần/ngày.', pricingNote: 'Tối ưu cho điện thoại — 3 lần miễn phí/ngày, sau đó đăng ký.',
                 linkTerms: 'Điều khoản', linkPrivacy: 'Riêng tư', linkLegal: 'Pháp lý', linkSupport: 'Hỗ trợ',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
@@ -1150,7 +1147,11 @@
             if (lr) lr.textContent = T('labelRegion');
             if (lf) lf.textContent = T('labelLangFrom');
             if (lt) lt.textContent = T('labelLangTo');
-            if (lfh) lfh.textContent = T('langFlowHint');
+            if (lfh) {
+                var flow = T('langFlowHint');
+                lfh.textContent = flow;
+                lfh.style.display = flow ? 'block' : 'none';
+            }
 
             var h2 = document.getElementById('t-pricing-h2');
             var li1 = document.getElementById('t-pricing-li1');
@@ -1276,43 +1277,12 @@
         STELLA_BUS.init();
 
         function runGatewayPulse() {
-            const el = document.getElementById('gateway-pulse');
-            if (!el) return;
-            var chk = T('apiChecking');
-            if (!chk) {
+            var el = document.getElementById('gateway-pulse');
+            if (el) {
                 el.style.display = 'none';
+                el.textContent = '';
                 el.dataset.healthDone = '1';
-                return;
             }
-            el.style.display = '';
-            el.textContent = chk;
-            el.dataset.healthDone = '';
-            fetch(NEXTBASE_APP_ORIGIN + '/health', { method: 'GET', cache: 'no-store' })
-                .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-                .then(function (j) {
-                    if (!el) return;
-                    el.dataset.healthDone = '1';
-                    var ok = (j.ok === true) || (j.check === 'OK');
-                    el.style.color = ok ? '#7a9e7a' : '#888';
-                    var line = j.ts ? String(j.ts) : (j.status || '') + ' · ' + (j.layer || '');
-                    var prefix = T('apiOk');
-                    if (!prefix) {
-                        el.style.display = 'none';
-                        return;
-                    }
-                    el.textContent = prefix + ' ' + (ok ? 'OK' : '?') + (line ? ' · ' + line : '');
-                })
-                .catch(function () {
-                    if (!el) return;
-                    el.dataset.healthDone = '1';
-                    var msg = T('apiNoResponse');
-                    if (!msg) {
-                        el.style.display = 'none';
-                        return;
-                    }
-                    el.style.color = '#966';
-                    el.textContent = msg;
-                });
         }
         runGatewayPulse();
 
@@ -1473,7 +1443,7 @@
             }
 
             function applyError(x) {
-                setResultText(T('failHttp') + ' ' + x.status + ' · ' + (x.body || ''), '#c99', '0');
+                setResultText(T('failHttp'), '#c99', '0');
             }
 
             btn.addEventListener('click', function () {
@@ -1543,8 +1513,7 @@
                             else applyError(x);
                         })
                         .catch(function (err) {
-                            console.error('[translate] network', err);
-                            setResultText(T('netErr') + ' ' + (err && err.message ? err.message : String(err)), '#c99', '0');
+                            setResultText(T('netErr'), '#c99', '0');
                         });
                     return;
                 }
@@ -1556,7 +1525,7 @@
                             applyError(x1);
                             return null;
                         }
-                        setResultText(T('sendingPivot'), '#eaeaea', '1');
+                        setResultText(T('sending'), '#eaeaea', '1');
                         return fetchTranslate(p1.text, 'en', target);
                     })
                     .then(function (x2) {
@@ -1566,8 +1535,7 @@
                         else applyError(x2);
                     })
                     .catch(function (err) {
-                        console.error('[translate] network', err);
-                        setResultText(T('netErr') + ' ' + (err && err.message ? err.message : String(err)), '#c99', '0');
+                        setResultText(T('netErr'), '#c99', '0');
                     });
             });
         })();
