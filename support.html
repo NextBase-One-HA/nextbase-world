@@ -23,6 +23,9 @@
     nav a { margin-right:12px; }
     .box { border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin:16px 0; background:#111; }
     .note { font-size:13px; color:var(--muted); border-top:1px solid var(--line); padding-top:20px; margin-top:32px; }
+    .btn-reload { display:inline-block; margin:8px 0 10px; padding:10px 14px; border:1px solid var(--gold); border-radius:10px; background:#151515; color:var(--gold); cursor:pointer; font-weight:700; }
+    .btn-reload:disabled { opacity:.55; cursor:not-allowed; }
+    .status-line { font-size:13px; color:var(--muted); margin:6px 0 0; }
   </style>
 </head>
 <body>
@@ -52,6 +55,12 @@
       <p>3) Choose <strong>Cancel plan</strong></p>
       <p>This flow is available anytime. Cancellation and payment-method updates are handled directly in Stripe Customer Portal.</p>
     </div>
+    <div class="box">
+      <p><strong>Paid but still seeing free limit?</strong></p>
+      <p>If you paid but still see the 10/day limit, press <strong>Status reload</strong> below. This forces a fresh entitlement sync from the billing API and overwrites local browser flags.</p>
+      <button type="button" class="btn-reload" id="billing-sync-btn">Status reload</button>
+      <p class="status-line" id="billing-sync-status" aria-live="polite"></p>
+    </div>
 
     <h2>Privacy requests</h2>
     <p>For privacy-related requests (access, deletion where applicable), email the address used for your account or purchase, or use the same channel you used to buy GLB. Include enough detail to verify your request without sending unnecessary ID.</p>
@@ -67,5 +76,42 @@
 
     <p class="note">© 2026 GLB-Noir. All Rights Reserved. Patent Pending</p>
   </div>
+  <script>
+    (function billingStatusSync() {
+      var API_ORIGIN = "https://smile-friend-engine-125142687526.us-central1.run.app";
+      var btn = document.getElementById("billing-sync-btn");
+      var out = document.getElementById("billing-sync-status");
+      if (!btn || !out) return;
+
+      function setStatus(msg) {
+        out.textContent = msg || "";
+      }
+
+      btn.addEventListener("click", async function () {
+        btn.disabled = true;
+        setStatus("Syncing status...");
+        try {
+          var customerId = (localStorage.getItem("GLB_CUSTOMER_ID") || "").trim();
+          var url = new URL(window.location.href);
+          var sessionId = (url.searchParams.get("session_id") || "").trim();
+          var endpoint = "";
+          if (customerId) endpoint = API_ORIGIN + "/entitlements?customer_id=" + encodeURIComponent(customerId);
+          else if (sessionId) endpoint = API_ORIGIN + "/entitlements?session_id=" + encodeURIComponent(sessionId);
+          else throw new Error("missing_customer_or_session");
+
+          var res = await fetch(endpoint, { cache: "no-store" });
+          var data = await res.json();
+          if (!data || data.ok !== true) throw new Error("entitlements_not_ok");
+          if (data.customer_id) localStorage.setItem("GLB_CUSTOMER_ID", String(data.customer_id));
+          localStorage.setItem("glb_subscribed", data.core_subscribed ? "1" : "0");
+          setStatus(data.core_subscribed ? "Synced: paid mode is active." : "Synced: free mode is active.");
+        } catch (e) {
+          setStatus("Could not sync right now. Please retry.");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
