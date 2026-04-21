@@ -574,7 +574,9 @@
     <script>
         window.__GLB_PAGE_LAYER = 'coreflow';
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
-        const APP_VERSION = '2026.04.21.coreflow.10';
+        /** API 未デプロイ時・session 失敗時: Stripe 公式ポータル入口（支払い・解約） */
+        var GLB_STRIPE_PORTAL_LOGIN_FALLBACK = 'https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00';
+        const APP_VERSION = '2026.04.21.coreflow.11';
         var GLB_COREFLOW_CONFIG = {
             API_BASE: 'https://smile-friend-engine-125142687526.us-central1.run.app',
             STRIPE_CORE: 'https://buy.stripe.com/bJedRbefH5yogzZfuDasg09',
@@ -695,6 +697,7 @@
                     return j;
                 })
                 .catch(function () {
+                    try { setMaintenanceOverlay(false, '', false); } catch (e0) { /* ignore */ }
                     return GLB_SYSTEM_STATUS_CACHE;
                 });
         }
@@ -1364,22 +1367,32 @@
                 btn.disabled = true;
                 btn.textContent = 'Opening management page...';
             }
+            var fallback = GLB_STRIPE_PORTAL_LOGIN_FALLBACK || 'https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00';
+            function go(url) {
+                window.location.href = url;
+            }
             try {
                 var customerId = (localStorage.getItem(LS_CUSTOMER_ID) || '').trim();
-                if (!customerId) throw new Error('missing_customer_id');
-                var res = await fetch(NEXTBASE_APP_ORIGIN + '/billing/portal', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ customer_id: customerId })
-                });
-                var data = await res.json();
-                if (!res.ok || !data || !data.url) throw new Error('portal_open_failed');
-                window.location.href = data.url;
-            } catch (e) {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = 'Manage Subscription';
+                if (!customerId) {
+                    go(fallback);
+                    return;
                 }
+                var payload = JSON.stringify({ customer_id: customerId });
+                var headers = { 'Content-Type': 'application/json' };
+                var paths = ['/billing/portal', '/create-portal-session'];
+                for (var i = 0; i < paths.length; i++) {
+                    var res = await fetch(NEXTBASE_APP_ORIGIN + paths[i], { method: 'POST', headers: headers, body: payload });
+                    var ct = (res.headers.get('content-type') || '').toLowerCase();
+                    if (!res.ok || ct.indexOf('application/json') === -1) continue;
+                    var data = await res.json();
+                    if (data && data.url) {
+                        go(data.url);
+                        return;
+                    }
+                }
+                go(fallback);
+            } catch (e) {
+                go(fallback);
             }
         }
 
