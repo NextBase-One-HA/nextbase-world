@@ -1,0 +1,16 @@
+# glb-noir: pure static HTML/CSS/JS at repository root (no dist/ folder).
+# Sync this Blueprint in the Render Dashboard, or mirror these values on your Static Site:
+#   Root Directory: (empty)
+#   Build Command: npm run build
+#   Publish directory: .
+#
+# If the dashboard already uses a different service name, rename `name` below to match
+# your existing service before enabling Blueprint sync, or apply settings manually only.
+
+services:
+  - type: web
+    name: glb-noir
+    runtime: static
+    branch: main
+    buildCommand: npm run build
+    staticPublishPath: .
