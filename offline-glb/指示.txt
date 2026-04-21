@@ -1,0 +1,140 @@
+Tomori Public v0.2（FIXED）
+
+GLB オフライン翻訳コア（公開OK統合仕様）
+
+0) 目的
+	•	外部APIに依存しない翻訳を、端末内リソースだけで成立させる
+	•	強い範囲を作る（旅行・店・交通・医療簡易など）
+	•	後から精度を上げられる“差し替え可能構造”にする
+
+⸻
+
+1) 公開OK / 公開NG の仕分け（FIX）
+
+公開OK（そのまま出せる）
+	•	ローカル辞書（SQLite）＋ Longest Match
+	•	テンプレ（定型文）変換
+	•	前後の正規化・置換ルール（pre/post）
+	•	LRUキャッシュ / TTL
+	•	Tokenizerを差し替え可能にする設計（簡易→高精度）
+
+公開NG（表に書くと揉める／疑われる）
+	•	学習済みモデルから Weights を抜き出す表現
+	•	他モデルの内部重み・内部スコアの流用（出所不明）
+
+置き換え規約（公開文言として固定）
+→ “オープンなデータ / 自前生成 / 自前学習（許諾明確）” のみ採用
+
+⸻
+
+2) 全体アーキテクチャ（2レイヤー固定）
+
+Layer A：Deterministic Layer（確定ロジック層 / 主戦力）
+	•	辞書・定型句・テンプレ・置換ルールで 確実に当てる
+	•	オフラインの“核”。ここだけで実用域に持っていく
+
+Layer B：Similarity Layer（類似度補助層 / 任意）
+	•	未知語・表記ゆれ救済（店名、略語、スペルミス）
+	•	許諾が明確な fastText / word2vec / 自前生成ベクトルのみ
+	•	“重み抽出”表現は禁止（採用しない）
+
+⸻
+
+3) Core Data（辞書・テンプレ・ルール）
+
+3.1 SQLite（推奨）データ構造（最小）
+	•	entries：単語/フレーズ辞書
+	•	src, dst, lang_from, lang_to, priority, domain(optional), pos(optional)
+	•	templates：定型テンプレ
+	•	pattern, rewrite, domain(optional), priority
+	•	rewrite_rules：前後置換
+	•	stage(pre/post), pattern, to, priority
+
+重要：エンジンに辞書を直書きしない（差替え・更新・検証のため）
+
+⸻
+
+4) 翻訳パイプライン（固定順・修正済み）
+	1.	Normalize
+	•	trim / 全角半角 / 大小 / 記号統一
+	•	キャッシュキーにも同じ正規化を適用
+	2.	Cache（LRU + TTL）
+	•	HIT時は即返し
+	3.	Template Apply（最優先）
+	•	構文が決まるため最初に適用
+	4.	Phrase Match（Longest Match）
+	•	Trie推奨（小規模ならルックアップ）
+	5.	Token Translate（単語置換）
+	•	残りをTokenizeして辞書置換
+	6.	Post Rewrite
+	•	語尾、空白、句読点、丁寧調、数値/型番保護
+	7.	Cache保存
+
+⸻
+
+5) Tokenizer（差し替え設計：公開OK）
+
+インターフェース（固定）
+	•	tokenize(text, lang) -> List<Token>
+
+実装（段階）
+	1.	SimpleTokenizer（MVP）
+	•	空白／記号／文字種で分割（最速）
+	2.	AdvancedTokenizer（差し替え）
+	•	MeCab/Sudachi等（公開文では“差し替え可能”とだけ記載）
+
+⸻
+
+6) Similarity Layer（任意・安全に書く）
+
+使用目的
+	•	表記ゆれ補正（例：McDonalds / MacDonald’s / マクド）
+	•	スペルミス補正（編集距離＋候補上位）
+	•	ドメイン辞書候補のスコアリング
+
+禁止事項（明文化）
+	•	学習済みモデルの 内部重み抽出・流用：採用しない
+
+安全な代替（公開OK）
+	•	共起カウント / PMI / TF-IDF
+	•	編集距離（Levenshtein）
+	•	カテゴリ一致・頻度
+	•	許諾明確な埋め込み（fastText等）＋コサイン類似度
+
+⸻
+
+7) 構築フロー（現実寄せ：公開安全）
+
+開発用（2機間連携は“開発工程”に限定）
+	•	Windows：辞書生成・ビルド（sqlite/json）
+	•	Mac：検証・タグ付け・品質確認
+	•	アプリ：成果物を取り込み（端末内完結）
+
+※ アプリ本体に Socket同期は不要（公開仕様には書かない）
+
+⸻
+
+8) 実装順（迷い禁止：FIX）
+	1.	SQLite辞書＋LongestMatch（最優先）
+	2.	テンプレ変換（定型文）
+	3.	キャッシュ（LRU/TTL）
+	4.	Tokenizer差し替え口（簡易でOK）
+	5.	必要になってから Similarity Layer
+
+⸻
+
+9) 公開用 1段落（確定文）
+
+GLBのオフライン翻訳は、端末内辞書（SQLite）と規則変換（テンプレ・置換）を中心に構成し、外部APIに依存しない形で実行されます。未知語や表記ゆれへの補助として、許諾が明確なオープンデータ／自前生成データを用いた軽量な類似度スコアリングを追加できます。学習済みモデルの内部重みを抽出・流用する設計は採用しません。
+
+⸻
+
+10) 次に出すべき「コード骨格」（6ファイル構成・FIX）
+
+この仕様をそのままFlutter/Dartに落とす“骨格”は以下で固定：
+	1.	core_pipeline.dart（パイプライン本体）
+	2.	tokenizer_interface.dart（差し替え口）
+	3.	simple_tokenizer.dart（MVP）
+	4.	sqflite_dictionary.dart（SQLite実装）
+	5.	phrase_matcher.dart（Trie / Longest Match）
+	6.	template_engine.dart（テンプレ適用）

@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     <title>GLOBAL LANGUAGE BREAKER</title>
+    <script src="offline-glb/glb_tomori_web.js"></script>
     <style>
         :root {
             --gold: #ffe566;
@@ -547,7 +548,7 @@
     <script>
         window.__GLB_PAGE_LAYER = 'coreflow';
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
-        const APP_VERSION = '2026.04.21.coreflow.7';
+        const APP_VERSION = '2026.04.21.coreflow.8';
         var GLB_COREFLOW_CONFIG = {
             API_BASE: 'https://smile-friend-engine-125142687526.us-central1.run.app',
             STRIPE_CORE: 'https://buy.stripe.com/bJedRbefH5yogzZfuDasg09',
@@ -1813,6 +1814,10 @@
             var btn = document.getElementById('tr-run');
             if (!btn || !out) return;
 
+            function glbFinalizeOut(s) {
+                return (typeof glbTomoriPostRewrite === 'function') ? glbTomoriPostRewrite(s) : s;
+            }
+
             function parseResponse(x) {
                 if (x.status >= 200 && x.status < 300) {
                     try {
@@ -1867,7 +1872,7 @@
                     ht.value = lt.value.trim();
                 }
                 var text = (document.getElementById('tr-text') && document.getElementById('tr-text').value) || '';
-                text = text.trim();
+                text = (typeof glbTomoriNormalize === 'function') ? glbTomoriNormalize(text) : text.trim();
                 var source = ((document.getElementById('tr-src') && document.getElementById('tr-src').value) || 'en').trim();
                 var target = ((document.getElementById('tr-tgt') && document.getElementById('tr-tgt').value) || 'fa').trim();
 
@@ -1887,18 +1892,20 @@
 
                 var cached = readTxCache(text, source, target);
                 if (cached != null && cached !== '') {
-                    setResultText(cached, '#eaeaea', '0');
+                    var cDone = glbFinalizeOut(cached);
+                    setResultText(cDone, '#eaeaea', '0');
                     refreshFreeQuotaDisplay();
-                    glbUpdateReadalong(text, cached, source, target);
+                    glbUpdateReadalong(text, cDone, source, target);
                     return;
                 }
 
                 var localOut = tryLocalRoute(text, source, target);
                 if (localOut != null && localOut !== '') {
-                    setResultText(localOut, '#eaeaea', '0');
-                    writeTxCache(text, source, target, localOut);
+                    var locDone = glbFinalizeOut(localOut);
+                    setResultText(locDone, '#eaeaea', '0');
+                    writeTxCache(text, source, target, locDone);
                     refreshFreeQuotaDisplay();
-                    glbUpdateReadalong(text, localOut, source, target);
+                    glbUpdateReadalong(text, locDone, source, target);
                     return;
                 }
 
@@ -1911,11 +1918,12 @@
                 var pivot = (source !== 'en' && target !== 'en');
 
                 function finishOk(line, apiJson) {
-                    setResultText(line, '#eaeaea', '0');
-                    writeTxCache(text, source, target, line);
+                    var done = glbFinalizeOut(line);
+                    setResultText(done, '#eaeaea', '0');
+                    writeTxCache(text, source, target, done);
                     recordGlbTranslateUse();
                     refreshFreeQuotaDisplay();
-                    glbUpdateReadalong(text, line, source, target);
+                    glbUpdateReadalong(text, done, source, target);
                     if (apiJson) glbLogClientAudit(apiJson, source, target, micSnapshot, ttsSnap);
                 }
 

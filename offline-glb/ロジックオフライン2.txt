@@ -1,0 +1,126 @@
+ロジックオフライン2
+
+了解。この部屋で確定したロジックを、判断・実装・安全の3層で簡潔にまとめる。
+（引き継ぎ用／再開用にそのまま使える形）
+
+⸻
+
+① 目的と前提（最上位ロジック）
+	•	目的：翻訳ではなく「生存と移動」を助ける命のインフラ
+	•	前提：
+	•	完全オフライン（API 0）
+	•	Android API21（5.0）〜最新
+	•	外部非公開（neゲートウェイは出さない）
+	•	人間主権（SOL 0%）・依存を作らない
+
+⸻
+
+② アーキテクチャ（確定）
+	•	Single Activity 構成
+	•	Single Responsibility
+	•	UI：表示と操作のみ
+	•	ロジック：決定論（AIなし）
+	•	データ：assets JSON（凍結）
+
+⸻
+
+③ UIロジック（要塞仕様）
+
+基本原則
+	•	1画面1フレーズ
+	•	2タップで完了
+	•	描画最小・再計算なし
+
+具体
+	•	PhraseRecyclerView
+	•	GridLayoutManager(2列固定)
+	•	setHasFixedSize(true)
+	•	高さ 200px固定（API21端末でも押しやすい）
+	•	タップ判定
+	•	SystemClock.elapsedRealtime() の時間差のみ
+	•	350ms以内＝2タップ
+	•	GestureDetector不使用（不確定要素排除）
+
+動作
+	•	1タップ：表示更新 + TTS即再生
+	•	2タップ：全画面提示（Overlay）
+
+⸻
+
+④ Overlay分離（命の聖域）
+	•	FullscreenPhraseActivity
+	•	singleInstance
+	•	showOnLockScreen
+	•	FLAG_KEEP_SCREEN_ON
+	•	目的：
+	•	メインUIが落ちても
+	•	メモリ逼迫でも
+	•	「命の表示だけは残す」
+
+⸻
+
+⑤ データロジック（JSON凍結）
+
+スキーマ v1.0（FIXED）
+
+{
+  "id": "string (a-z0-9_)",
+  "category": "Emergency | Station | Taxi | Hotel | Number",
+  "template": "string",
+  "tags": ["string"]
+}
+
+ルール
+	•	構造変更禁止
+	•	拡張＝行追加のみ
+	•	意味変更禁止
+
+バリデータ
+	•	起動時 FAIL FAST
+	•	壊れたJSONは即クラッシュ
+	•	黙って動かさない＝未来ブレーキ
+
+⸻
+
+⑥ Repository（血流）
+	•	assets JSON を一度だけロード
+	•	キャッシュ保持
+	•	提供API：
+	•	getAll()
+	•	getByCategory()
+	•	getEmergencyOnly()
+
+⸻
+
+⑦ 物理トリガ（現実連動）
+	•	Battery ≤ 5%
+	•	強制的に Emergencyカテゴリのみ
+	•	UI・判断を上書き
+	•	AI判断なし、物理条件のみ
+
+⸻
+
+⑧ 安全・未来ブレーキ（重要）
+	•	自己進化なし
+	•	自動最適化なし
+	•	判断の置き換えなし
+	•	依存を作らない
+	•	説明可能（子供に30秒で説明できる）
+
+⸻
+
+⑨ 状態まとめ（現在地）
+	•	UI：完成
+	•	ロジック：完成
+	•	データ構造：凍結済み
+	•	外部連携：なし
+	•	次工程（未着手）
+	•	起動前自己診断（Battery / JSON / TTS）
+	•	低RAM端末最終HARDEN
+
+⸻
+
+一文で言うと
+
+「困った瞬間だけ助けて、無くても生きられる。
+未来でやり過ぎないよう、構造そのものにブレーキを入れたアプリ。」

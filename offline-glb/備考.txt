@@ -1,0 +1,109 @@
+
+
+使い方（最小例）
+
+雛形を組み合わせる最小コード（参考）：
+
+import 'core_pipeline.dart';
+import 'simple_tokenizer.dart';
+import 'sqlite_dictionary.dart';
+import 'template_engine.dart';
+import 'phrase_matcher.dart';
+
+Future<void> main() async {
+  final dict = InMemoryDictionary();
+  dict.putWord('ja', 'en', 'こんにちは', 'hello');
+  dict.putPhrase('ja', 'en', 'おはようございます', 'good morning');
+  dict.addTemplate(TemplateRule(
+    pattern: '{A} は どこ です か',
+    rewrite: 'Where is {A}?',
+    priority: 10,
+  ));
+
+  final pipeline = OfflineTranslatePipeline(
+    dictionary: dict,
+    tokenizer: SimpleTokenizer(),
+    templateEngine: const TemplateEngine(),
+    phraseMatcher: PhraseMatcher(),
+  );
+
+  final out = await pipeline.translate(text: 'こんにちは', from: 'ja', to: 'en');
+  print(out);
+}
+
+次の一手だけ言う：
+SQLite（sqflite）で本物にするなら、OfflineDictionary の実装を SqfliteDictionary に差し替えるだけで済む。
+必要なら、その Sqflite版の実装雛形もこの構造に合わせて出す。
+
+pubspec.yaml 追加
+
+dependencies:
+  sqflite: ^2.3.3+1
+  path: ^1.9.0
+
+
+⸻
+
+つなぎ込み例（TrieをビルドしてLongestMatchを有効化）
+
+import 'core_pipeline.dart';
+import 'simple_tokenizer.dart';
+import 'template_engine.dart';
+import 'phrase_matcher.dart';
+import 'sqflite_dictionary.dart';
+
+Future<void> main() async {
+  final dict = SqfliteDictionary(
+    onCreateSeed: (db) async {
+      // 最小シード（例）
+      await db.insert('entries', {
+        'lang_from': 'ja',
+        'lang_to': 'en',
+        'src': 'おはようございます',
+        'dst': 'good morning',
+        'kind': 'phrase',
+        'priority': 10,
+      });
+      await db.insert('entries', {
+        'lang_from': 'ja',
+        'lang_to': 'en',
+        'src': 'こんにちは',
+        'dst': 'hello',
+        'kind': 'word',
+        'priority': 1,
+      });
+      await db.insert('templates', {
+        'lang_from': 'ja',
+        'lang_to': 'en',
+        'pattern': '{A} は どこ です か',
+        'rewrite': 'Where is {A}?',
+        'priority': 10,
+      });
+    },
+  );
+
+  final matcher = PhraseMatcher();
+
+  // Trieビルド（フレーズキー一覧をSQLiteから取得）
+  await dict.ensureReady(from: 'ja', to: 'en');
+  final phraseKeys = await dict.listPhraseKeys(from: 'ja', to: 'en', limit: 5000);
+  await matcher.ensureBuilt(from: 'ja', to: 'en', dict: dict, phraseKeys: phraseKeys);
+
+  final pipeline = OfflineTranslatePipeline(
+    dictionary: dict,
+    tokenizer: SimpleTokenizer(),
+    templateEngine: const TemplateEngine(),
+    phraseMatcher: matcher,
+  );
+
+  final out = await pipeline.translate(text: 'おはようございます', from: 'ja', to: 'en');
+  print(out);
+
+  await dict.close();
+}
+
+次に必要になるのは「SQLiteに辞書データをどう入れるか」だけ。
+	•	assetsのCSV/TSVを初回起動で流し込み
+	•	もしくはビルド時に glb_offline_dict.db を作って同梱（最速）
+
+どっちで行くかは二人に任せてOK。
