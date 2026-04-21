@@ -593,7 +593,7 @@
 
         (function prehideLimitedUiWhenPaid() {
             try {
-                if (!glbIsPaidFlag()) return;
+                if (!glbIsPaidFlag() && localStorage.getItem(LS_BILLING_LOCK) !== '1') return;
                 var st = document.createElement('style');
                 st.id = 'glb-paid-mode-style';
                 st.textContent = '#t-free-quota,#subscribe-area,#glb-core-subscribe-block{display:none !important;}';
