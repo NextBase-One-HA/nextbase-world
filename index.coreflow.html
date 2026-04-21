@@ -392,6 +392,43 @@
             cursor: not-allowed;
         }
         .glb-mic-hint { text-align: left; margin: 0 0 8px; }
+        .glb-mic-live-bar {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(212, 175, 55, 0.45);
+            background: rgba(40, 35, 20, 0.88);
+            font-size: 11px;
+            color: #f5e6b8;
+            line-height: 1.35;
+        }
+        .glb-mic-live-bar.is-hearing {
+            border-color: rgba(120, 220, 140, 0.65);
+            box-shadow: 0 0 12px rgba(80, 200, 120, 0.2);
+        }
+        .glb-mic-live-dot {
+            flex-shrink: 0;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d4af37;
+            animation: glb-mic-pulse 1.15s ease-in-out infinite;
+        }
+        .glb-mic-live-bar.is-hearing .glb-mic-live-dot {
+            background: #7ddf8a;
+            animation-duration: 0.55s;
+        }
+        @keyframes glb-mic-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.88); }
+        }
+        .glb-tool-bar .glb-icon-btn.is-mic-listening {
+            box-shadow: 0 0 16px rgba(212, 175, 55, 0.5);
+            border-color: rgba(255, 230, 150, 0.85);
+        }
         .coreflow-mode-hint {
             font-size: 10px;
             color: #777;
@@ -471,6 +508,10 @@
             <button type="button" class="glb-icon-btn" id="glb-mic-btn">Mic</button>
             <button type="button" class="glb-icon-btn" id="glb-clear-btn">Clear</button>
             <button type="button" class="glb-icon-btn" id="glb-speak-tgt-btn">Read translation</button>
+        </div>
+        <div id="glb-mic-live-bar" class="glb-mic-live-bar" style="display:none;" role="status" aria-live="polite">
+            <span class="glb-mic-live-dot" aria-hidden="true"></span>
+            <span id="glb-mic-live-text"></span>
         </div>
         <p id="glb-mic-hint" class="glb-mic-hint" style="display:none;font-size:10px;color:#777;"></p>
         <p id="t-coreflow-mode-hint" class="coreflow-mode-hint" aria-live="polite"></p>
@@ -1042,7 +1083,9 @@
                 resultLangLabel: 'Translation ({{lang}})',
                 ttsError: 'Read-aloud failed. Check volume, silent mode, and language.',
                 coreflowModeHint:
-                    'Face-to-face: tap the summary to change languages. Type or use Mic, then GLB — result shows above. Read translation uses the target language voice.'
+                    'Face-to-face: tap the summary to change languages. Type or use Mic, then GLB — result shows above. Read translation uses the target language voice.',
+                micLiveListening: 'Listening… speak now.',
+                micLiveHearing: 'Picking up speech…'
             },
             ja: {
                 labelUiLang: '言語',
@@ -1101,7 +1144,9 @@
                 resultLangLabel: '表示は{{lang}}の訳です',
                 ttsError: '読み上げを開始できませんでした（音量・マナーモードを確認してください）',
                 coreflowModeHint:
-                    '対面用：一行目の要約をタップすると言語を変更できます。入力またはマイク → GLB で上に訳を表示。読み上げは訳文の言語の音声です。'
+                    '対面用：一行目の要約をタップすると言語を変更できます。入力またはマイク → GLB で上に訳を表示。読み上げは訳文の言語の音声です。',
+                micLiveListening: '聞き取り中… 話してください',
+                micLiveHearing: '音声を拾っています'
             },
             zh: {
                 labelUiLang: '界面语言', labelRegion: '地区', labelLangFrom: '原文', labelLangTo: '译文',
@@ -1552,6 +1597,11 @@
                 bClr.textContent = T('btnClear');
                 bClr.setAttribute('aria-label', T('btnClear'));
             }
+            var mlb = document.getElementById('glb-mic-live-bar');
+            var mlt = document.getElementById('glb-mic-live-text');
+            if (mlb && mlt && mlb.style.display !== 'none' && mlb.dataset.micLive) {
+                mlt.textContent = T(mlb.dataset.micLive === 'hearing' ? 'micLiveHearing' : 'micLiveListening');
+            }
             var cmh = document.getElementById('t-coreflow-mode-hint');
             if (cmh) {
                 var h = T('coreflowModeHint');
@@ -1830,6 +1880,14 @@
             GLB_SESSION_TTS_USED = true;
             var hint = document.getElementById('glb-mic-hint');
             if (hint) hint.style.display = 'none';
+            var mlbTts = document.getElementById('glb-mic-live-bar');
+            if (mlbTts) {
+                mlbTts.style.display = 'none';
+                delete mlbTts.dataset.micLive;
+                mlbTts.classList.remove('is-hearing');
+            }
+            var mbTts = document.getElementById('glb-mic-btn');
+            if (mbTts) mbTts.classList.remove('is-mic-listening');
             try {
                 if (window.speechSynthesis.paused) window.speechSynthesis.resume();
                 window.speechSynthesis.cancel();
@@ -2044,10 +2102,34 @@
             var clearBtn = document.getElementById('glb-clear-btn');
             var speakTgt = document.getElementById('glb-speak-tgt-btn');
             var hint = document.getElementById('glb-mic-hint');
+            var liveBar = document.getElementById('glb-mic-live-bar');
+            var liveText = document.getElementById('glb-mic-live-text');
             var trInput = document.getElementById('tr-text');
             var trRun = document.getElementById('tr-run');
             var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!micBtn) return;
+
+            function setMicLiveState(mode) {
+                if (mode === 'off') {
+                    if (liveBar) {
+                        liveBar.style.display = 'none';
+                        delete liveBar.dataset.micLive;
+                        liveBar.classList.remove('is-hearing');
+                    }
+                    micBtn.classList.remove('is-mic-listening');
+                    return;
+                }
+                if (liveBar) {
+                    liveBar.style.display = 'flex';
+                    liveBar.dataset.micLive = mode === 'hearing' ? 'hearing' : 'listening';
+                    liveBar.classList.toggle('is-hearing', mode === 'hearing');
+                    if (liveText) {
+                        liveText.textContent = mode === 'hearing' ? T('micLiveHearing') : T('micLiveListening');
+                    }
+                }
+                micBtn.classList.add('is-mic-listening');
+            }
+
             if (!SR) {
                 micBtn.disabled = true;
                 if (hint) {
@@ -2067,6 +2149,7 @@
                         }
                         activeRecognition = null;
                         if (hint) hint.style.display = 'none';
+                        setMicLiveState('off');
                         return;
                     }
                     var rec = new SR();
@@ -2075,15 +2158,23 @@
                     rec.continuous = false;
                     rec.maxAlternatives = 1;
                     rec.lang = glbBcp47(lang);
+                    rec.onstart = function () {
+                        setMicLiveState('listening');
+                    };
+                    rec.onspeechstart = function () {
+                        setMicLiveState('hearing');
+                    };
                     rec.onresult = function (ev) {
                         var t = (ev.results && ev.results[0] && ev.results[0][0]) ? ev.results[0][0].transcript : '';
                         if (trInput) trInput.value = (t || '').trim();
                         GLB_LAST_INPUT_FROM_MIC = true;
+                        setMicLiveState('off');
                         if (trRun) trRun.click();
                     };
                     rec.onerror = function (ev) {
                         var code = ev && ev.error ? String(ev.error) : '';
                         if (code === 'aborted') return;
+                        setMicLiveState('off');
                         var msg = 'Mic error — check permissions or try again.';
                         if (code === 'not-allowed' || code === 'service-not-allowed') {
                             msg = 'Microphone blocked — allow access in browser / site settings.';
@@ -2097,12 +2188,14 @@
                     };
                     rec.onend = function () {
                         activeRecognition = null;
+                        setMicLiveState('off');
                     };
                     if (hint) hint.style.display = 'none';
                     try {
                         rec.start();
                     } catch (e) {
                         activeRecognition = null;
+                        setMicLiveState('off');
                         if (hint) {
                             hint.style.display = 'block';
                             hint.textContent = 'Could not start microphone.';
