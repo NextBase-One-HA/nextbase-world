@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* A4 物理サイズ強制リセット */
+        @page { size: A4; margin: 0; }
+        @media print {
+            html, body { width: 210mm; height: 297mm; overflow: hidden; }
+            .page { border: none; box-shadow: none; }
+        }
+        
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+        
+        body { 
+            margin: 0; padding: 0; 
+            background: #e0e0e0; 
+            display: flex; justify-content: center; align-items: flex-start;
+            font-family: 'Roboto Mono', 'Noto Sans JP', monospace;
+        }
+
+        .page { 
+            width: 210mm; 
+            height: 297mm; 
+            padding: 8mm; /* 外側余白を微調整 */
+            background: #fff;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 枠線を1本に絞り、内側にマージンを確保 */
+        .master-frame {
+            border: 6px solid #000;
+            height: 100%;
+            padding: 12mm;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            border-bottom: 10px solid #000;
+            padding-bottom: 8px;
+            margin-bottom: 25px;
+        }
+        .title { font-size: 20pt; font-weight: 700; }
+
+        /* 行間の最適化 */
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 2px solid #000;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+        .row-label { font-size: 12pt; font-weight: 700; }
+        .row-value { font-size: 18pt; font-weight: 700; }
+
+        .spec-section { margin-top: 15px; }
+        .spec-label {
+            background: #000; color: #fff;
+            padding: 2px 8px; font-size: 9pt;
+            font-weight: 700; display: inline-block;
+            margin-bottom: 8px;
+        }
+        .spec-body {
+            font-size: 10.5pt; line-height: 1.6;
+            padding-left: 12px; border-left: 4px solid #000;
+        }
+
+        .footer {
+            margin-top: auto;
+            border-top: 3px solid #000;
+            padding-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 8.5pt;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="master-frame">
+            <header class="header">
+                <div class="title">NE_GATEWAY // SYNC_V2.2</div>
+            </header>
+
+            <main>
+                <div class="row">
+                    <span class="row-label">01: TEST_PHASE</span>
+                    <span class="row-value">$59</span>
+                </div>
+                <div class="row">
+                    <span class="row-label">02: ADVANCED</span>
+                    <span class="row-value">$99</span>
+                </div>
+                <div class="row">
+                    <span class="row-label">03: PRO_PHASE</span>
+                    <span class="row-value">$149</span>
+                </div>
+
+                <div class="spec-section">
+                    <span class="spec-label">VISUAL_INDEX</span>
+                    <div class="spec-body">
+                        01. LOGIC_INTERPRETER<br>
+                        02. AGENT_COMMUNICATION<br>
+                        03. ROADMAP_SYNC_VIEW
+                    </div>
+                </div>
+
+                <div class="spec-section" style="margin-top: 25px;">
+                    <span class="spec-label">SYSTEM_CORE_LOGIC</span>
+                    <div class="spec-body">
+                        LOGIC: DRIVER_PROTECTION_SYSTEM<br>
+                        PATTERN: REDUCE_ADMIN_COST_TO_ZERO<br>
+                        SYNC: ACTIVE // VERIFIED_DONE
+                    </div>
+                </div>
+            </main>
+
+            <footer class="footer">
+                <span>NEXT BASE PROJECT // DOC_FACTORY</span>
+                <span>CONFIDENTIAL_IP // v2.2</span>
+            </footer>
+        </div>
+    </div>
+</body>
+</html>

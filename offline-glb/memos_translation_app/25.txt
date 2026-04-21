@@ -1,0 +1,6 @@
+voiceType = "Cute-Warm"
+pitch = +10
+speed = 1.07
+breath = +20%
+intonation = "soft_up"
+emotion = "friendly"

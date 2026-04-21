@@ -1,0 +1,17 @@
+import Foundation
+
+struct GLBTranslationRecord: Codable, Hashable {
+    let id: UUID
+    let sourceText: String
+    let translatedText: String
+    
+    // 生活導線の基盤：いつ、どこで（中間保持用）
+    let timestamp: Int64
+    let langPair: String // "ja-en" 等
+    
+    // GLBの証跡：改ざん検知のハッシュのみ保持
+    var evidenceHash: Data {
+        let raw = "\(id.uuidString)\(sourceText)\(translatedText)\(timestamp)"
+        return Data(SHA256.hash(data: raw.data(using: .utf8)!))
+    }
+}

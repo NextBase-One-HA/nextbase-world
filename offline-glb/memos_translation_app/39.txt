@@ -1,0 +1,8 @@
+[COPY_HOME_JA_EN]
+title: "GLB"
+subtitle: "Global Language Breaker"
+status_online: "STATUS: ONLINE"
+input_hint: "ここに話したい言葉を書くか、マイクで話してください。"
+output_label: "Translated"
+button_translate: "TRANSLATE"
+kids_label: "Kids"

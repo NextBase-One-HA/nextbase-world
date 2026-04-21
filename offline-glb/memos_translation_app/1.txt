@@ -1,0 +1,17 @@
+glb_translator_v1/
+  lib/
+    main.dart
+    screens/
+      startup_screen.dart
+      home_screen.dart
+      settings_screen.dart
+      bridge_screen.dart
+      history_screen.dart
+      tomori_screen.dart
+    core/
+      translation_engine.dart   // Pivot構造・GPT/Gemini/ne 入口
+      ne_gateway.dart           // neへの命令窓口(将来)
+      app_state.dart            // 共通状態
+  android/
+  ios/
+  pubspec.yaml

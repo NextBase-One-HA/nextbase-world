@@ -1,0 +1,231 @@
+ロジック辞書2
+
+一人のユーザーの月額予想は？毎日、昼間に日常会話程度で。
+今、考えれる自由に使える翻訳アプリにAPIを最小限に抑えるロジックは？
+短くコピペできるようにして
+
+1
+⭐️1) 入力前処理
+text = trim(input)
+if text is empty:
+    return ""
+
+# 2) ローカル辞書（フレーズ）
+if local_phrase_dict.has(text):
+    return local_phrase_dict[text]
+
+# 3) ローカル辞書（単語置き換え）
+output = []
+for w in tokenize(text):
+    output.append(local_word_dict.get(w, w))
+
+# 4) キャッシュ（過去翻訳の再利用）
+if cache.has(text, from_lang, to_lang):
+    return cache.get(text, from_lang, to_lang)
+
+# 5) APIを叩く条件チェック
+if len(text) < 3:
+    return join(output)      # 短文はローカルで返す
+if api_calls_today > LIMIT:
+    return join(output)      # 上限超えはローカル
+
+# 6) 必要なときだけAPIへ
+translated = call_api(text, from_lang, to_lang)
+
+# 7) 翻訳結果をキャッシュに保存
+cache.save(text, from_lang, to_lang, translated)
+
+# 8) 結果を返す
+return translated
+
+【API使用を最小限に抑える翻訳ロジック】
+
+⭐️2キャッシュ（同じ文は二度呼ばない）
+   - 入力テキストをキーにして翻訳結果を保存
+   - 同じ入力が来たら API を呼ばずにキャッシュ返却
+
+2. 短文は軽いエンジン、長文だけ重いエンジン
+   - 文字数 < 80：Gemini（安い・速い）
+   - 文字数 ≥ 80：GPT（精度優先）
+   → 不必要に GPT を使わない
+
+3. 一定時間内の連打は「最後の1回」だけ送る
+   - 入力中 500〜800ms は待機
+   - タイピングが止まった時だけ API を1回呼ぶ
+   → 無駄な連続呼び出しを防ぐ
+
+4. 方向が逆なら使い回す
+   - A→EN→B を呼んだ時、EN から A/B への結果を両方持っておく
+   - 「EN→A」「EN→B」の再翻訳が来たらキャッシュで返す
+
+5. Kidsフィルタはアプリ内で処理
+   - API結果をそのまま受け取って、NGワード伏字はローカル処理
+   → フィルタのためだけに再度 API を呼ばない
+
+6. 無意味な入力はそもそも送らない
+   - 空文字／スペースだけ／数字だけ／1〜2文字の記号だけ は API を呼ばない
+   → 誤操作やテスト入力での無駄コストをカット
+
+7. エラー時のリトライ回数を絞る
+   - タイムアウト時：最大1回だけ再試行
+   - それでもダメなら「ローカル簡易翻訳 or 元文表示」で逃がす
+   → 同じエラーで何度も API を叩かない
+
+⭐️
+async function cheapTranslate(text) {
+  // 1) 空文字はAPI呼ばない
+  if (!text.trim()) return "";
+
+  // 2) 過去に同じ文を翻訳したら再利用（キャッシュ）
+  if (CACHE[text]) return CACHE[text];
+
+  // 3) 文字が短いなら自動翻訳せず、そのまま返す
+  if (text.length < 2) return text;
+
+  // 4) 翻訳APIを最小限だけ呼ぶ
+  const res = await fetch(TRANSLATE_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+
+  const data = await res.json();
+
+  // 5) 翻訳結果をキャッシュして、次回は無料で返す
+  CACHE[text] = data.translatedText;
+
+  return data.translatedText;
+}
+
+// メモリ内キャッシュ（API節約の心臓部）
+const CACHE = {};
+
+// APIのURL（好きな翻訳APIを入れる）
+const TRANSLATE_URL = "https://example.com/translate";
+
+
+⭐️1. user_input が一定時間変化しなかったら translate() を実行
+
+2. translate(text, from, to):
+    key = hash(text + from + to)
+
+    // ① キャッシュチェック
+    if cache[key] exists:
+        return cache[key]
+
+    // ② ローカル翻訳優先
+    local_result, confidence = local_translate(text, from, to)
+    if confidence >= CONF_THRESHOLD:
+        cache[key] = local_result
+        return local_result
+
+    // ③ 差分のみAPIに送る（長文の場合）
+    chunks = split_to_sentences(text)
+    changed_chunks = filter_only_changed(chunks, previous_text)
+    if total_length(changed_chunks) == 0:
+        return previous_result
+
+    // ④ クラウドAPI
+    api_result = cloud_translate(join(changed_chunks), from, to)
+
+    // ⑤ キャッシュ保存
+    cache[key] = api_result
+    previous_text = text
+    previous_result = api_result
+    return api_result
+
+⭐️ 【GLB API節約ロジック v1】
+
+1. 入力デバウンス：
+   ユーザーの入力／発話が止まってから 800ms 経過したタイミングでのみ翻訳APIを呼び出す。
+
+2. 文単位バッチ：
+   改行または「。!?」で文を分割し、複数文をまとめて 1 回のAPIリクエストにする。
+
+3. ローカルキャッシュ：
+   「原文文字列 → 訳文」のMapを端末内に保持し、完全一致する原文はAPIを呼ばずキャッシュ結果を返す。
+
+4. 編集差分のみ再翻訳：
+   同じ文が再送された場合は前回文との差分部分だけAPIに送り、共通部分は前回の訳文を再利用して合成する。
+
+5. レート制限：
+   1ユーザーあたり「1分間に送信できる総文字数」を上限N文字に制限し、超過分はオフライン翻訳 or 次の1分枠に繰り越す。
+
+6. 品質スイッチ：
+   デフォルトは端末内（オフライン/簡易）翻訳を使い、「高精度モード」ON時のみクラウド翻訳APIを使用する。
+
+⭐️ API使用を最小限に抑える翻訳アプリのロジック案（コピペ用）
+	1.	ハイブリッド翻訳エンジン
+	•	基本：端末内オフライン翻訳モデルで処理
+	•	条件付きでAPI使用：
+	•	長文（例：200文字以上）
+	•	専門用語が多いと判定されたとき
+→ その時だけクラウド翻訳APIへ送信
+	2.	バッチ送信＆キャッシュ
+	•	文ごとに送らず、「一回の会話」をまとめて1リクエスト
+	•	同じ文・同じフレーズはローカルキャッシュから再利用
+→ 「よく使う定型句」は2回目以降APIを叩かない
+	3.	モード切替（ユーザー選択）
+	•	「節約モード」：
+	•	原則オフライン翻訳＋キャッシュのみ
+	•	手動で「高精度翻訳」ボタンを押したときだけAPI使用
+	•	「高精度モード」：
+	•	毎回オンライン翻訳を使う（有料プラン向け）
+	4.	音声系の節約
+	•	STT/TTSも同じく
+	•	短いフレーズは端末内モデル
+	•	長時間録音や重要フレーズのみオンラインAPI
+	•	翻訳テキストをまとめて1回のTTSにする（文ごとに分割しない）
+
+⭐️ def minimize_api_translate(text, src_lang, tgt_lang):
+    # 1. 【門前払い】無駄なリクエストを即座に弾く
+    if not text or text.is_space(): return ""         # 空文字
+    if src_lang == tgt_lang: return text              # 同一言語
+    if is_url_or_emoji_only(text): return text        # URL・絵文字・数字のみ
+
+    # 2. 【正規化】「Apple」と「apple」を同じとみなしてキャッシュヒット率を上げる（Gemini追加案）
+    normalized_key = f"{text.strip().lower()}:{src_lang}:{tgt_lang}"
+
+    # 3. 【ローカル解決】APIを呼ばずに返す
+    if cache.exists(normalized_key): return cache.get(normalized_key)
+    if local_dict.has(text): return local_dict.get(text) # 定型文辞書
+
+    # 4. 【文字数分岐】短文は軽いモデル/長文はAPI（トモリ案採用）
+    if len(text) < 5: return local_engine.translate(text) # "OK" "Yes" 程度ならAPIを使わない
+
+    # 5. 【API実行】ここで初めて課金発生
+    # ※Debounce（入力停止後800ms待機）は呼び出し元で制御すること
+    result = cloud_api.translate(text, src_lang, tgt_lang)
+
+    # 6. 【資産化】結果を保存して次回無料にする
+    cache.save(normalized_key, result)
+    
+    return result
+
+⭐️ 【APIコスト最小ロジック】
+
+1. キャッシュ
+   - 同じ文章は二度呼ばない（入力文字列＝キー）
+
+2. エンジン自動切替
+   - 文字数 < 80：Gemini（安い）
+   - 文字数 >= 80：GPT（精度用）
+
+3. デバウンス（連打制御）
+   - 入力停止から500ms後に1回だけAPI呼ぶ
+
+4. 並列要求の統合
+   - 連続で送られたリクエストは最新の1つだけ処理
+
+5. Kidsフィルタはローカルで処理
+   - NGワード伏字のためにAPIを呼ばない
+
+6. 無意味入力スキップ
+   - 空文字 / 記号 / 数字のみはAPI呼ばない
+
+7. エラー時の簡易フォールバック
+   - リトライは1回だけ
+   - それでも失敗したらローカル簡易翻訳に切替
+
+8. Pivot翻訳で中継を一本化
+   - A→EN / EN→B を共通化して無駄呼び出しを減らす

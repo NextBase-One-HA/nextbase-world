@@ -1,0 +1,98 @@
+GLB コード　③
+
+次は共通マイク部品。
+これを作れば、翻訳画面／隠しコンソールの両方で同一UIになる。
+次：lib/widgets/glowing_mic_button.dart（確定版・コピペ）
+そのまま全貼りして保存。
+
+
+import 'package:flutter/material.dart';
+
+class GlowingMicButton extends StatefulWidget {
+  final bool isListening;
+  final VoidCallback onTap;
+
+  const GlowingMicButton({
+    super.key,
+    required this.isListening,
+    required this.onTap,
+  });
+
+  @override
+  State<GlowingMicButton> createState() => _GlowingMicButtonState();
+}
+
+class _GlowingMicButtonState extends State<GlowingMicButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500), // 呼吸テンポ
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _anim = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: AnimatedBuilder(
+        animation: _anim,
+        builder: (context, _) {
+          final spread = widget.isListening ? 6.0 + (_anim.value * 8.0) : 0.0;
+          final blur = widget.isListening ? 10.0 + (_anim.value * 10.0) : 0.0;
+          final glow = Colors.cyanAccent.withOpacity(
+            widget.isListening ? 0.3 + (_anim.value * 0.3) : 0.0,
+          );
+
+          return Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: widget.isListening
+                  ? Colors.cyanAccent.withOpacity(0.1)
+                  : Colors.grey.withOpacity(0.1),
+              border: Border.all(
+                color: widget.isListening
+                    ? Colors.cyanAccent
+                    : Colors.grey.shade700,
+                width: 1.5,
+              ),
+              boxShadow: widget.isListening
+                  ? [
+                      BoxShadow(
+                        color: glow,
+                        blurRadius: blur,
+                        spreadRadius: spread,
+                      ),
+                    ]
+                  : [],
+            ),
+            child: Icon(
+              widget.isListening ? Icons.mic : Icons.mic_none,
+              color:
+                  widget.isListening ? Colors.cyanAccent : Colors.grey.shade400,
+              size: 24,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}

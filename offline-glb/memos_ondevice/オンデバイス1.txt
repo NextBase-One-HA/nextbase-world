@@ -1,0 +1,12 @@
+struct GLBTranslator {
+    /// 翻訳実行とレコード生成（0.1s以内のレスポンスを想定）
+    static func createRecord(source: String, translated: String, pair: String) -> GLBTranslationRecord {
+        return GLBTranslationRecord(
+            id: UUID(),
+            sourceText: source,
+            translatedText: translated,
+            timestamp: Int64(Date().timeIntervalSince1970 * 1000),
+            langPair: pair
+        )
+    }
+}

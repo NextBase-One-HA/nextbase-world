@@ -1,0 +1,108 @@
+nextbaseの簡単なロジックを教えてなかった。
+
+
+Pivot翻訳 仕様（完全版）
+
+0) 目的
+	•	Gemini/外部AIは使わない
+	•	翻訳は Pivot（英語）を中間言語として成立させる
+	•	UIは触らず、内部ロジックだけで成立させる
+
+⸻
+
+1) 基本ルール（ピボット経路）
+
+翻訳は必ずこの形：
+
+(A) 直接英語が絡む場合
+	•	ja -> en：1回でOK
+	•	en -> ja：1回でOK
+	•	en -> xx / xx -> en：1回でOK
+
+(B) 英語が絡まない場合（Pivot必須）
+	•	ja -> zh は ja->en → en->zh の2段
+	•	zh -> ja は zh->en → en->ja の2段
+	•	fr -> ko は fr->en → en->ko の2段
+
+👉 原則：英語が中間に入る2ホップ
+
+⸻
+
+2) tomoriRun（外部契約）に渡すパラメータ
+
+アプリからのリクエストは常にこれを送る（1本化）：
+
+{
+  "text": "...",
+  "source": "ja",
+  "target": "zh",
+  "mode": "pivot"
+}
+
+mode は "pivot" 固定でもいい
+	•	source/target は ISO言語コード（ja,en,zh,ko,fr,de,es など）
+
+⸻
+
+3) tomoriRunの期待レスポンス（固定）
+
+{ "translatedText": "..." }
+
+4) 実装方式（どっちでも可）
+
+方式1（おすすめ）：ピボットはサーバー側（tomoriRun）で完結
+	•	アプリ：1回POSTするだけ（最も安定）
+	•	tomoriRun：内部で2回翻訳（source->en, en->target）
+
+方式2：ピボットはアプリ側（2回POST）
+	•	アプリ：2回POST（step1: source->en, step2: en->target）
+	•	tomoriRun：単発翻訳のみ
+
+※審査・安定を考えると方式1が勝ち。
+（アプリ側の連打・エラー祭りが起きにくい）
+
+⸻
+
+5) Cursorに貼る指示（そのまま）
+
+【Pivot翻訳（Geminiなし）仕様を実装】
+
+前提：
+- 外部AI（Gemini等）は使わない/載せない
+- URLは tomoriRun 1本
+- UIは変更しない（内部ロジックのみ）
+
+仕様：
+- 翻訳はPivot（英語）を中間言語にする
+- source/targetのどちらかが"en"なら1ホップ
+- どちらも"en"でないなら2ホップ（source->en->target）
+
+実装方針：
+- 推奨：tomoriRun側で pivot を処理し、アプリは1回POSTで完結させる
+- リクエストは必ず {text, source, target, mode:"pivot"} を送る
+- レスポンスは {translatedText} のみを扱う
+
+必須：
+- 二重タップ防止（_isLoadingガード）
+- 結果は上書き（+=禁止）
+- 失敗時は無限リトライ禁止
+
+6) 重要：NE露出ゼロのまま成立する
+
+この仕様は
+	•	NE
+	•	Gateway
+	•	optimizer
+	•	Stella
+一切出さずに実装できる。
+
+⸻
+
+次に決めること（1つだけ）
+
+ピボットを どっちでやる？
+	•	A：tomoriRun（サーバー側）で2ホップ（おすすめ・安定）
+	•	B：アプリ側で2回POST（早く試せるが二重実行対策必須）
+
+迷うならAで確定していい。
+今の「エラー祭り」を避けるならAが正解。

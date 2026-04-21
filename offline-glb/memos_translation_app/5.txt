@@ -1,0 +1,221 @@
+import 'package:flutter/material.dart';
+import '../core/translation_engine.dart';
+import 'settings_screen.dart';
+import 'bridge_screen.dart';
+import 'history_screen.dart';
+import 'tomori_screen.dart';
+
+class HomeScreen extends StatefulWidget {
+  static const routeName = '/home';
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _inputController = TextEditingController();
+  final _engine = TranslationEngine();
+
+  String _status = 'ONLINE';
+  String _fromLang = 'ja';
+  String _toLang = 'en';
+  String _outputText = '';
+  bool _kidsMode = false;
+
+  Future<void> _doTranslate() async {
+    final text = _inputController.text;
+    setState(() => _status = 'PROCESSING');
+
+    final result = await _engine.pivotTranslate(
+      sourceText: text,
+      fromLang: _fromLang,
+      toLang: _toLang,
+      kidsMode: _kidsMode,
+    );
+
+    setState(() {
+      _outputText = result.text;
+      _status = 'ONLINE';
+    });
+  }
+
+  @override
+  void dispose() {
+    _inputController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('GLB'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () =>
+                Navigator.pushNamed(context, HistoryScreen.routeName),
+          ),
+          IconButton(
+            icon: const Icon(Icons.message_outlined),
+            onPressed: () =>
+                Navigator.pushNamed(context, BridgeScreen.routeName),
+          ),
+          IconButton(
+            icon: const Icon(Icons.psychology_outlined),
+            onPressed: () =>
+                Navigator.pushNamed(context, TomoriScreen.routeName),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () =>
+                Navigator.pushNamed(context, SettingsScreen.routeName),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // STATUSバー
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'STATUS: $_status',
+                style: TextStyle(
+                  color: _status == 'ONLINE'
+                      ? scheme.primary
+                      : scheme.secondary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // 言語バー（簡略版）
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _fromLang,
+                    items: const [
+                      DropdownMenuItem(value: 'ja', child: Text('日本語')),
+                      DropdownMenuItem(value: 'en', child: Text('English')),
+                    ],
+                    onChanged: (v) {
+                      if (v == null) return;
+                      setState(() => _fromLang = v);
+                    },
+                    decoration: const InputDecoration(labelText: 'FROM'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.swap_horiz),
+                  onPressed: () {
+                    setState(() {
+                      final tmp = _fromLang;
+                      _fromLang = _toLang;
+                      _toLang = tmp;
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _toLang,
+                    items: const [
+                      DropdownMenuItem(value: 'en', child: Text('English')),
+                      DropdownMenuItem(value: 'ja', child: Text('日本語')),
+                    ],
+                    onChanged: (v) {
+                      if (v == null) return;
+                      setState(() => _toLang = v);
+                    },
+                    decoration: const InputDecoration(labelText: 'TO'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // INPUTカード
+            Expanded(
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: TextField(
+                    controller: _inputController,
+                    maxLines: null,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      hintText: 'Your message...',
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // OUTPUTカード
+            Expanded(
+              child: Card(
+                color: Colors.white10,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: SingleChildScrollView(
+                    child: Text(
+                      _outputText,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // 下部バー
+            Row(
+              children: [
+                // 🎤（将来 ne or ネイティブ音声接続）
+                IconButton(
+                  icon: const Icon(Icons.mic),
+                  onPressed: () {
+                    // TODO: 音声入力→ne: speech_to_text
+                  },
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _doTranslate,
+                    child: const Text('TRANSLATE'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Row(
+                  children: [
+                    const Text('Kids'),
+                    Switch(
+                      value: _kidsMode,
+                      onChanged: (v) {
+                        setState(() => _kidsMode = v);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

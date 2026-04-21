@@ -1,0 +1,268 @@
+import 'package:flutter/material.dart';
+import '../core/translation_engine.dart';
+
+class BridgeScreen extends StatefulWidget {
+  static const routeName = '/bridge';
+  const BridgeScreen({super.key});
+
+  @override
+  State<BridgeScreen> createState() => _BridgeScreenState();
+}
+
+class _BridgeScreenState extends State<BridgeScreen> {
+  final _engine = TranslationEngine();
+
+  final _aController = TextEditingController();
+  final _bController = TextEditingController();
+
+  String _aLang = 'ja';
+  String _bLang = 'en';
+
+  final List<_BridgeBubble> _bubbles = [];
+
+  bool _kidsMode = false;
+  bool _isBusy = false;
+
+  @override
+  void dispose() {
+    _aController.dispose();
+    _bController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendFromA() async {
+    final text = _aController.text.trim();
+    if (text.isEmpty || _isBusy) return;
+
+    setState(() => _isBusy = true);
+    _aController.clear();
+
+    // Aの元発話
+    setState(() {
+      _bubbles.add(
+        _BridgeBubble(
+          speaker: 'A',
+          original: text,
+          translated: '',
+        ),
+      );
+    });
+
+    final result = await _engine.pivotTranslate(
+      sourceText: text,
+      fromLang: _aLang,
+      toLang: _bLang,
+      kidsMode: _kidsMode,
+    );
+
+    setState(() {
+      _bubbles.add(
+        _BridgeBubble(
+          speaker: 'B',
+          original: '',
+          translated: result.text,
+        ),
+      );
+      _isBusy = false;
+    });
+  }
+
+  Future<void> _sendFromB() async {
+    final text = _bController.text.trim();
+    if (text.isEmpty || _isBusy) return;
+
+    setState(() => _isBusy = true);
+    _bController.clear();
+
+    // Bの元発話
+    setState(() {
+      _bubbles.add(
+        _BridgeBubble(
+          speaker: 'B',
+          original: text,
+          translated: '',
+        ),
+      );
+    });
+
+    final result = await _engine.pivotTranslate(
+      sourceText: text,
+      fromLang: _bLang,
+      toLang: _aLang,
+      kidsMode: _kidsMode,
+    );
+
+    setState(() {
+      _bubbles.add(
+        _BridgeBubble(
+          speaker: 'A',
+          original: '',
+          translated: result.text,
+        ),
+      );
+      _isBusy = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Bridge – A / B'),
+      ),
+      body: Column(
+        children: [
+          // 言語ペア
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _aLang,
+                    items: const [
+                      DropdownMenuItem(value: 'ja', child: Text('A: 日本語')),
+                      DropdownMenuItem(value: 'en', child: Text('A: English')),
+                    ],
+                    onChanged: (v) {
+                      if (v == null) return;
+                      setState(() => _aLang = v);
+                    },
+                    decoration: const InputDecoration(labelText: 'A側'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _bLang,
+                    items: const [
+                      DropdownMenuItem(value: 'en', child: Text('B: English')),
+                      DropdownMenuItem(value: 'ja', child: Text('B: 日本語')),
+                    ],
+                    onChanged: (v) {
+                      if (v == null) return;
+                      setState(() => _bLang = v);
+                    },
+                    decoration: const InputDecoration(labelText: 'B側'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Row(
+                  children: [
+                    const Text('Kids'),
+                    Switch(
+                      value: _kidsMode,
+                      onChanged: (v) {
+                        setState(() => _kidsMode = v);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // 会話ログ
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(8),
+              reverse: true,
+              itemCount: _bubbles.length,
+              itemBuilder: (context, index) {
+                final bubble = _bubbles[_bubbles.length - 1 - index];
+                final isA = bubble.speaker == 'A';
+                final align = isA ? Alignment.centerLeft : Alignment.centerRight;
+                final bg = isA ? Colors.white10 : scheme.primary.withOpacity(0.2);
+
+                final text = bubble.original.isNotEmpty
+                    ? bubble.original
+                    : bubble.translated;
+
+                return Align(
+                  alignment: align,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: bg,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      '${bubble.speaker}: $text',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // 下：A入力 + B入力
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Text('A'),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: TextField(
+                        controller: _aController,
+                        decoration: const InputDecoration(
+                          hintText: 'A側の発話を入力…',
+                        ),
+                        onSubmitted: (_) => _sendFromA(),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.send),
+                      onPressed: _sendFromA,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Text('B'),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: TextField(
+                        controller: _bController,
+                        decoration: const InputDecoration(
+                          hintText: 'B側の発話を入力…',
+                        ),
+                        onSubmitted: (_) => _sendFromB(),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.send),
+                      onPressed: _sendFromB,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BridgeBubble {
+  final String speaker;   // 'A' or 'B'
+  final String original;  // 元言語
+  final String translated; // 相手言語
+
+  _BridgeBubble({
+    required this.speaker,
+    required this.original,
+    required this.translated,
+  });
+}

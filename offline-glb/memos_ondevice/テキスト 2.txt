@@ -1,0 +1,11 @@
+// lib/features/unused_experimental.dart
+// 実装したが、審査戦略のために「隠す」か「削る」かした機能
+class ExperimentalFeatures {
+  // 音声感情解析（複雑すぎてリジェクトのリスクになったもの）
+  void analyzeVoiceTone() {
+    /* * 30年後の未来には必要だが、
+     * 今は「数字」を優先して、シンプルなGLBコアに集中すべきと判断しコメントアウト
+     */
+    print("Emotional analysis paused for release strategy.");
+  }
+}

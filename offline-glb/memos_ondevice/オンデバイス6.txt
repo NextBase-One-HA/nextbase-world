@@ -1,0 +1,705 @@
+// ============================================================
+// NE-OS Dashboard v1 (SwiftUI) — Single Screen Integrated UI
+// - Domain selector (GENERAL / MEDICAL / LOGISTICS)
+// - Input -> DomainRouter -> (NE submit) -> LatestCompleteStream reactive UI
+// - Audit Dashboard: latest seq/rid, last saved audit evidence, enclave signature status
+// - Noir UI: minimal, facts only
+// ============================================================
+
+import SwiftUI
+import Foundation
+import CryptoKit
+import Security
+import os.log
+
+// ------------------------------------------------------------
+// MARK: - SafeLog (facts only)
+// ------------------------------------------------------------
+enum SafeLog {
+    private static let log = Logger(subsystem: "NEXTBASE", category: "NE_AUDIT")
+    static func audit(_ code: String, rid: String? = nil, ms: Int? = nil) {
+        if let rid, let ms {
+            log.info("AUDIT code=\(code, privacy: .public) rid=\(rid, privacy: .public) ms=\(ms, privacy: .public)")
+        } else if let rid {
+            log.info("AUDIT code=\(code, privacy: .public) rid=\(rid, privacy: .public)")
+        } else {
+            log.info("AUDIT code=\(code, privacy: .public)")
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - Core Models
+// ------------------------------------------------------------
+enum Domain: String, Codable, CaseIterable, Identifiable {
+    case general, medical, logistics
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .general: return "GENERAL"
+        case .medical: return "MEDICAL"
+        case .logistics: return "LOGISTICS"
+        }
+    }
+}
+
+struct DomainRequest: Codable, Sendable {
+    let rid: String
+    let seq: Int64
+    let domain: Domain
+    let text: String
+    let locale: String
+}
+
+struct DomainResponse: Codable, Sendable {
+    let rid: String
+    let seq: Int64
+    let domain: Domain
+    let output: String
+    let confidence: Float
+    let reason: String?
+    let ms: Int
+}
+
+struct StoredEvaluation: Codable, Sendable {
+    let rid: String
+    let seq: Int64
+    let ts: Int64
+    let isValidated: Bool
+    let confidence: Float
+    let reason: String?
+    let ms: Int
+}
+
+// ------------------------------------------------------------
+// MARK: - LatestCompleteStream
+// ------------------------------------------------------------
+actor LatestCompleteStream {
+    enum Event: Sendable {
+        case completed(StoredEvaluation)
+        case storageFailed(rid: String)
+    }
+    private var continuation: AsyncStream<Event>.Continuation?
+    func stream() -> AsyncStream<Event> {
+        AsyncStream { cont in self.continuation = cont }
+    }
+    func emit(_ e: Event) { continuation?.yield(e) }
+}
+
+// ------------------------------------------------------------
+// MARK: - Reason Policy (whitelist only)
+// ------------------------------------------------------------
+enum ReasonPolicy {
+    private static let allowed: Set<String> = ["BELOW_THRESHOLD","CANCELLED","INFERENCE_FAILED","INVALID_INPUT","BUSY"]
+    static func sanitize(_ reason: String?) -> String? {
+        guard let r = reason else { return nil }
+        return allowed.contains(r) ? r : "REDACTED"
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - Inference + Engine (Latest-only cancellation)
+// NOTE: Replace adapter with CoreML adapter in your project.
+// ------------------------------------------------------------
+protocol InferenceAdapter: Sendable {
+    func predict(_ input: [Float32]) async throws -> Float
+}
+
+struct MockAdapter: InferenceAdapter {
+    let fixed: Float
+    func predict(_ input: [Float32]) async throws -> Float {
+        // ultra-light mock
+        return fixed
+    }
+}
+
+enum BackpressurePolicy: Sendable { case latestOnly, rejectWhenBusy }
+
+actor LocalStateEngineV2 {
+    private let adapter: InferenceAdapter
+    private let threshold: Float
+    private let maxLen: Int
+    private let policy: BackpressurePolicy
+
+    private var currentTask: Task<StoredEvaluation, Never>?
+    private var pending: (rid: String, seq: Int64, input: [Float32])?
+
+    init(adapter: InferenceAdapter, threshold: Float = 0.5, maxLen: Int = 2048, policy: BackpressurePolicy = .latestOnly) {
+        self.adapter = adapter
+        self.threshold = threshold
+        self.maxLen = maxLen
+        self.policy = policy
+    }
+
+    func evaluate(rid: String, seq: Int64, input: [Float32]) async -> StoredEvaluation {
+        let start = Date().timeIntervalSince1970
+
+        // sanitize
+        let normalized: [Float32]
+        do { normalized = try validateAndNormalize(input) }
+        catch {
+            return StoredEvaluation(rid: rid, seq: seq, ts: Self.nowMs(), isValidated: false, confidence: 0, reason: "INVALID_INPUT", ms: Self.msSince(start))
+        }
+
+        switch policy {
+        case .rejectWhenBusy:
+            if currentTask != nil {
+                return StoredEvaluation(rid: rid, seq: seq, ts: Self.nowMs(), isValidated: false, confidence: 0, reason: "BUSY", ms: Self.msSince(start))
+            }
+            return await runTask(rid: rid, seq: seq, input: normalized)
+
+        case .latestOnly:
+            if currentTask != nil {
+                pending = (rid: rid, seq: seq, input: normalized)
+                currentTask?.cancel()
+                // intermediate noise; caller may ignore
+                return StoredEvaluation(rid: rid, seq: seq, ts: Self.nowMs(), isValidated: false, confidence: 0, reason: "QUEUED_LATEST", ms: Self.msSince(start))
+            }
+            return await runTask(rid: rid, seq: seq, input: normalized)
+        }
+    }
+
+    private func runTask(rid: String, seq: Int64, input: [Float32]) async -> StoredEvaluation {
+        let t0 = Date().timeIntervalSince1970
+        let task = Task<StoredEvaluation, Never> { [threshold, adapter] in
+            do {
+                let conf = try await adapter.predict(input)
+                let ok = conf >= threshold
+                return StoredEvaluation(rid: rid, seq: seq, ts: Self.nowMs(), isValidated: ok, confidence: conf, reason: ok ? nil : "BELOW_THRESHOLD", ms: Self.msSince(t0))
+            } catch {
+                if Task.isCancelled {
+                    return StoredEvaluation(rid: rid, seq: seq, ts: Self.nowMs(), isValidated: false, confidence: 0, reason: "CANCELLED", ms: Self.msSince(t0))
+                }
+                return StoredEvaluation(rid: rid, seq: seq, ts: Self.nowMs(), isValidated: false, confidence: 0, reason: "INFERENCE_FAILED", ms: Self.msSince(t0))
+            }
+        }
+
+        currentTask = task
+        let result = await task.value
+        currentTask = nil
+
+        if policy == .latestOnly, let p = pending {
+            pending = nil
+            _ = await runTask(rid: p.rid, seq: p.seq, input: p.input)
+        }
+
+        return result
+    }
+
+    private func validateAndNormalize(_ input: [Float32]) throws -> [Float32] {
+        guard !input.isEmpty else { throw NSError(domain: "EMPTY", code: 1) }
+        guard input.count <= maxLen else { throw NSError(domain: "TOO_LONG", code: 2) }
+        for v in input { if v.isNaN || v.isInfinite { throw NSError(domain: "NAN_INF", code: 3) } }
+
+        var sum: Float = 0
+        for v in input { sum += v * v }
+        let norm = sqrt(max(sum, 1e-12))
+        return input.map { $0 / norm }
+    }
+
+    private static func nowMs() -> Int64 { Int64(Date().timeIntervalSince1970 * 1000) }
+    private static func msSince(_ start: TimeInterval) -> Int { Int((Date().timeIntervalSince1970 - start) * 1000) }
+}
+
+// ------------------------------------------------------------
+// MARK: - Secure Store (stub hooks)
+// IMPORTANT: Replace with your SecureStoreHardening implementation (Gist06-08).
+// Here we provide minimal protocol so UI compiles in isolation.
+// ------------------------------------------------------------
+struct SecureManifest: Codable, Sendable {
+    var formatVersion: Int
+    var currentKeyVersion: Int
+    var records: [String: String] // minimal
+}
+
+protocol SecureStoreHardeningLike: Sendable {
+    func loadOrRecoverManifest(defaultKeyVersion: Int) throws -> SecureManifest
+    func store(plaintext: Data, recordId: String, manifest: inout SecureManifest) throws
+    func load(recordId: String, manifest: inout SecureManifest) throws -> Data
+}
+
+// Minimal in-memory placeholder (swap with real SecureStoreHardening)
+final class MemorySecureStore: SecureStoreHardeningLike {
+    private var db: [String: Data] = [:]
+    func loadOrRecoverManifest(defaultKeyVersion: Int) throws -> SecureManifest {
+        SecureManifest(formatVersion: 1, currentKeyVersion: defaultKeyVersion, records: [:])
+    }
+    func store(plaintext: Data, recordId: String, manifest: inout SecureManifest) throws {
+        db[recordId] = plaintext
+        manifest.records[recordId] = "ok"
+    }
+    func load(recordId: String, manifest: inout SecureManifest) throws -> Data {
+        db[recordId] ?? Data()
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - LatestPointerStore (2PC) — used for seq continuity
+// ------------------------------------------------------------
+struct LatestPointer: Codable, Sendable {
+    let seq: Int64
+    let rid: String
+    let ts: Int64
+}
+
+final class LatestPointerStore {
+    private let url: URL
+    private let tmpURL: URL
+    init(directory: URL) {
+        url = directory.appendingPathComponent("latest_pointer.json")
+        tmpURL = directory.appendingPathComponent("latest_pointer.tmp")
+    }
+
+    func save(_ p: LatestPointer) throws {
+        let data = try JSONEncoder().encode(p)
+        try data.write(to: tmpURL, options: [.atomic])
+        do {
+            _ = try FileManager.default.replaceItemAt(url, withItemAt: tmpURL, backupItemName: nil, options: .usingNewMetadataOnly)
+        } catch {
+            if FileManager.default.fileExists(atPath: url.path) { try? FileManager.default.removeItem(at: url) }
+            try FileManager.default.moveItem(at: tmpURL, to: url)
+        }
+        try? FileManager.default.removeItem(at: tmpURL)
+        try? (url as NSURL).setResourceValue(URLFileProtection.complete, forKey: .fileProtectionKey)
+    }
+
+    func load() -> LatestPointer? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return try? JSONDecoder().decode(LatestPointer.self, from: data)
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - Flow V4 (seq + pointer persistence + result-only store)
+// ------------------------------------------------------------
+actor NEEvaluateAndStoreFlowV4 {
+    private let engine: LocalStateEngineV2
+    private let store: SecureStoreHardeningLike
+    private var manifest: SecureManifest
+    private let events: LatestCompleteStream
+    private let pointerStore: LatestPointerStore
+
+    private var nextSeq: Int64 = 0
+    private var latest: (seq: Int64, rid: String)?
+
+    init(engine: LocalStateEngineV2, store: SecureStoreHardeningLike, events: LatestCompleteStream, secureDir: URL) throws {
+        self.engine = engine
+        self.store = store
+        self.events = events
+        self.manifest = try store.loadOrRecoverManifest(defaultKeyVersion: 1)
+        self.pointerStore = LatestPointerStore(directory: secureDir)
+
+        if let p = pointerStore.load() {
+            self.latest = (p.seq, p.rid)
+            self.nextSeq = max(self.nextSeq, p.seq + 1)
+        }
+    }
+
+    func submit(input: [Float32]) async -> (rid: String, seq: Int64) {
+        let seq = nextSeq
+        nextSeq += 1
+        let rid = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+
+        let r = await engine.evaluate(rid: rid, seq: seq, input: input)
+
+        if r.reason == "QUEUED_LATEST" { return (rid, seq) }
+
+        let safeReason = ReasonPolicy.sanitize(r.reason)
+        let payload = StoredEvaluation(rid: r.rid, seq: r.seq, ts: r.ts, isValidated: r.isValidated, confidence: r.confidence, reason: safeReason, ms: r.ms)
+
+        do {
+            let data = try JSONEncoder().encode(payload)
+            try store.store(plaintext: data, recordId: "eval_\(payload.rid)", manifest: &manifest)
+
+            if let cur = latest { if payload.seq >= cur.seq { latest = (payload.seq, payload.rid) } }
+            else { latest = (payload.seq, payload.rid) }
+
+            if let latest {
+                try? pointerStore.save(LatestPointer(seq: latest.seq, rid: latest.rid, ts: Int64(Date().timeIntervalSince1970 * 1000)))
+            }
+
+            await events.emit(.completed(payload))
+        } catch {
+            await events.emit(.storageFailed(rid: payload.rid))
+        }
+
+        return (payload.rid, payload.seq)
+    }
+
+    func readLatestBySeq() async -> StoredEvaluation? {
+        guard let latest else { return nil }
+        do {
+            let data = try store.load(recordId: "eval_\(latest.rid)", manifest: &manifest)
+            return try JSONDecoder().decode(StoredEvaluation.self, from: data)
+        } catch { return nil }
+    }
+
+    func latestPointer() -> (seq: Int64, rid: String)? { latest }
+}
+
+// ------------------------------------------------------------
+// MARK: - Domain Processors / Router
+// ------------------------------------------------------------
+protocol DomainProcessor: Sendable {
+    func process(_ req: DomainRequest) async -> DomainResponse
+}
+
+final class TemplateDictProcessor: DomainProcessor {
+    private let canned: [Domain: [String: String]]
+    init(canned: [Domain: [String: String]]) { self.canned = canned }
+
+    func process(_ req: DomainRequest) async -> DomainResponse {
+        let t0 = Date().timeIntervalSince1970
+        let map = canned[req.domain] ?? [:]
+        let output = map[req.text] ?? map.first(where: { req.text.contains($0.key) })?.value ?? req.text
+
+        return DomainResponse(
+            rid: req.rid,
+            seq: req.seq,
+            domain: req.domain,
+            output: output,
+            confidence: 0.7,
+            reason: nil,
+            ms: Int((Date().timeIntervalSince1970 - t0) * 1000)
+        )
+    }
+}
+
+final class NEBackedProcessor: DomainProcessor {
+    private let flow: NEEvaluateAndStoreFlowV4
+    private let domain: Domain
+    init(flow: NEEvaluateAndStoreFlowV4, domain: Domain) { self.flow = flow; self.domain = domain }
+
+    func process(_ req: DomainRequest) async -> DomainResponse {
+        let input = Self.hashEmbed(req.text)
+        let (rid, seq) = await flow.submit(input: input)
+        let latest = await flow.readLatestBySeq()
+
+        let out = (latest?.isValidated == true) ? "VALIDATED" : "HOLD"
+        let conf = latest?.confidence ?? 0
+        let ms = latest?.ms ?? 0
+        let reason = latest?.reason
+
+        return DomainResponse(rid: rid, seq: seq, domain: domain, output: out, confidence: conf, reason: reason, ms: ms)
+    }
+
+    private static func hashEmbed(_ s: String) -> [Float32] {
+        var acc: UInt32 = 2166136261
+        for b in s.utf8 { acc = (acc ^ UInt32(b)) &* 16777619 }
+        return (0..<16).map { i in
+            let v = (acc &>> (i % 24)) & 0xFF
+            return Float32(v) / 255.0
+        }
+    }
+}
+
+struct DomainRouter: Sendable {
+    let general: DomainProcessor
+    let medical: DomainProcessor
+    let logistics: DomainProcessor
+
+    func route(_ req: DomainRequest) async -> DomainResponse {
+        switch req.domain {
+        case .general: return await general.process(req)
+        case .medical: return await medical.process(req)
+        case .logistics: return await logistics.process(req)
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - Audit Evidence (signed + enclave optional)
+// ------------------------------------------------------------
+struct AuditCase: Codable, Sendable { let name: String; let passed: Bool; let code: String }
+struct AuditReport: Codable, Sendable { let ts: Int64; let build: String; let phase: String; let cases: [AuditCase]; let okToDeploy: Bool }
+
+enum AuditReportBuilder {
+    static func report(build: String, phase: String, cases: [AuditCase]) -> AuditReport {
+        let ok = cases.allSatisfy { $0.passed }
+        return AuditReport(ts: Int64(Date().timeIntervalSince1970 * 1000), build: build, phase: phase, cases: cases, okToDeploy: ok)
+    }
+}
+
+struct SignedAudit: Codable, Sendable {
+    let report: AuditReport
+    let sha256: String
+    let enclaveSignatureB64: String? // optional
+}
+
+enum AuditSigner {
+    static func sha256Hex(of report: AuditReport) -> String {
+        let data = try! JSONEncoder().encode(report)
+        let hash = SHA256.hash(data: data)
+        return hash.map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+// Secure Enclave signer (optional)
+final class EnclaveSigner {
+    private let tag = "NEXTBASE_AUDIT_ENCLAVE_KEY".data(using: .utf8)!
+
+    func getOrCreatePrivateKey() throws -> SecKey {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassKey,
+            kSecAttrApplicationTag as String: tag,
+            kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+            kSecReturnRef as String: true
+        ]
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        if status == errSecSuccess, let key = item as! SecKey? { return key }
+
+        let access = SecAccessControlCreateWithFlags(nil, kSecAttrAccessibleWhenUnlockedThisDeviceOnly, [.privateKeyUsage], nil)!
+
+        let attrs: [String: Any] = [
+            kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+            kSecAttrKeySizeInBits as String: 256,
+            kSecAttrTokenID as String: kSecAttrTokenIDSecureEnclave,
+            kSecPrivateKeyAttrs as String: [
+                kSecAttrIsPermanent as String: true,
+                kSecAttrApplicationTag as String: tag,
+                kSecAttrAccessControl as String: access
+            ]
+        ]
+        guard let key = SecKeyCreateRandomKey(attrs as CFDictionary, nil) else { throw NSError(domain: "KEYGEN", code: 1) }
+        return key
+    }
+
+    func sign(sha256Hex: String) throws -> Data {
+        let priv = try getOrCreatePrivateKey()
+        let msg = Data(sha256Hex.utf8)
+        var error: Unmanaged<CFError>?
+        guard let sig = SecKeyCreateSignature(priv, .ecdsaSignatureMessageX962SHA256, msg as CFData, &error) as Data?
+        else { throw NSError(domain: "SIGN", code: 2) }
+        return sig
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - ViewModel
+// ------------------------------------------------------------
+@MainActor
+final class NEDashboardViewModel: ObservableObject {
+
+    @Published var inputText: String = ""
+    @Published var currentDomain: Domain = .general
+
+    @Published var latestOutput: String = "IDLE"
+    @Published var confidence: Float = 0.0
+    @Published var latestSeqRid: String = "NO_POINTER"
+    @Published var lastReason: String = "-"
+    @Published var lastMs: String = "-"
+
+    @Published var auditStatus: String = "NO_EVIDENCE"
+    @Published var enclaveStatus: String = "ENCLAVE: OFF"
+
+    private let router: DomainRouter
+    private let events: LatestCompleteStream
+    private let flow: NEEvaluateAndStoreFlowV4
+
+    // evidence store (here: secure store placeholder record)
+    private let evidenceStore: SecureStoreHardeningLike
+    private var evidenceManifest: SecureManifest
+
+    private let secureDir: URL
+
+    init(router: DomainRouter, flow: NEEvaluateAndStoreFlowV4, events: LatestCompleteStream, evidenceStore: SecureStoreHardeningLike, secureDir: URL) throws {
+        self.router = router
+        self.flow = flow
+        self.events = events
+        self.evidenceStore = evidenceStore
+        self.secureDir = secureDir
+        self.evidenceManifest = try evidenceStore.loadOrRecoverManifest(defaultKeyVersion: 1)
+
+        // Subscribe latest completed only
+        Task {
+            for await event in await events.stream() {
+                switch event {
+                case .completed(let e):
+                    self.latestOutput = e.isValidated ? "VALIDATED" : "HOLD"
+                    self.confidence = e.confidence
+                    self.lastReason = e.reason ?? "-"
+                    self.lastMs = "\(e.ms)ms"
+                    self.latestSeqRid = "SEQ \(e.seq) / RID \(e.rid.prefix(6))"
+                    SafeLog.audit("UI_UPDATED", rid: e.rid, ms: e.ms)
+                case .storageFailed(let rid):
+                    SafeLog.audit("STORE_FAILED", rid: rid, ms: nil)
+                }
+            }
+        }
+
+        // show pointer immediately if exists
+        Task {
+            if let p = await flow.latestPointer() {
+                self.latestSeqRid = "SEQ \(p.seq) / RID \(p.rid.prefix(6))"
+            }
+        }
+    }
+
+    func runEvaluation() {
+        let domain = currentDomain
+        let text = inputText
+
+        Task {
+            let req = DomainRequest(
+                rid: UUID().uuidString,
+                seq: 0,
+                domain: domain,
+                text: text,
+                locale: "ja-JP"
+            )
+
+            let resp = await router.route(req)
+
+            // Minimal “facts only”
+            self.auditStatus = "LAST: SEQ \(resp.seq) / RID \(resp.rid.prefix(6))"
+        }
+    }
+
+    func runFullEvidenceCycle() {
+        Task {
+            // Build a tiny audit report from current state (replace with full property attack runner)
+            let cases = [
+                AuditCase(name: "ui_latest_present", passed: latestOutput != "IDLE", code: latestOutput == "IDLE" ? "NO" : "OK"),
+                AuditCase(name: "pointer_present", passed: latestSeqRid != "NO_POINTER", code: latestSeqRid == "NO_POINTER" ? "NO" : "OK")
+            ]
+            let report = AuditReportBuilder.report(build: "NE_OS_DASHBOARD", phase: "UI_EVIDENCE", cases: cases)
+            let sha = AuditSigner.sha256Hex(of: report)
+
+            // Optional: Secure Enclave sign
+            var sigB64: String? = nil
+            do {
+                let signer = EnclaveSigner()
+                let sig = try signer.sign(sha256Hex: sha)
+                sigB64 = sig.base64EncodedString()
+                self.enclaveStatus = "ENCLAVE: ON"
+            } catch {
+                self.enclaveStatus = "ENCLAVE: OFF"
+            }
+
+            let signed = SignedAudit(report: report, sha256: sha, enclaveSignatureB64: sigB64)
+
+            // Persist signed evidence (encrypted store in real build)
+            do {
+                let data = try JSONEncoder().encode(signed)
+                try evidenceStore.store(plaintext: data, recordId: "audit_signed_\(report.ts)", manifest: &evidenceManifest)
+                self.auditStatus = "EVIDENCE SAVED / ts \(report.ts)"
+                SafeLog.audit("EVIDENCE_SAVED", rid: nil, ms: nil)
+            } catch {
+                self.auditStatus = "EVIDENCE SAVE FAIL"
+            }
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - View (Noir Minimal UI)
+// ------------------------------------------------------------
+struct NEDashboardView: View {
+    @StateObject var vm: NEDashboardViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+
+            Text("NE-OS DASHBOARD v1")
+                .font(.system(.headline, design: .monospaced))
+                .foregroundStyle(.secondary)
+
+            Divider()
+
+            Picker("Domain", selection: $vm.currentDomain) {
+                ForEach(Domain.allCases) { d in
+                    Text(d.label).tag(d)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            TextField("INPUT", text: $vm.inputText)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(.body, design: .monospaced))
+                .onSubmit { vm.runEvaluation() }
+
+            HStack(spacing: 12) {
+                Button("RUN") { vm.runEvaluation() }
+                Button("EVIDENCE") { vm.runFullEvidenceCycle() }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("LATEST (LATEST-ONLY)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text(vm.latestOutput)
+                    .font(.system(.title, design: .monospaced))
+                    .bold()
+
+                ProgressView(value: min(max(vm.confidence, 0), 1))
+
+                HStack {
+                    Text(vm.latestSeqRid).font(.system(.caption, design: .monospaced))
+                    Spacer()
+                    Text(vm.lastMs).font(.system(.caption, design: .monospaced))
+                }
+                Text("REASON: \(vm.lastReason)")
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(12)
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(10)
+
+            Spacer()
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: "checkmark.shield.fill")
+                    Text(vm.auditStatus).font(.system(.caption, design: .monospaced))
+                }
+                HStack {
+                    Image(systemName: "lock.shield")
+                    Text(vm.enclaveStatus).font(.system(.caption, design: .monospaced))
+                }
+            }
+            .foregroundStyle(.secondary)
+        }
+        .padding()
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - App Bootstrap (single-file friendly)
+// Replace MemorySecureStore with your real SecureStoreHardening.
+// ------------------------------------------------------------
+@main
+struct NEOSDashboardApp: App {
+    var body: some Scene {
+        WindowGroup {
+            let secureDir = FileManager.default.temporaryDirectory.appendingPathComponent("ne_os_secure", isDirectory: true)
+            try? FileManager.default.createDirectory(at: secureDir, withIntermediateDirectories: true)
+
+            let events = LatestCompleteStream()
+            let store = MemorySecureStore() // swap with SecureStoreHardening
+            let engine = LocalStateEngineV2(adapter: MockAdapter(fixed: 0.8), policy: .latestOnly)
+
+            let flow = try! NEEvaluateAndStoreFlowV4(engine: engine, store: store, events: events, secureDir: secureDir)
+
+            // Domain processors:
+            // - For GENERAL: TemplateDictProcessor (instant value)
+            // - For MEDICAL/LOGISTICS: NEBackedProcessor (uses fortress)
+            let dict = TemplateDictProcessor(canned: [
+                .general: ["hello": "OK", "test": "OK"],
+                .medical: ["pain": "HOLD"],
+                .logistics: ["invoice": "HOLD"]
+            ])
+
+            let router = DomainRouter(
+                general: dict,
+                medical: NEBackedProcessor(flow: flow, domain: .medical),
+                logistics: NEBackedProcessor(flow: flow, domain: .logistics)
+            )
+
+            let vm = try! NEDashboardViewModel(router: router, flow: flow, events: events, evidenceStore: store, secureDir: secureDir)
+            NEDashboardView(vm: StateObject(wrappedValue: vm))
+        }
+    }
+}

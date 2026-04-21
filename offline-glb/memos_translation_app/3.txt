@@ -1,0 +1,41 @@
+import 'package:flutter/material.dart';
+import 'screens/startup_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/bridge_screen.dart';
+import 'screens/history_screen.dart';
+import 'screens/tomori_screen.dart';
+
+void main() {
+  runApp(const GLBApp());
+}
+
+class GLBApp extends StatelessWidget {
+  const GLBApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'GLB – Global Language Breaker',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Colors.black,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF00D0C8), // ティール寄りシアン
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      initialRoute: StartupScreen.routeName,
+      routes: {
+        StartupScreen.routeName: (_) => const StartupScreen(),
+        HomeScreen.routeName: (_) => const HomeScreen(),
+        SettingsScreen.routeName: (_) => const SettingsScreen(),
+        BridgeScreen.routeName: (_) => const BridgeScreen(),
+        HistoryScreen.routeName: (_) => const HistoryScreen(),
+        TomoriScreen.routeName: (_) => const TomoriScreen(),
+      },
+    );
+  }
+}

@@ -1,0 +1,123 @@
+GLB   仕様 2
+
+✅ GLB翻訳アプリ V2 最終仕様・コード引き継ぎ（2025/12/15リリース部屋）
+
+0) 目的と審査上の見せ方
+	•	表向き：音声翻訳ユーティリティ（Translation Utility）
+	•	UI：Translation History（翻訳履歴）＝会話ログ風だがチャットAIではない
+	•	チャット画面（Admin Console）はリリースでは封印（kReleaseModeで反応しない）
+
+⸻
+
+1) NE（バックエンド）最終仕様
+
+エンドポイント（本番）
+	•	NE URL：固定の物
+
+リクエスト（フラットJSON・階層ズレ無し）
+
+必須：userId / text / mode / dstLang / requestId
+
+{
+  "userId": "<device-uuid>",
+  "text": "こんにちは",
+  "mode": "translate",
+  "dstLang": "en",
+  "requestId": "<uuid-v4>",
+  "timestamp": 1734109400
+}
+
+レスポンス（鉄の掟：4要素固定）
+
+{
+  "decision": "GO|HOLD",
+  "reason": "SUCCESS|BAD_LANG|BAD_MODE|NO_REQUEST_ID|TOO_LONG|EMPTY|ERROR",
+  "source": "ZERO_API|CACHE|API",
+  "result": "Hello"
+}
+
+防衛（要塞ロジック）
+	•	requestId 必須（無ければ HOLD / NO_REQUEST_ID / ZERO_API）
+	•	mode ホワイトリスト（translate/chat）→ それ以外は BAD_MODE
+	•	translate時 dstLang ホワイトリスト（en/ja/zh/ko）→ 外れたら BAD_LANG
+	•	空文 → EMPTY
+	•	100文字超 → TOO_LONG
+	•	成功（GO）のみキャッシュ保存、同一requestId再送は CACHE で即返し（原価ゼロ）
+	•	source は原価の出所だけ（SpeakerやVersionと混ぜない）
+
+⸻
+
+2) クライアント（iOS/Flutter）最終仕様
+
+画面：Translation History（ログ型翻訳）
+	•	右：自分の入力（ユーザー発言）
+	•	左：翻訳結果（シアン枠）→ タップで全画面拡大（相手に見せる）
+	•	下部：入力欄＋呼吸するシアンマイク＋送信
+	•	ボタン表記：GLB（動詞化）
+実行中は PROCESSING…（スピナー禁止）
+
+盾（Idempotency）
+	•	_activeRequestId を成功するまで保持
+	•	GO を受け取った時だけ _activeRequestId=null
+	•	失敗/HOLD/通信エラー時は保持（連打・再送で CACHE が効く）
+
+マイク権限（Robust Permission）
+	•	Denied → request()
+	•	PermanentlyDenied → openAppSettings()
+	•	Grantedのみ listen
+	•	赤禁止、シアン呼吸で状態表現
+
+⸻
+
+3) UIパーツ共通化（必須）
+	•	lib/widgets/glowing_mic_button.dart
+	•	GlowingMicButton(isListening, onTap) の共通部品（赤ゼロ、シアン呼吸）
+	•	lib/widgets/shimmer_loading.dart
+	•	shimmerパッケージの ダークShimmer（黒85/灰10）
+	•	トーン：Black 85 / Gray 10 / Cyan 5
+	•	エラー色：Amber（赤禁止）
+
+⸻
+
+4) 起動演出（Step3確定）
+	•	文字ロゴの 0.6秒ノイズ点滅 → ガラス割れ動画 → 翻訳画面へ自動遷移
+	•	splash_screen.dart は _navigatedガード＋nullable controllerで落ちない版採用
+	•	アセット：assets/glass_crack.mp4（pubspec.yamlに必ず登録）
+
+⸻
+
+5) 隠しコンソール（Admin Console）
+	•	ChatScreen は 開発者用
+	•	Releaseでは封印：
+	•	onLongPress: kReleaseMode ? null : _openTomoriConsole
+	•	kEnableTomoriConsole = !kReleaseMode
+	•	表向きに “NE/Charter/Gateway” など内部用語を出さない
+
+⸻
+
+6) 審査用「Privacy Policy / Support」
+
+連絡先
+	•	info@nextbase-japan.com
+	•	事業者名：NEXTBASE (One-HA Division)
+
+日付
+	•	December 14, 2025
+
+Privacy Policy URL（公開URL）
+	•	https://docs.google.com/document/d/e/2PACX-1vTU2dkf6JVx-T7yzRFyfN5Y8XMoR_vqyKq2oN9slypR4klo8gmPXgLinrPEV3TbJVXJozPxyYpjM7-N/pub
+
+※ Support URL は 同じURLでOK（メールだけはNG）
+
+⸻
+
+7) iOSリリースビルド手順（確定）
+
+flutter clean
+flutter pub get
+flutter build ipa --release
+
+8) 最終成功シグナル（審査前の目視）
+	•	翻訳純度：余計な前置き無しで 翻訳結果のみ
+	•	連打：同一requestId再送で CACHE が効く（原価ゼロ）
+

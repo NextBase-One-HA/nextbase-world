@@ -1,0 +1,6 @@
+participants = [
+  { id: "A", lang: "ja" },
+  { id: "B", lang: "en" },
+  { id: "C", lang: "fr" },
+  ... // 将来4人目以降もいける
+]

@@ -1,0 +1,6 @@
+[EFFECT_ZAP]
+intensity: medium
+color: #00D0C8
+duration: 0.2s
+noise: light_grain
+blend: add

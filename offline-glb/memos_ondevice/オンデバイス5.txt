@@ -1,0 +1,442 @@
+// ============================================================
+// NE-OS Dashboard v1.2 — ADD: Evidence Viewer + Copy + Enclave Signature Verify
+// - Shows full SignedAudit JSON (pretty)
+// - Copy to clipboard
+// - Verify: (1) SHA256(report) == signed.sha256  (2) Enclave signature verifies (if present)
+// ============================================================
+
+import SwiftUI
+import Foundation
+import CryptoKit
+import Security
+import os.log
+import UIKit
+
+// ------------------------------------------------------------
+// MARK: - SafeLog (facts only)
+// ------------------------------------------------------------
+enum SafeLog {
+    private static let log = Logger(subsystem: "NEXTBASE", category: "NE_AUDIT")
+    static func audit(_ code: String, rid: String? = nil, ms: Int? = nil) {
+        if let rid, let ms {
+            log.info("AUDIT code=\(code, privacy: .public) rid=\(rid, privacy: .public) ms=\(ms, privacy: .public)")
+        } else if let rid {
+            log.info("AUDIT code=\(code, privacy: .public) rid=\(rid, privacy: .public)")
+        } else {
+            log.info("AUDIT code=\(code, privacy: .public)")
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - Linguistic Audit (same as before)
+// ------------------------------------------------------------
+enum LinguisticAudit {
+    private static let forbidden: [String] = [
+        "DeviceState", "processing(", "validated(", "idle",
+        "SymmetricKey", "SealedBox", "AES.GCM", "Keychain", "kSec",
+        "input:", "vector", "embedding", "token", "nonce",
+        "主権", "レイヤー", "チャーター", "思想"
+    ]
+    static func scan(_ lines: [String]) -> (passed: Bool, hit: String?) {
+        for line in lines {
+            for f in forbidden where line.localizedCaseInsensitiveContains(f) { return (false, f) }
+        }
+        return (true, nil)
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - Evidence Models
+// ------------------------------------------------------------
+struct AuditCase: Codable, Sendable { let name: String; let passed: Bool; let code: String }
+struct AuditReport: Codable, Sendable { let ts: Int64; let build: String; let phase: String; let cases: [AuditCase]; let okToDeploy: Bool }
+
+struct SignedAudit: Codable, Sendable {
+    let report: AuditReport
+    let sha256: String
+    let enclaveSignatureB64: String?
+    let linguisticOK: Bool
+}
+
+enum AuditSigner {
+    static func sha256Hex(of report: AuditReport) -> String {
+        let data = try! JSONEncoder().encode(report)
+        let hash = SHA256.hash(data: data)
+        return hash.map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - Secure Enclave Sign/Verify
+// ------------------------------------------------------------
+final class EnclaveSigner {
+    private let tag = "NEXTBASE_AUDIT_ENCLAVE_KEY".data(using: .utf8)!
+
+    func getOrCreatePrivateKey() throws -> SecKey {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassKey,
+            kSecAttrApplicationTag as String: tag,
+            kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+            kSecReturnRef as String: true
+        ]
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        if status == errSecSuccess, let key = item as! SecKey? { return key }
+
+        let access = SecAccessControlCreateWithFlags(
+            nil,
+            kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+            [.privateKeyUsage],
+            nil
+        )!
+
+        let attrs: [String: Any] = [
+            kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+            kSecAttrKeySizeInBits as String: 256,
+            kSecAttrTokenID as String: kSecAttrTokenIDSecureEnclave,
+            kSecPrivateKeyAttrs as String: [
+                kSecAttrIsPermanent as String: true,
+                kSecAttrApplicationTag as String: tag,
+                kSecAttrAccessControl as String: access
+            ]
+        ]
+        guard let key = SecKeyCreateRandomKey(attrs as CFDictionary, nil) else {
+            throw NSError(domain: "KEYGEN", code: 1)
+        }
+        return key
+    }
+
+    func sign(sha256Hex: String) throws -> Data {
+        let priv = try getOrCreatePrivateKey()
+        let msg = Data(sha256Hex.utf8)
+        var error: Unmanaged<CFError>?
+        guard let sig = SecKeyCreateSignature(priv, .ecdsaSignatureMessageX962SHA256, msg as CFData, &error) as Data? else {
+            throw NSError(domain: "SIGN", code: 2)
+        }
+        return sig
+    }
+
+    func verify(sha256Hex: String, signature: Data) throws -> Bool {
+        let priv = try getOrCreatePrivateKey()
+        guard let pub = SecKeyCopyPublicKey(priv) else { throw NSError(domain: "PUBKEY", code: 3) }
+        let msg = Data(sha256Hex.utf8)
+        var error: Unmanaged<CFError>?
+        return SecKeyVerifySignature(pub, .ecdsaSignatureMessageX962SHA256, msg as CFData, signature as CFData, &error)
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - Store Protocol + Minimal In-Memory Placeholder
+// Replace with your SecureStoreHardening in production.
+// ------------------------------------------------------------
+struct SecureManifest: Codable, Sendable {
+    var formatVersion: Int
+    var currentKeyVersion: Int
+    var records: [String: String]
+}
+
+protocol SecureStoreHardeningLike: Sendable {
+    func loadOrRecoverManifest(defaultKeyVersion: Int) throws -> SecureManifest
+    func store(plaintext: Data, recordId: String, manifest: inout SecureManifest) throws
+    func load(recordId: String, manifest: inout SecureManifest) throws -> Data
+    func listRecordIds() -> [String]
+}
+
+final class MemorySecureStore: SecureStoreHardeningLike {
+    private var db: [String: Data] = [:]
+    func loadOrRecoverManifest(defaultKeyVersion: Int) throws -> SecureManifest {
+        SecureManifest(formatVersion: 1, currentKeyVersion: defaultKeyVersion, records: [:])
+    }
+    func store(plaintext: Data, recordId: String, manifest: inout SecureManifest) throws {
+        db[recordId] = plaintext
+        manifest.records[recordId] = "ok"
+    }
+    func load(recordId: String, manifest: inout SecureManifest) throws -> Data {
+        db[recordId] ?? Data()
+    }
+    func listRecordIds() -> [String] { Array(db.keys).sorted() }
+}
+
+// ------------------------------------------------------------
+// MARK: - Evidence Vault (save + load latest + load all ids)
+// ------------------------------------------------------------
+@MainActor
+final class EvidenceVault {
+    private let store: SecureStoreHardeningLike
+    private var manifest: SecureManifest
+
+    init(store: SecureStoreHardeningLike) throws {
+        self.store = store
+        self.manifest = try store.loadOrRecoverManifest(defaultKeyVersion: 1)
+    }
+
+    func saveSignedAudit(_ signed: SignedAudit) {
+        do {
+            let data = try JSONEncoder().encode(signed)
+            try store.store(plaintext: data, recordId: "audit_signed_\(signed.report.ts)", manifest: &manifest)
+            SafeLog.audit("EVIDENCE_SAVED")
+        } catch {
+            SafeLog.audit("EVIDENCE_SAVE_FAIL")
+        }
+    }
+
+    func listSignedAuditIds() -> [String] {
+        store.listRecordIds().filter { $0.hasPrefix("audit_signed_") }.sorted()
+    }
+
+    func loadSignedAudit(id: String) -> SignedAudit? {
+        do {
+            let data = try store.load(recordId: id, manifest: &manifest)
+            return try JSONDecoder().decode(SignedAudit.self, from: data)
+        } catch { return nil }
+    }
+
+    func loadLatestSignedAudit() -> SignedAudit? {
+        guard let last = listSignedAuditIds().last else { return nil }
+        return loadSignedAudit(id: last)
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - Evidence Viewer Sheet
+// ------------------------------------------------------------
+struct EvidenceViewerSheet: View {
+    let signed: SignedAudit
+    let verifyResult: String
+    let onCopy: () -> Void
+
+    private var prettyJSON: String {
+        let enc = JSONEncoder()
+        enc.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = (try? enc.encode(signed)) ?? Data()
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("SIGNED AUDIT EVIDENCE")
+                .font(.system(.headline, design: .monospaced))
+                .foregroundStyle(.secondary)
+
+            Text(verifyResult)
+                .font(.system(.caption, design: .monospaced))
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 12) {
+                Button("COPY JSON") { onCopy() }
+            }
+
+            ScrollView {
+                Text(prettyJSON)
+                    .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(12)
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(10)
+
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - ViewModel (Evidence: generate + persist + view + verify)
+// ------------------------------------------------------------
+@MainActor
+final class NEDashboardViewModel: ObservableObject {
+
+    // UI state
+    @Published var evidenceStatus: String = "NO_EVIDENCE"
+    @Published var deployPermit: String = "PERMIT: UNKNOWN"
+    @Published var shaPrefix: String = "SHA: -"
+    @Published var enclaveStatus: String = "ENCLAVE: OFF"
+    @Published var linguisticStatus: String = "LINGUISTIC: -"
+
+    // viewer
+    @Published var showEvidenceSheet: Bool = false
+    @Published var viewerTextStatus: String = "VERIFY: -"
+    private var viewerSigned: SignedAudit?
+
+    private let vault: EvidenceVault
+
+    init(vault: EvidenceVault) {
+        self.vault = vault
+        refreshEvidenceUI()
+    }
+
+    func refreshEvidenceUI() {
+        if let s = vault.loadLatestSignedAudit() {
+            deployPermit = s.report.okToDeploy ? "PERMIT: YES" : "PERMIT: NO"
+            shaPrefix = "SHA: \(s.sha256.prefix(10))"
+            evidenceStatus = "EVIDENCE ts \(s.report.ts)"
+            linguisticStatus = s.linguisticOK ? "LINGUISTIC: OK" : "LINGUISTIC: FAIL"
+            enclaveStatus = (s.enclaveSignatureB64 != nil) ? "ENCLAVE: ON" : "ENCLAVE: OFF"
+        } else {
+            deployPermit = "PERMIT: UNKNOWN"
+            shaPrefix = "SHA: -"
+            evidenceStatus = "NO_EVIDENCE"
+            enclaveStatus = "ENCLAVE: OFF"
+            linguisticStatus = "LINGUISTIC: -"
+        }
+    }
+
+    // --- Evidence: minimal generator (replace with your Parallel 1000-knock runner if desired) ---
+    func generateAndSaveEvidence() {
+        // Minimal “permit” example
+        let cases = [
+            AuditCase(name: "boot_ok", passed: true, code: "OK"),
+            AuditCase(name: "linguistic_policy", passed: true, code: "OK")
+        ]
+        let report = AuditReport(ts: Int64(Date().timeIntervalSince1970 * 1000), build: "NE_OS", phase: "EVIDENCE_UI", cases: cases, okToDeploy: true)
+
+        let sha = AuditSigner.sha256Hex(of: report)
+
+        var enclaveB64: String? = nil
+        do {
+            let signer = EnclaveSigner()
+            let sig = try signer.sign(sha256Hex: sha)
+            enclaveB64 = sig.base64EncodedString()
+        } catch {
+            enclaveB64 = nil
+        }
+
+        // Linguistic scan of JSON only (evidence payload itself)
+        let reportJSON = String(data: (try! JSONEncoder().encode(report)), encoding: .utf8) ?? ""
+        let signedPreview = SignedAudit(report: report, sha256: sha, enclaveSignatureB64: enclaveB64, linguisticOK: true)
+        let signedJSON = String(data: (try! JSONEncoder().encode(signedPreview)), encoding: .utf8) ?? ""
+        let ling = LinguisticAudit.scan([reportJSON, signedJSON])
+
+        let signed = SignedAudit(report: report, sha256: sha, enclaveSignatureB64: enclaveB64, linguisticOK: ling.passed)
+        vault.saveSignedAudit(signed)
+        SafeLog.audit("EVIDENCE_GENERATED")
+        refreshEvidenceUI()
+    }
+
+    // --- View Evidence (latest) ---
+    func openLatestEvidence() {
+        guard let s = vault.loadLatestSignedAudit() else {
+            viewerTextStatus = "VERIFY: NO_EVIDENCE"
+            showEvidenceSheet = false
+            return
+        }
+        viewerSigned = s
+        viewerTextStatus = verifySignedAudit(s)
+        showEvidenceSheet = true
+    }
+
+    func copyEvidenceJSON() {
+        guard let s = viewerSigned else { return }
+        let enc = JSONEncoder()
+        enc.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = (try? enc.encode(s)) ?? Data()
+        UIPasteboard.general.string = String(data: data, encoding: .utf8) ?? "{}"
+        SafeLog.audit("EVIDENCE_COPIED")
+    }
+
+    // --- Verification: SHA + Enclave signature ---
+    private func verifySignedAudit(_ s: SignedAudit) -> String {
+        // 1) SHA integrity
+        let computed = AuditSigner.sha256Hex(of: s.report)
+        let shaOK = (computed == s.sha256)
+
+        // 2) Linguistic OK flag is evidence metadata; we still can re-scan JSON for defense
+        let enc = JSONEncoder()
+        let reportJSON = String(data: (try! enc.encode(s.report)), encoding: .utf8) ?? ""
+        let signedJSON = String(data: (try! enc.encode(s)), encoding: .utf8) ?? ""
+        let ling = LinguisticAudit.scan([reportJSON, signedJSON])
+        let lingOK = ling.passed
+
+        // 3) Enclave signature verify (if present)
+        var enclOK: Bool? = nil
+        if let b64 = s.enclaveSignatureB64, let sig = Data(base64Encoded: b64) {
+            do {
+                let signer = EnclaveSigner()
+                let ok = try signer.verify(sha256Hex: s.sha256, signature: sig)
+                enclOK = ok
+            } catch {
+                enclOK = false
+            }
+        }
+
+        // Facts-only status line
+        if enclOK == nil {
+            return "VERIFY: SHA=\(shaOK ? "OK" : "FAIL") / ENCLAVE=NONE / LING=\(lingOK ? "OK" : "FAIL")"
+        } else {
+            return "VERIFY: SHA=\(shaOK ? "OK" : "FAIL") / ENCLAVE=\((enclOK! ? "OK" : "FAIL")) / LING=\(lingOK ? "OK" : "FAIL")"
+        }
+    }
+
+    // Expose signed for sheet
+    func sheetSignedAudit() -> SignedAudit? { viewerSigned }
+}
+
+// ------------------------------------------------------------
+// MARK: - View (Noir Minimal UI) + Evidence Viewer Sheet
+// ------------------------------------------------------------
+struct NEDashboardView: View {
+    @StateObject var vm: NEDashboardViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+
+            Text("NE-OS DASHBOARD v1.2")
+                .font(.system(.headline, design: .monospaced))
+                .foregroundStyle(.secondary)
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("AUDIT / EVIDENCE")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text(vm.evidenceStatus).font(.system(.caption, design: .monospaced))
+                Text(vm.deployPermit).font(.system(.caption, design: .monospaced))
+                Text(vm.shaPrefix).font(.system(.caption, design: .monospaced))
+                Text(vm.enclaveStatus).font(.system(.caption, design: .monospaced))
+                Text(vm.linguisticStatus).font(.system(.caption, design: .monospaced))
+            }
+            .foregroundStyle(.secondary)
+
+            HStack(spacing: 12) {
+                Button("MAKE EVIDENCE") { vm.generateAndSaveEvidence() }
+                Button("VIEW LATEST") { vm.openLatestEvidence() }
+            }
+
+            Spacer()
+        }
+        .padding()
+        .sheet(isPresented: $vm.showEvidenceSheet) {
+            if let signed = vm.sheetSignedAudit() {
+                EvidenceViewerSheet(
+                    signed: signed,
+                    verifyResult: vm.viewerTextStatus,
+                    onCopy: { vm.copyEvidenceJSON() }
+                )
+            } else {
+                VStack { Text("NO_EVIDENCE").font(.system(.headline, design: .monospaced)) }
+                    .padding()
+            }
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// MARK: - App Bootstrap (standalone demo)
+// Replace MemorySecureStore with SecureStoreHardening (encrypted) in production.
+// ------------------------------------------------------------
+@main
+struct NEOSDashboardApp: App {
+    var body: some Scene {
+        WindowGroup {
+            let store = MemorySecureStore() // <-- swap with real SecureStoreHardening
+            let vault = try! EvidenceVault(store: store)
+            let vm = NEDashboardViewModel(vault: vault)
+            NEDashboardView(vm: StateObject(wrappedValue: vm))
+        }
+    }
+}

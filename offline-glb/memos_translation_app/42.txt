@@ -1,0 +1,19 @@
+SCENE_1:
+  duration: 1.2s
+  background: black
+  effect: log_text_fadein
+  text: "Initializing GLB..."
+
+SCENE_2:
+  duration: 1.0s
+  effect: system_scan_lines
+  text: "Loading Pivot Engine..."
+
+SCENE_3:
+  duration: 1.5s
+  effect: glb_logo_zoom_in
+  text: "Global Language Breaker"
+
+SCENE_4:
+  duration: 0.7s
+  effect: white_flash → fade_to_home

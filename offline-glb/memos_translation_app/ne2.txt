@@ -1,0 +1,6 @@
+GLB_project/
+  lib/
+  ios/
+  android/
+  assets/
+  ne_generated/

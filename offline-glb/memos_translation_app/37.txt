@@ -1,0 +1,26 @@
+[HOME_SCREEN_LAYOUT]
+background: black
+sections:
+  - top_status:
+      type: text
+      text: "STATUS: ONLINE"
+      align: left
+  - lang_bar:
+      type: horizontal_bar
+      items:
+        - from_lang_chip (left)
+        - swap_icon (center)
+        - to_lang_chip (right)
+  - input_card:
+      type: card
+      label: "Your message"
+      area: upper_middle
+  - output_card:
+      type: card
+      label: "Translated"
+      area: lower_middle
+  - bottom_bar:
+      type: bar
+      left_icon: mic
+      center_button: TRANSLATE
+      right_toggle: Kids

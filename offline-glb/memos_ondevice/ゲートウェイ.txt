@@ -1,0 +1,118 @@
+1) 全体ロジック（要塞構造）
+
+目的：会話AIにしない。前置きゼロで翻訳結果だけ返す。
+主役：人間。AIは裏で“通すだけ”。
+	•	入力（音声/テキスト）→ NE Gateway → 出力（翻訳結果）
+	•	文脈保持・助言・人格・長文会話は やらせない
+	•	失敗しても爆発しない：GO/HOLD＋理由固定＋原価管理（ZERO_API/CACHE/API） 
+
+⸻
+
+2) 画面導線（iOS/Flutter）
+
+導線は固定：
+main.dart → SplashScreen（演出）→ IstInterface（Translation History）
+
+GLBボタンの出現条件
+
+IstInterfaceの下部送信ボタン表示が
+	•	_isLoading == false → GLB
+	•	_isLoading == true → PROCESSING…
+
+⸻
+
+3) NE（バックエンド）最終仕様
+
+本番URL（固定）：https://us-central1-tomori-world.cloudfunctions.net/tomoriRun
+
+リクエスト（Flat JSON）
+
+必須：userId / text / mode / dstLang / requestId（+timestamp） 
+
+レスポンス（鉄の掟：4要素固定）
+
+decision / reason / source / result  
+
+要塞ルール（防衛）
+	•	requestId必須（無ければHOLD/NO_REQUEST_ID/ZERO_API）
+	•	mode whitelist（translate/chat）
+	•	dstLang whitelist（en/ja/zh/ko など）
+	•	100文字超 → TOO_LONG、空文 → EMPTY
+	•	同一requestId再送はCACHEで即返し（原価ゼロ）  
+
+⸻
+
+4) 最終コード一覧（確定ファイル）
+
+(A) lib/main.dart（入口固定）
+	•	home: const SplashScreen()  
+
+(B) lib/screens/splash_screen.dart（起動演出）
+	•	0.6秒シアン文字ノイズ → ガラス割れ動画 → IstInterfaceへ遷移
+	•	_navigatedガード付き  
+
+(C) lib/screens/ist_interface.dart（本編＝Translation History）
+	•	音声権限ハンドリング（permission_handler）
+	•	speech_to_textで入力
+	•	POSTでNEへ送信
+	•	GOで結果追加＋requestId解除、HOLDは解除しない（盾）
+	•	言語切替（TO: ENGLISH / TO: JAPANESE）
+	•	長押しで隠しコンソール（Release封印：kReleaseMode ? null : ...） 
+
+(D) lib/screens/chat_screen.dart（隠しコンソール）
+	•	mode=chatでNEへ（Releaseでは開けない前提） 
+
+(E) lib/widgets/glowing_mic_button.dart（共通マイク部品）
+	•	“呼吸する”シアン発光（isListeningで表現） 
+
+(F) lib/widgets/shimmer_loading.dart（スピナー禁止対策）
+	•	shimmerで待機表現  
+
+(G) pubspec.yaml（依存・アセット・version）
+	•	http / uuid / speech_to_text / permission_handler / shimmer / video_player
+	•	assets/glass_crack.mp4
+	•	version +1ルール  
+
+(H) iOS権限（Info.plist追記）
+	•	NSMicrophoneUsageDescription
+	•	NSSpeechRecognitionUsageDescription  
+
+⸻
+
+5) 審査・提出ロジック（iOS）
+
+提出物
+	•	Runner.ipa 1個だけ  
+
+App Store Connect入力の要点
+	•	Privacy Policy URL / Support URL（同一でOK）
+	•	Audio/Textは翻訳目的、保存しない、追跡しない
+
+審査コメント（英語テンプレあり）
+	•	翻訳用途、サーバ保存なし、端末内履歴のみ  
+
+⸻
+
+6) “トモリワールド”の扱い（規約対策）
+	•	表（審査・ユーザー）：翻訳ユーティリティ
+	•	裏（構造）：tomori-world（Firebase/Cloud Functions）で稼働
+	•	「TOMORI WORLD」を前面に出さず、機能を表、世界観は裏
+
+⸻
+
+7) 物流・医療へ転用できる理由（この部屋の核心）
+	•	GLBは「翻訳アプリ」以上に、
+**入力→判定→出力を止まらず返す“プロトコル”**を完成させた。
+	•	requestId冪等性／GO-HOLD／source（原価管理）／即時応答
+→ 物流・医療・インフラ入口にそのまま移植可能
+
+⸻
+
+8) Android（エンジニア渡し物：最小）
+	•	渡すのは ipa ではなく Flutterプロジェクト一式（zip）
+	•	追加で必要：Play Console招待（クローズドテスト）
+	•	中身の“データ”は不要。仕様＋エンドポイント＋UI制約で動く（この部屋の設計がそれ）
+
+⸻
+
+必要なら、

@@ -1,0 +1,29 @@
+NE-OS/
+├─ NECore/
+│  ├─ DomainModels.swift
+│  ├─ DomainRouter.swift
+│  ├─ LocalStateEngineV2.swift
+│  ├─ InferenceAdapters.swift
+│  ├─ MonotonicClock.swift
+│  └─ ReasonPolicy.swift
+├─ NEStore/
+│  ├─ SecureStoreHardening.swift            // あなたのGist06-08本体（暗号/2PC/Quarantine/Manifest）
+│  ├─ SecureRecordWriter.swift              // Gist07相当
+│  ├─ KeychainKeyManager.swift              // Gist06相当
+│  ├─ LatestPointerStore.swift
+│  ├─ StoragePressureGuard.swift
+│  └─ EvidenceEvictor.swift
+├─ NEAudit/
+│  ├─ SafeLog.swift
+│  ├─ LinguisticAudit.swift
+│  ├─ AuditModels.swift
+│  ├─ AuditSigner.swift                     // SHA256
+│  ├─ EnclaveSigner.swift                   // Secure Enclave署名/検証
+│  ├─ EvidenceVault.swift                   // 署名済み証拠の保管・列挙・復号
+│  ├─ EvidenceRunner.swift                  // 並列1000ノック（TaskGroup）
+│  └─ EvidenceCycleV2.swift                 // Pressure-aware + RAM fallback
+└─ NEUI/
+   ├─ NEDashboardViewModel.swift
+   ├─ NEDashboardView.swift
+   ├─ EvidenceViewerSheet.swift
+   └─ NEOSDashboardApp.swift

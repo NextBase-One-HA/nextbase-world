@@ -1,0 +1,74 @@
+【審査通過モード：翻訳を必ず動かす（UI凍結・ロジックのみ）】
+
+最優先ゴール：
+1) 翻訳が確実に動く（最低1回は必ず translatedText が出る）
+2) エラー祭り（連打・二重実行）を止める
+3) 無料枠の挙動が説明と一致する
+4) NE/Gateway等の内部語彙はアプリ内に一切残さない
+
+禁止：
+- UI構造/レイアウト/ボタン配置/文言の大改修（UIは触らない）
+- NE, Gateway, optimizer, SOL, Stella, NextBase 等の文字列やクラスを新規作成・復活
+- isReviewMode 等の審査専用分岐
+
+通信仕様（これ以外禁止）：
+- 翻訳はURL 1本のみ：
+  POST https://us-固定の物
+- baseUrl+path結合禁止（二重tomoriRun防止）
+- Request JSON（最低限）：
+  { "text": "<input>", "source": "ja", "target": "en", "mode": "pivot" }
+  ※ source/target がUIで選べないなら固定でOK（ja->en）
+- Response JSON（固定）：
+  { "translatedText": "<string>" }
+- アプリは translatedText をそのまま表示（加工/ダミー翻訳禁止）
+
+内部ロジック要件（必須）：
+A) 二重実行防止
+- _isLoading ガード（関数先頭で if (_isLoading) return;）
+- ボタンは _isLoading中は無効化（onPressed: null）
+B) 翻訳結果の残像禁止
+- 実行開始時に _translatedText=null, _errorMessage=null
+- 代入は必ず上書き（+=禁止）
+C) 無限リトライ禁止
+- 通信失敗時は1回で終了。UIを復帰する（finallyで _isLoading=false）
+D) 無料枠（審査通過の最小）
+- 文章翻訳：1日3回まで成功時にのみカウント減算
+- 翻訳失敗時は回数を減らさない
+- カウント保存は端末ローカル（SharedPreferences）でOK
+- 日付が変わったら回数を3に戻す
+E) 課金導線（今ある機能を維持）
+- 無料回数が0のときだけ課金画面へ誘導
+- 翻訳結果欄に「課金しろ」文言を出さない（翻訳欄は翻訳だけ）
+
+デバッグ（審査前に消す前提でOK）：
+- 通信直前に1回だけログ：
+  debugPrint("POST -> https://us-固定URL");
+- 受信bodyの先頭だけログ（機密語彙なし）：
+  debugPrint("RESP <- " + body.toString());
+
+作業手順（この順で進める）：
+1) プロジェクト全体検索して、URL/通信箇所を列挙：
+   - "cloudfunctions.net"
+   - "tomoriRun"
+   - "http.post" / "Dio(" / "Uri.parse"
+   → URLが複数あるなら必ず1本に統一
+2) 翻訳関数（例：_translateText / _callTomoriRun）を上の要件A〜Cに揃える
+3) 無料回数ロジックを要件Dに実装（SharedPreferences）
+4) 無料回数0のときの分岐で課金画面へ（要件E）
+5) 露出監査（ヒット0にする）：
+   grep対象キーワード：NE, NextBase, NEXTBASE, Gateway, NE_Gateway, optimizer, SOL, Stella, layer
+   → ヒットしたら削除（UI文言/コメント/ファイル名も含む）
+
+完了条件（必ず確認して報告）：
+- flutter analyze : No issues found
+- 実機で以下が成立：
+  ① 翻訳が1回出る（translatedTextが表示）
+  ② 3回までは無料で翻訳できる
+  ③ 4回目は課金誘導（翻訳欄には課金文を出さない）
+  ④ 連打してもエラー祭りにならない（ボタン無効化）
+- 変更したファイル一覧と、変更した関数名を提示
+- 実行コマンド：
+  flutter clean
+  flutter pub get
+  cd ios && pod install && cd ..
+  flutter run

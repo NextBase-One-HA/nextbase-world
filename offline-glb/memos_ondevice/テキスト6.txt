@@ -1,0 +1,398 @@
+import 'dart:convert';
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Haptic用
+import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
+
+// 共通パーツ (パスが違う場合は適宜修正してくれ)
+import '../widgets/glowing_mic_button.dart';
+import '../widgets/shimmer_loading.dart';
+import 'chat_screen.dart'; // 隠しコンソール用
+
+// ■ データモデル：会話ログ
+class TranslationLog {
+  final String text;
+  final bool isUser; // true=右(自分), false=左(翻訳)
+  TranslationLog({required this.text, required this.isUser});
+}
+
+class IstInterface extends StatefulWidget {
+  const IstInterface({super.key});
+
+  @override
+  State<IstInterface> createState() => _IstInterfaceState();
+}
+
+class _IstInterfaceState extends State<IstInterface> {
+  // ■ 1. 設定・変数定義
+  // ★本番URL（Cloud FunctionsのURLをここに設定）
+  final String _apiUrl = "https://us-central1-tomori-world-glb.cloudfunctions.net/tomoriRun"; 
+
+  final TextEditingController _inputController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  
+  // ログ管理
+  final List<TranslationLog> _logs = [];
+  bool _isLoading = false;
+
+  // 言語設定 (true: JA->EN, false: EN->JA)
+  bool _isJapaneseSource = true; 
+
+  // ■ 2. 盾 (Shield Logic) のための変数
+  final Uuid _uuid = const Uuid(); 
+  late final String _userId; // 起動時に確定
+  String? _activeRequestId;  // ★盾：成功するまでこれを使い回す
+
+  @override
+  void initState() {
+    super.initState();
+    _userId = _uuid.v4(); // セッションID生成
+  }
+
+  // ■ 3. 送信ロジック (The Core)
+  Future<void> _translate() async {
+    final text = _inputController.text.trim();
+    if (text.isEmpty) return;
+
+    // キーボードを閉じる
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // リスト末尾へスクロール準備
+    _scrollToBottom();
+
+    try {
+      // --- [SHIELD ACTIVATION] ---
+      // 未解決のリクエストIDがあれば使い回し、なければ新規発行
+      _activeRequestId ??= _uuid.v4();
+      final currentRequestId = _activeRequestId!; // 送信に使うID
+
+      // ターゲット言語決定
+      final String targetMode = _isJapaneseSource ? "en" : "ja"; 
+      // ※サーバー側が mode="translate", dstLang=... を受け取る仕様に合わせる
+
+      // 送信データ作成
+      final body = jsonEncode({
+        "userId": _userId,
+        "requestId": currentRequestId, // ★盾IDを送信
+        "text": text,
+        "mode": "translate",
+        "dstLang": targetMode, 
+      });
+
+      // APIコール
+      final response = await http.post(
+        Uri.parse(_apiUrl),
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final decision = data['decision']; // GO or HOLD
+        final resultText = data['result'] ?? "";
+
+        if (decision == "GO") {
+          // --- [SUCCESS] ---
+          HapticFeedback.lightImpact(); // 成功の感触
+          
+          setState(() {
+            // 1. 自分の発言をログに追加
+            _logs.add(TranslationLog(text: text, isUser: true));
+            // 2. 翻訳結果をログに追加
+            _logs.add(TranslationLog(text: resultText, isUser: false));
+            
+            // 3. 入力クリア
+            _inputController.clear();
+            
+            // ★4. 盾を破棄 (次のリクエストのためにIDをリセット)
+            _activeRequestId = null;
+          });
+          
+          _scrollToBottom();
+
+        } else {
+          // --- [HOLD / ERROR] ---
+          // 盾(_activeRequestId)は維持する（再送時に同じIDを使うため）
+          _showErrorSnackBar("Error: ${data['reason']}");
+        }
+      } else {
+        // HTTPエラー
+        _showErrorSnackBar("Server Error: ${response.statusCode}");
+      }
+
+    } catch (e) {
+      _showErrorSnackBar("Connection Failed");
+      print("Error: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.redAccent.withOpacity(0.8),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // ■ 4. UI構築
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black, // 漆黒
+      
+      // --- Header ---
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        title: const Text(
+          "GLOBAL LANGUAGE BREAKER",
+          style: TextStyle(
+            color: Colors.cyanAccent,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.5,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          // 隠しコマンド（ロゴ長押し等でChatScreenへ行くならここにGestureDetector）
+          IconButton(
+            icon: const Icon(Icons.terminal, color: Colors.white12),
+            onPressed: () {
+               Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatScreen()));
+            },
+          ),
+        ],
+      ),
+
+      // --- Body ---
+      body: Column(
+        children: [
+          // 言語切替バー
+          Container(
+            color: Colors.white10,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildLangButton("JA", _isJapaneseSource),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Icon(Icons.swap_horiz, color: Colors.cyanAccent),
+                ),
+                _buildLangButton("EN", !_isJapaneseSource),
+              ],
+            ),
+          ),
+
+          // ログ表示エリア (LINE風)
+          Expanded(
+            child: _logs.isEmpty
+                ? Center(
+                    child: Text(
+                      "READY TO BREAK",
+                      style: TextStyle(
+                        color: Colors.white10,
+                        fontSize: 20,
+                        letterSpacing: 4.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _logs.length,
+                    itemBuilder: (context, index) {
+                      final log = _logs[index];
+                      return _buildLogBubble(log);
+                    },
+                  ),
+          ),
+
+          // ローディング表示 (Shimmer)
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: ShimmerLoading(),
+            ),
+
+          // 入力エリア
+          _buildInputArea(),
+        ],
+      ),
+    );
+  }
+
+  // --- UI Components ---
+
+  Widget _buildLangButton(String lang, bool isActive) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isJapaneseSource = (lang == "JA");
+        });
+        HapticFeedback.selectionClick();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.cyanAccent.withOpacity(0.2) : Colors.transparent,
+          border: Border.all(
+            color: isActive ? Colors.cyanAccent : Colors.white24,
+            width: 1,
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          lang,
+          style: TextStyle(
+            color: isActive ? Colors.cyanAccent : Colors.white54,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogBubble(TranslationLog log) {
+    final isUser = log.isUser;
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
+        decoration: BoxDecoration(
+          color: isUser ? Colors.white10 : Colors.cyanAccent.withOpacity(0.1),
+          border: isUser 
+              ? null 
+              : Border.all(color: Colors.cyanAccent.withOpacity(0.5)),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(12),
+            topRight: const Radius.circular(12),
+            bottomLeft: isUser ? const Radius.circular(12) : const Radius.circular(0),
+            bottomRight: isUser ? const Radius.circular(0) : const Radius.circular(12),
+          ),
+        ),
+        child: Text(
+          log.text,
+          style: TextStyle(
+            color: isUser ? Colors.white : Colors.cyanAccent,
+            fontSize: 16,
+            height: 1.4,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputArea() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32), // iPhone下部余白考慮
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        border: Border(top: BorderSide(color: Colors.white10)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // テキスト入力
+              Expanded(
+                child: TextField(
+                  controller: _inputController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: "Enter text...",
+                    hintStyle: const TextStyle(color: Colors.white38),
+                    filled: true,
+                    fillColor: Colors.white10,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  onSubmitted: (_) => _translate(), // Enterで送信
+                ),
+              ),
+              const SizedBox(width: 12),
+              
+              // マイクボタン（既存のものを使用）
+              GlowingMicButton(
+                onPressed: () {
+                  // 音声入力の実装を入れる場合はここ
+                  // 今回はテキスト送信メインの構成
+                  _translate(); 
+                },
+                isListening: false, // 必要に応じてState管理
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // ★ GLBボタン (The Trigger)
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _translate,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white10,
+                foregroundColor: Colors.cyanAccent,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: const BorderSide(color: Colors.white24),
+                ),
+              ),
+              child: _isLoading
+                  ? const Text(
+                      "PROCESSING…",
+                      style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                    )
+                  : const Text(
+                      "GLB", // ★ GLBのみ
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20, // ★押しやすさのためにサイズアップ
+                        letterSpacing: 4.0, // ★最大限の視認性
+                        color: Colors.cyanAccent,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,0 +1,299 @@
+GLB コード　⑤
+lib/screens/ist_interface.dart（確定版・コピペ）
+前提
+	•	NE URLは必ず本番URLに置換
+	•	glowing_mic_button.dart / shimmer_loading.dart は作成済み
+	•	マイク権限・ログ型翻訳・盾（requestId）すべて含む
+
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart'
+import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:permission_handler/permission_handler.dart';
+
+import '../widgets/glowing_mic_button.dart';
+import '../widgets/shimmer_loading.dart';
+import 'chat_screen.dart'; // 隠しコンソール（Release封印）
+
+class TranslationLog {
+  final String text;
+  final bool isUser;
+  TranslationLog({required this.text, required this.isUser});
+}
+
+class IstInterface extends StatefulWidget {
+  const IstInterface({super.key});
+
+  @override
+  State<IstInterface> createState() => _IstInterfaceState();
+}
+
+class _IstInterfaceState extends State<IstInterface> {
+  // ★ 本番URLに必ず置換
+  static const String _endpoint =
+      'https://us-central1-tomori-world.cloudfunctions.net/tomoriRun';
+
+  final TextEditingController _inputController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final stt.SpeechToText _speech = stt.SpeechToText();
+
+  final Uuid _uuid = const Uuid();
+  late final String _userId = _uuid.v4();
+  String? _activeRequestId;
+
+  List<TranslationLog> _logs = [];
+  bool _isLoading = false;
+  bool _isListening = false;
+  String _targetLang = 'en';
+
+  @override
+  void dispose() {
+    _speech.cancel();
+    _inputController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _openTomoriConsole() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ChatScreen()),
+    );
+  }
+
+  Future<void> _listen() async {
+    if (_isListening) {
+      await _speech.stop();
+      setState(() => _isListening = false);
+      return;
+    }
+
+    var status = await Permission.microphone.status;
+    if (status.isDenied) status = await Permission.microphone.request();
+    if (status.isPermanentlyDenied) {
+      await openAppSettings();
+      return;
+    }
+    if (!status.isGranted) return;
+
+    final available = await _speech.initialize(
+      onStatus: (s) {
+        if (s == 'done' || s == 'notListening') {
+          if (mounted) setState(() => _isListening = false);
+        }
+      },
+      onError: (_) {
+        if (mounted) setState(() => _isListening = false);
+      },
+    );
+
+    if (!available) return;
+
+    setState(() => _isListening = true);
+    HapticFeedback.lightImpact();
+
+    final localeId = _targetLang == 'en' ? 'ja_JP' : 'en_US';
+    _speech.listen(
+      localeId: localeId,
+      onResult: (r) {
+        setState(() => _inputController.text = r.recognizedWords);
+      },
+    );
+  }
+
+  Future<void> _translate() async {
+    final text = _inputController.text.trim();
+    if (text.isEmpty) return;
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      _isLoading = true;
+      _logs.add(TranslationLog(text: text, isUser: true));
+    });
+    _scrollToBottom();
+    _inputController.clear();
+
+    try {
+      _activeRequestId ??= _uuid.v4();
+      final reqId = _activeRequestId!;
+
+      final body = jsonEncode({
+        "userId": _userId,
+        "text": text,
+        "mode": "translate",
+        "dstLang": _targetLang,
+        "requestId": reqId,
+        "timestamp": DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      });
+
+      final res = await http.post(
+        Uri.parse(_endpoint),
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['decision'] == 'GO') {
+          setState(() {
+            _logs.add(TranslationLog(text: data['result'], isUser: false));
+            _activeRequestId = null;
+          });
+          HapticFeedback.lightImpact();
+        } else {
+          setState(() {
+            _logs.add(TranslationLog(text: data['result'], isUser: false));
+          });
+        }
+      } else {
+        setState(() {
+          _logs.add(TranslationLog(text: 'Server Error', isUser: false));
+        });
+      }
+    } catch (_) {
+      setState(() {
+        _logs.add(TranslationLog(text: 'Network Error', isUser: false));
+      });
+    } finally {
+      setState(() => _isLoading = false);
+      _scrollToBottom();
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        centerTitle: true,
+        title: GestureDetector(
+          onLongPress: kReleaseMode ? null : _openTomoriConsole,
+          child: const Text(
+            'TRANSLATION HISTORY',
+            style: TextStyle(color: Colors.white24, letterSpacing: 2.0),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() => _targetLang = _targetLang == 'en' ? 'ja' : 'en');
+              HapticFeedback.selectionClick();
+            },
+            child: Text(
+              _targetLang == 'en' ? 'TO: ENGLISH' : 'TO: JAPANESE',
+              style: const TextStyle(color: Colors.cyanAccent),
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: _logs.length + (_isLoading ? 1 : 0),
+              itemBuilder: (context, i) {
+                if (_isLoading && i == _logs.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: ShimmerLoading(width: 160, height: 28, borderRadius: 12),
+                  );
+                }
+                final log = _logs[i];
+                return Align(
+                  alignment:
+                      log.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    constraints: BoxConstraints(
+                        maxWidth:
+                            MediaQuery.of(context).size.width * 0.75),
+                    decoration: BoxDecoration(
+                      color: log.isUser
+                          ? const Color(0xFF333333)
+                          : const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.circular(16),
+                      border: log.isUser
+                          ? null
+                          : Border.all(
+                              color: Colors.cyanAccent.withOpacity(0.5)),
+                    ),
+                    child: Text(
+                      log.text,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: Color(0xFF0D0D0D),
+              border: Border(top: BorderSide(color: Colors.white10)),
+            ),
+            child: Row(
+              children: [
+                GlowingMicButton(
+                  isListening: _isListening,
+                  onTap: _listen,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _inputController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: _targetLang == 'en'
+                          ? '日本語で入力...'
+                          : 'Enter English...',
+                      hintStyle:
+                          TextStyle(color: Colors.white.withOpacity(0.3)),
+                      filled: true,
+                      fillColor: const Color(0xFF1A1A1A),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onSubmitted: (_) => _translate(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                IconButton(
+                  onPressed: _isLoading ? null : _translate,
+                  icon: Icon(
+                    Icons.send_rounded,
+                    color:
+                        _isLoading ? Colors.grey : Colors.cyanAccent,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

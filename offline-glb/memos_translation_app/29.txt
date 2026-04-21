@@ -1,0 +1,8 @@
+voiceType = "TOMORI-CORE"
+pitch = +6         // 可愛いすぎず、優しさを残す
+speed = 1.02       // 少し速くてキビキビ
+breath = +10%      // 優しさ
+bassBoost = +8%    // Dandyの落ち着き
+intonation = "soft_up" // 親しみ
+emotion = "calm_warm"
+pronunciation = "global_clean"

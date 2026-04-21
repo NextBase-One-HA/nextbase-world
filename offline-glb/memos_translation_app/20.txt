@@ -1,0 +1,8 @@
+onSpeech(speakerId, text):
+  src = participants[speakerId].lang        // 例: 'ja'
+  for each p in participants where p.id != speakerId:
+      // A→EN→p.lang のピボット翻訳
+      translated = pivotTranslate(text, src, p.lang)
+      // それぞれの言語で表示＋音声再生
+      UI.addBubble(speakerId, p.id, text, translated)
+      SpeechOut.play(translated, p.lang)

@@ -1,0 +1,4 @@
+userSpeech -> SpeechIn -> jpText
+jpText -> pivotTranslate(jp -> en) -> enTextFromOther
+enTextFromOther -> Tomori.ask("どう返す？") -> enReply
+enReply -> pivotTranslate(en -> jp / other) -> replyText

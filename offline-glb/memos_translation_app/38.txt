@@ -1,0 +1,10 @@
+[STYLE_TOMORI_WORLD]
+background_color: #000000
+primary_color: #00D0C8
+text_color: #FFFFFF
+sub_text_color: #B0B0B0
+card_radius: 18
+button_radius: 12
+border_style: subtle
+noise: light_grain
+effect: soft_glow_under_primary_elements

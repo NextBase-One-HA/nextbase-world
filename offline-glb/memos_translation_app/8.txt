@@ -1,0 +1,9 @@
+loop on audio_chunk:
+  speaker = detectSpeaker(audio_chunk)   // A or B（最初は手動トグルでもOK）
+  langFrom, langTo = resolveLangPair(speaker)
+
+  text = SpeechIn.toText(chunk, langFrom)
+  translated = TranslationEngine.pivotTranslate(text, langFrom, langTo)
+  SpeechOut.play(translated.text, langTo)
+
+  UI.appendBubble(speaker, text, translated.text)

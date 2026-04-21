@@ -1,0 +1,129 @@
+import 'package:flutter/foundation.dart';
+
+enum EngineType { gpt, gemini, neFallback }
+
+class TranslationResult {
+  final String text;
+  final EngineType engine;
+  final bool isSafeForKids;
+
+  TranslationResult({
+    required this.text,
+    required this.engine,
+    required this.isSafeForKids,
+  });
+}
+
+class TranslationEngine {
+  /// Pivot構造: A -> EN -> B
+  Future<TranslationResult> pivotTranslate({
+    required String sourceText,
+    required String fromLang, // "ja", "en", etc.
+    required String toLang,
+    bool kidsMode = false,
+  }) async {
+    if (sourceText.trim().isEmpty) {
+      return TranslationResult(
+        text: "",
+        engine: EngineType.gpt,
+        isSafeForKids: true,
+      );
+    }
+
+    try {
+      // 1. A -> EN
+      final toEnglish = await _translateStep(
+        text: sourceText,
+        fromLang: fromLang,
+        toLang: "en",
+        kidsMode: kidsMode,
+      );
+
+      // 2. EN -> B
+      final toTarget = await _translateStep(
+        text: toEnglish.text,
+        fromLang: "en",
+        toLang: toLang,
+        kidsMode: kidsMode,
+      );
+
+      return toTarget;
+    } catch (_) {
+      // 両方NGなら neFallback（将来 ne_gateway に投げる）
+      return await _neFallback(
+        sourceText: sourceText,
+        fromLang: fromLang,
+        toLang: toLang,
+        kidsMode: kidsMode,
+      );
+    }
+  }
+
+  Future<TranslationResult> _translateStep({
+    required String text,
+    required String fromLang,
+    required String toLang,
+    required bool kidsMode,
+  }) async {
+    // シンプルな品質チェック（数字だけなど）
+    if (_isTrivial(text)) {
+      return TranslationResult(
+        text: text,
+        engine: EngineType.gpt,
+        isSafeForKids: true,
+      );
+    }
+
+    // 短文→Gemini、長文→GPT などの自動選択（今はダミー）
+    final engine = _selectEngine(text);
+
+    // TODO: 実際のAPI呼び出しを実装（エンジニア向け）
+    String translated = "[dummy $fromLang->$toLang] $text";
+
+    if (kidsMode) {
+      translated = _applyKidsFilter(translated);
+    }
+
+    return TranslationResult(
+      text: translated,
+      engine: engine,
+      isSafeForKids: kidsMode,
+    );
+  }
+
+  EngineType _selectEngine(String text) {
+    if (text.length < 60) {
+      return EngineType.gemini;
+    } else {
+      return EngineType.gpt;
+    }
+  }
+
+  bool _isTrivial(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return true;
+    final onlyDigits = RegExp(r'^[0-9]+$');
+    if (onlyDigits.hasMatch(trimmed)) return true;
+    return false;
+  }
+
+  String _applyKidsFilter(String text) {
+    // TODO: NGワード辞書を追加して伏字処理
+    return text;
+  }
+
+  Future<TranslationResult> _neFallback({
+    required String sourceText,
+    required String fromLang,
+    required String toLang,
+    required bool kidsMode,
+  }) async {
+    // TODO: ne_gateway.dart の呼び出しに差し替え
+    debugPrint("neFallback called");
+    return TranslationResult(
+      text: "[ne_fallback $fromLang->$toLang] $sourceText",
+      engine: EngineType.neFallback,
+      isSafeForKids: kidsMode,
+    );
+  }
+}

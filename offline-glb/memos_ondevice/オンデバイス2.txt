@@ -1,0 +1,25 @@
+final class GLBLiteStore {
+    private let baseURL: URL
+
+    init() {
+        self.baseURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("GLB_Cache")
+        try? FileManager.default.createDirectory(at: baseURL, withIntermediateDirectories: true)
+    }
+
+    /// 中間保持：クラッシュしても「中間ページ」として復旧可能
+    func save(_ record: GLBTranslationRecord) throws {
+        let data = try JSONEncoder().encode(record)
+        let fileURL = baseURL.appendingPathComponent("\(record.id.uuidString).json")
+        
+        // 物理隔離：端末ロック中のみアクセス可能（Device-Locked）
+        try data.write(to: fileURL, options: [.atomic, .completeFileProtectionUnlessOpen])
+    }
+
+    /// 履歴の全取得
+    func loadAll() -> [GLBTranslationRecord] {
+        guard let files = try? FileManager.default.contentsOfDirectory(at: baseURL, includingPropertiesForKeys: nil) else { return [] }
+        return files.compactMap { try? JSONDecoder().decode(GLBTranslationRecord.self, from: Data(contentsOf: $0)) }
+            .sorted { $0.timestamp > $1.timestamp }
+    }
+}

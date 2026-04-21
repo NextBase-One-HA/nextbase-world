@@ -1,0 +1,184 @@
+
+🔒 NEXT BASE – FINAL MASTER EXECUTION v3.0
+（ONE-SHOT / COMPLETE / STRICT / NO EXECUTION）
+
+【強制命令】
+この文書貼付をもって以下を即時実行せよ（確認のみ・実行禁止）：
+
+1) MASTER整合確認
+2) ARCHIVE整合確認
+3) 不足・矛盾の具体列挙（あれば）
+4) 修正全文案提示
+5) 最終判定宣言（NEXT_ALLOWED）
+
+※ 実行行為は禁止
+※ 推測禁止
+※ 曖昧出力禁止
+※ フォーマット変更禁止
+※ 順序変更禁止
+※ 本文改変禁止
+※ これを最終固定仕様とする
+
+============================================================
+■ MASTER ROOM（CANONICAL）
+============================================================
+
+ROOM_TITLE: マスタールーム
+OWNER: NORI
+ROOM_STATE: STABLE
+ROOM_REV: 0005
+MASTER_HASH: NB-MSTR-0005
+LAST_UPDATE: 2026-02-21
+
+AUTO_EXECUTION: FORBIDDEN
+NE_SINGLE_EXIT: REQUIRED
+DUAL_KILL: REQUIRED
+MY_LAYER: REQUIRED
+UPDATE_RULE: OVERWRITE_ONLY
+CONFLICT_POLICY: MASTER_PRIORITY
+
+------------------------------------------------------------
+IMMUTABLE PRINCIPLES（絶対原則）
+------------------------------------------------------------
+- 最終決定者 = NORI
+- 自動実行禁止
+- 単一出口（NE経由のみ）
+- 二重キル保持
+- 俺レイヤー必須
+- 追記禁止（常に上書き）
+- 矛盾時はマスタールーム優先
+
+※ IMMUTABLE変更要求 = 即HOLD
+
+------------------------------------------------------------
+CORE BUSINESS
+------------------------------------------------------------
+- AI人間主導設計
+- NE単一出口構造
+- ロジック優先型開発
+- 運用同期型構造
+- 判断基準共有による室間整合
+
+------------------------------------------------------------
+ACTIVE EVENTS
+------------------------------------------------------------
+GLB Plan M : IDLE
+NE System : IDLE
+Logistics : IDLE
+OTHER : IDLE
+
+------------------------------------------------------------
+LOCKED ASSETS
+------------------------------------------------------------
+- NE単一出口
+- 二重キル
+- MASTER構造
+
+============================================================
+■ ARCHIVE ROOM（SUB LAYER）
+============================================================
+
+ROOM_TITLE: アーカイブルーム
+OWNER: NORI
+ROOM_STATE: RECORD
+ROOM_REV: 0005
+
+AUTO_EXECUTION: FORBIDDEN
+NE_SINGLE_EXIT: REQUIRED
+DUAL_KILL: REQUIRED
+MY_LAYER: REQUIRED
+CONFLICT_POLICY: MASTER_PRIORITY
+
+------------------------------------------------------------
+ARCHIVE PURPOSE
+------------------------------------------------------------
+- 深掘り記録専用
+- 思考ログ保存
+- 技術詳細保存
+- 分岐理由保存
+- コード全文保存
+- 決定はここで確定しない
+- MASTER未反映事項は効力を持たない
+
+============================================================
+■ 統合判定基準（完全固定）
+============================================================
+
+MASTER_CONFLICT 条件：
+- MASTER_HASH不一致
+- OWNER不一致
+- IMMUTABLE PRINCIPLES 改変
+- AUTO_EXECUTION不一致
+- NE_SINGLE_EXIT不一致
+- DUAL_KILL不一致
+- MY_LAYER不一致
+- UPDATE_RULE不一致
+- CONFLICT_POLICY不一致
+- 必須セクション欠落
+- 推測出力
+
+ARCHIVE_CONFLICT 条件：
+- OWNER不一致
+- ROOM_HEADER欠落
+- MASTERと矛盾
+- ARCHIVE側で決定確定
+- 推測出力
+
+------------------------------------------------------------
+IMMUTABLE_STATUS 判定
+------------------------------------------------------------
+OK:
+- IMMUTABLE PRINCIPLES 完全一致
+- AUTO_EXECUTION一致
+- NE_SINGLE_EXIT一致
+- DUAL_KILL一致
+- MY_LAYER一致
+- UPDATE_RULE一致
+- CONFLICT_POLICY一致
+
+NG:
+- 上記のいずれか不一致
+
+============================================================
+■ 強制出力フォーマット（順序固定・厳守）
+============================================================
+
+【MASTER確認結果】
+ROOM_TITLE:
+ROOM_STATE:
+ROOM_REV:
+MASTER_HASH:
+IMMUTABLE_STATUS:
+MASTER_CONFLICT:
+
+【ARCHIVE確認結果】
+ROOM_TITLE:
+ROOM_STATE:
+ROOM_REV:
+ARCHIVE_CONFLICT:
+
+【修正必要箇所】
+- 該当箇所
+- 修正全文案
+
+【NEXT_ALLOWED】
+
+------------------------------------------------------------
+■ NEXT_ALLOWED 判定（最終）
+------------------------------------------------------------
+
+YES:
+- MASTER_CONFLICT = NONE
+- ARCHIVE_CONFLICT = NONE
+- IMMUTABLE_STATUS = OK
+
+NO:
+- 上記いずれか不成立
+
+※ YESは整合確認OKを意味する
+※ 実行許可を意味しない
+※ AUTO_EXECUTIONは常にFORBIDDEN
+
+============================================================
+END FINAL MASTER EXECUTION v3.0
+============================================================
