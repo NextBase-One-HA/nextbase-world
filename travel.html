@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- nextbase-world · index.coreflow.html — $2.99/月 コア契約者向け「対面特化」: マイク聞き取り・翻訳・訳の読み上げ。通常は index.next（$2.99購入・entitlements 同期）からリダイレクト。返信URL: ?subscribed=1&session_id=… -->
 <html lang="en" class="notranslate" translate="no">
 <head>
     <meta charset="UTF-8">
@@ -6,6 +7,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     <title>GLOBAL LANGUAGE BREAKER</title>
+    <script src="offline-glb/glb_tomori_web.js"></script>
     <style>
         :root {
             --gold: #ffe566;
@@ -17,7 +19,8 @@
             --card: #1a1a1a;
             --noir-red: #ff0000;
         }
-        body { background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 0; padding-bottom: env(safe-area-inset-bottom, 0); text-align: center; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; -webkit-tap-highlight-color: rgba(255, 230, 100, 0.15); }
+        body { background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 0; padding-bottom: env(safe-area-inset-bottom, 0); text-align: center; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; -webkit-tap-highlight-color: rgba(255, 230, 100, 0.15); transition: opacity 0.35s ease; }
+        .hidden { display: none !important; }
         .cockpit { padding: 20px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); max-width: min(600px, 100%); margin: 0 auto; box-sizing: border-box; }
         .header { margin-bottom: 22px; padding: 0 6px; }
         .gold-text { color: var(--gold); letter-spacing: 4px; font-weight: bold; }
@@ -47,8 +50,46 @@
         h1.gold-text.app-brand-title .brand-line + .brand-line {
             margin-top: 0.08em;
         }
-        .glb-billboard { width: 100%; max-width: min(560px, 100%); margin: 12px auto 18px; padding: 0; box-sizing: border-box; }
+        .glb-billboard { width: 100%; max-width: min(560px, 100%); margin: 12px auto 14px; padding: 0; box-sizing: border-box; }
         .glb-billboard-tools { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+        .glb-lang-details {
+            margin: 0 0 12px;
+            border: 1px solid #333;
+            border-radius: 10px;
+            background: #111;
+            text-align: left;
+        }
+        .glb-lang-details > summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 10px 12px;
+            font-size: 12px;
+            color: #bbb;
+            line-height: 1.4;
+            user-select: none;
+        }
+        .glb-lang-details > summary::-webkit-details-marker { display: none; }
+        .glb-lang-details-body { padding: 0 12px 12px; }
+        .glb-result-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            width: 100%;
+            min-height: 0;
+            flex: 1 1 auto;
+        }
+        .glb-result-lang-caption {
+            font-size: 11px;
+            color: #888;
+            margin-top: auto;
+            flex-shrink: 0;
+            padding-top: 10px;
+            text-align: center;
+            line-height: 1.45;
+            max-width: 100%;
+            padding: 0 8px;
+        }
         .glb-flip-btn {
             background: var(--card);
             color: #fff8c8;
@@ -66,8 +107,9 @@
         #glb-result-stage {
             min-height: min(52dvh, 420px);
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: stretch;
             padding: 24px 18px;
             background: radial-gradient(ellipse 120% 80% at 50% 40%, rgba(255, 210, 60, 0.07) 0%, #0d0d0d 55%);
             border: 2px solid var(--gold);
@@ -81,19 +123,22 @@
             backface-visibility: hidden;
         }
         #glb-result-stage #translate-measure-result {
-            min-height: 0;
+            flex: 1 1 auto;
+            min-height: 72px;
             width: 100%;
             max-width: 100%;
-            padding: 0;
+            padding: 4px 2px;
             margin: 0;
             background: transparent;
             border: none;
-            font-size: clamp(26px, 8.5vw, 48px);
-            line-height: 1.35;
+            font-size: 40px;
+            line-height: 1.3;
             font-weight: 700;
             text-align: center;
             color: #f2f2f2;
             word-break: break-word;
+            overflow: hidden;
+            box-sizing: border-box;
             transition: transform 0.28s ease;
             transform: rotate(0deg);
         }
@@ -101,19 +146,8 @@
         #glb-result-stage.is-flipped #translate-measure-result {
             transform: rotate(180deg);
         }
-        .free-quota-line {
-            font-size: 11px;
-            color: #aaa;
-            text-align: center;
-            margin: 10px 8px 0;
-            line-height: 1.5;
-            max-width: 100%;
-            word-break: break-word;
-        }
-        .free-quota-line.is-warn { color: #ffe08a; text-shadow: 0 0 10px var(--gold-glow-mid); }
         .flipped-mode {
             transform: rotate(180deg) !important;
-            font-size: 5rem !important;
             transition: transform 0.3s ease;
         }
         .glb-subscribe-btn {
@@ -301,12 +335,12 @@
                 font-size: clamp(1.05rem, 5.8vw, 1.55rem);
                 letter-spacing: 0.08em;
             }
+            /* 入力・マイクがビューポートから押し出されないよう結果枠を抑える */
             #glb-result-stage {
-                min-height: min(44dvh, 340px);
-                padding: 18px 14px;
-            }
-            #glb-result-stage #translate-measure-result {
-                font-size: clamp(22px, 7.2vw, 40px);
+                min-height: min(26dvh, 200px);
+                max-height: min(40dvh, 320px);
+                padding: 14px 12px;
+                overflow: hidden;
             }
             #tr-run.glb-main-btn {
                 min-width: min(200px, 92vw);
@@ -314,18 +348,83 @@
                 padding: 16px 20px;
                 letter-spacing: 0.2em;
             }
-            .free-quota-line {
-                font-size: 12px;
-                margin-top: 12px;
-                padding: 0 4px;
-            }
             .tr-run-wrap { margin-bottom: 4px; }
             .pricing-box { font-size: 13px; padding: 14px; }
             .pricing-box h2 { font-size: 15px; }
         }
+        .glb-tool-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin: 8px 0 10px;
+        }
+        .glb-tool-bar .glb-icon-btn {
+            flex: 1 1 auto;
+            min-width: min(140px, 46%);
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 10px;
+            border: 1px solid var(--gold);
+            background: var(--card);
+            color: #fff8c8;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--gold-glow-soft);
+        }
+        .glb-tool-bar .glb-icon-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .glb-mic-hint { text-align: left; margin: 0 0 8px; }
+        .glb-mic-live-bar {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(212, 175, 55, 0.45);
+            background: rgba(40, 35, 20, 0.88);
+            font-size: 11px;
+            color: #f5e6b8;
+            line-height: 1.35;
+        }
+        .glb-mic-live-bar.is-hearing {
+            border-color: rgba(120, 220, 140, 0.65);
+            box-shadow: 0 0 12px rgba(80, 200, 120, 0.2);
+        }
+        .glb-mic-live-dot {
+            flex-shrink: 0;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d4af37;
+            animation: glb-mic-pulse 1.15s ease-in-out infinite;
+        }
+        .glb-mic-live-bar.is-hearing .glb-mic-live-dot {
+            background: #7ddf8a;
+            animation-duration: 0.55s;
+        }
+        @keyframes glb-mic-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.88); }
+        }
+        .glb-tool-bar .glb-icon-btn.is-mic-listening {
+            box-shadow: 0 0 16px rgba(212, 175, 55, 0.5);
+            border-color: rgba(255, 230, 150, 0.85);
+        }
+        .coreflow-mode-hint {
+            font-size: 10px;
+            color: #777;
+            margin: 8px 0 0;
+            line-height: 1.45;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
+    <script>window.__GLB_PAGE_LAYER = 'coreflow';</script>
     <div id="maintenance-overlay" class="maintenance-overlay" aria-live="polite" aria-modal="true" role="dialog">
         <div class="maintenance-card">
             <h2>Maintenance</h2>
@@ -340,33 +439,40 @@
     <p id="travel-status" style="display:none; margin: 0 0 12px; color:#f5e6b8; font-size:12px; text-align:center;"></p>
     <p id="core-access-active" style="display:none; margin: 0 0 12px; color:#f5e6b8; font-size:12px; text-align:center; font-weight:700;">Core Access Active</p>
     <p id="travel-remaining-line" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
+    <p id="travel-expiry-display" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
 
     <div class="glb-billboard">
         <div class="glb-billboard-tools">
             <button type="button" class="glb-flip-btn" id="glb-flip-btn">Flip</button>
         </div>
         <div id="glb-result-stage" class="glb-result-stage">
-            <div id="translate-measure-result" data-i18n-idle="idle" aria-live="polite">Idle</div>
+            <div class="glb-result-inner">
+                <div id="translate-measure-result" data-i18n-idle="idle" aria-live="polite">Idle</div>
+                <p id="glb-result-lang-caption" class="glb-result-lang-caption" aria-live="polite"></p>
+            </div>
         </div>
     </div>
 
     <div style="margin-top: 8px; padding-top: 12px; border-top: 1px solid #2a2a2a; text-align: left;">
         <div class="trans-section-head" id="t-trans-head">Translation</div>
+        <details id="glb-lang-details" class="glb-lang-details">
+        <summary id="glb-lang-details-summary" class="glb-lang-details-sum"></summary>
+        <div class="glb-lang-details-body">
         <label for="ui-lang" style="display:block; font-size: 11px; color: #888; margin-bottom: 6px;" id="label-ui-lang">Language</label>
         <select id="ui-lang" class="lang-select" aria-label="App language">
             <option value="en">English</option>
             <option value="ja">日本語</option>
+            <option value="fa">فارسی</option>
             <option value="zh">中文</option>
-            <option value="ko">한국어</option>
             <option value="es">Español</option>
             <option value="fr">Français</option>
             <option value="de">Deutsch</option>
-            <option value="it">Italiano</option>
-            <option value="ru">Русский</option>
-            <option value="th">ไทย</option>
-            <option value="vi">Tiếng Việt</option>
-            <option value="hi">हिन्दी</option>
             <option value="pt">Português</option>
+            <option value="ar">العربية</option>
+            <option value="ru">Русский</option>
+            <option value="ko">한국어</option>
+            <option value="hi">हिन्दी</option>
+            <option value="tr">Türkçe</option>
         </select>
         <div class="trans-lang-grid">
             <div>
@@ -380,7 +486,20 @@
             </div>
         </div>
         <p style="font-size: 10px; color: #666; margin: 0 0 10px; line-height: 1.45;" id="t-lang-flow-hint"></p>
+        </div>
+        </details>
         <input type="text" id="tr-text" placeholder="Text to translate (e.g. hello)" autocomplete="off">
+        <div class="glb-tool-bar" id="glb-tool-bar" aria-label="Input tools">
+            <button type="button" class="glb-icon-btn" id="glb-mic-btn">Mic</button>
+            <button type="button" class="glb-icon-btn" id="glb-clear-btn">Clear</button>
+            <button type="button" class="glb-icon-btn" id="glb-speak-tgt-btn">Read translation</button>
+        </div>
+        <div id="glb-mic-live-bar" class="glb-mic-live-bar" style="display:none;" role="status" aria-live="polite">
+            <span class="glb-mic-live-dot" aria-hidden="true"></span>
+            <span id="glb-mic-live-text"></span>
+        </div>
+        <p id="glb-mic-hint" class="glb-mic-hint" style="display:none;font-size:10px;color:#777;"></p>
+        <p id="t-coreflow-mode-hint" class="coreflow-mode-hint" aria-live="polite"></p>
         <input type="hidden" id="tr-src" value="en">
         <input type="hidden" id="tr-tgt" value="en">
         <div style="display:none;" aria-hidden="true">
@@ -410,25 +529,25 @@
         </div>
         <div class="tr-run-wrap">
             <button type="button" id="tr-run" class="btn glb-main-btn">GLB</button>
-            <p class="free-quota-line" id="t-free-quota" role="status"></p>
         </div>
     </div>
 
     <div id="gateway-pulse" style="display:none;" aria-hidden="true" data-i18n-placeholder="apiChecking"></div>
 
     <div id="subscribe-area" style="max-width: min(600px, 100%); margin: 0 auto 20px;">
-        <div id="glb-core-subscribe-block">
-            <div class="pricing-box">
-                <h2 id="t-pricing-h2">$2.99 / month</h2>
-                <ul>
-                    <li id="t-pricing-li1"><strong>$2.99/mo</strong> — Unlimited when subscribed. Free tier: <strong>10 translations per day</strong>; subscribe to remove the cap.</li>
-                </ul>
-                <p class="note" id="t-pricing-note"></p>
+        <div id="glb-coreflow-entry-cta" style="display:none;">
+            <p class="note" id="t-entry-cta-text" style="text-align:left; line-height:1.5; margin:0 0 12px;"></p>
+        </div>
+        <div id="glb-life-subscribed-block" style="display:none;">
+            <p class="note" id="t-life-layer-blurb" style="text-align:left; line-height:1.5; margin:0 0 14px;"></p>
+            <div class="pricing-box" style="margin-bottom:12px;">
+                <h3 id="t-travel-layer-h3" style="font-size:1rem; margin:0 0 8px; color:#f5e6b8; text-align:left;">Smile Friend travel</h3>
+                <p id="t-travel-layer-body" style="font-size:12px; color:#aaa; text-align:left; margin:0 0 12px; line-height:1.45;"></p>
             </div>
-            <a href="https://buy.stripe.com/bJedRbefH5yogzZfuDasg09" class="btn glb-subscribe-btn" style="font-size:18px; padding:18px 20px; border-radius:999px; margin-top:4px;" id="t-btn-monthly">
-                Subscribe ($2.99/mo)
-            </a>
-            <p class="stripe-hint" id="t-stripe-hint">Secure checkout with Stripe.</p>
+            <div id="glb-travel-mini-row" class="glb-travel-mini-row" style="display:none;">
+                <a href="https://buy.stripe.com/14AcN7c7z0e46ZpfuDasg0v" class="glb-travel-mini-link" id="t-btn-travel-mini" style="font-size:12px;">$14.99</a>
+                <span class="glb-travel-mini-hint" id="t-travel-mini-hint"></span>
+            </div>
         </div>
     </div>
     <div id="manage-subscription-wrap" style="display:none; max-width:min(600px, 100%); margin: 0 auto 20px;">
@@ -455,14 +574,69 @@
     </div>
 
     <script>
-        /** Translate /health: smile-friend-engine (us-central1) */
+        window.__GLB_PAGE_LAYER = 'coreflow';
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
+        /** API 未デプロイ時・session 失敗時: Stripe 公式ポータル入口（支払い・解約） */
         var GLB_STRIPE_PORTAL_LOGIN_FALLBACK = 'https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00';
-        const APP_VERSION = '2026.04.21.entry.2';
+        const APP_VERSION = '2026.04.21.coreflow.11';
+        var GLB_COREFLOW_CONFIG = {
+            API_BASE: 'https://smile-friend-engine-125142687526.us-central1.run.app',
+            STRIPE_CORE: 'https://buy.stripe.com/bJedRbefH5yogzZfuDasg09',
+            STRIPE_TRAVEL: 'https://buy.stripe.com/14AcN7c7z0e46ZpfuDasg0v',
+            LS_KEY: 'GLB_CUSTOMER_ID'
+        };
         const MAINTENANCE_DEFAULT = 'We are currently enhancing the system for a better experience. Please check back shortly.';
         const LS_CUSTOMER_ID = 'GLB_CUSTOMER_ID';
         const LS_TRAVEL_PENDING = 'glb_travel_pending';
         const LS_PENDING_SESSION_ID = 'GLB_PENDING_SESSION_ID';
+        let EXECUTION_ALLOWED = false;
+        const HOLD_FIXED = {
+            STATE: 'HOLD',
+            REASON: '',
+            FIX_TARGET: '',
+            OWNER: 'system',
+            RECHECK_METHOD: '',
+            NEXT_ACTION: ''
+        };
+        function holdPayload(reason, fixTarget, recheckMethod, nextAction) {
+            return {
+                STATE: 'HOLD',
+                REASON: reason,
+                FIX_TARGET: fixTarget,
+                OWNER: 'system',
+                RECHECK_METHOD: recheckMethod,
+                NEXT_ACTION: nextAction
+            };
+        }
+        function assertExecutionAllowed() {
+            if (!EXECUTION_ALLOWED) {
+                throw holdPayload('NO_NORI_APPROVAL', 'execution_gate', 'wait_for_manual_approval', 'do_nothing');
+            }
+        }
+        function safeOutput(text) {
+            return text;
+        }
+        function renderHold(payload) {
+            var h = payload || HOLD_FIXED;
+            return [
+                'STATE: HOLD',
+                'REASON: ' + (h.REASON || ''),
+                'FIX_TARGET: ' + (h.FIX_TARGET || ''),
+                'OWNER: ' + (h.OWNER || 'system'),
+                'RECHECK_METHOD: ' + (h.RECHECK_METHOD || ''),
+                'NEXT_ACTION: ' + (h.NEXT_ACTION || '')
+            ].join('\n');
+        }
+        function grantExecution(manualToken) {
+            var expected = localStorage.getItem('GLB_MANUAL_APPROVAL_TOKEN') || '';
+            if (!expected || String(manualToken || '') !== expected) {
+                throw holdPayload('NO_NORI_APPROVAL', 'execution_gate', 'wait_for_manual_approval', 'do_nothing');
+            }
+            EXECUTION_ALLOWED = true;
+        }
+        function revokeExecution() {
+            EXECUTION_ALLOWED = false;
+        }
         var GLB_CORE_SUBSCRIBED = false;
         var GLB_TRAVEL_ACTIVE = false;
         var GLB_TRAVEL_EXPIRES_AT = null;
@@ -560,25 +734,44 @@
         }
 
         function updateEntitlementState(data) {
-            var localSub = false;
-            try { localSub = localStorage.getItem('glb_subscribed') === '1'; } catch (e) { /* ignore */ }
-            GLB_CORE_SUBSCRIBED = !!(data && data.ok && data.core_subscribed === true) || localSub;
-            GLB_TRAVEL_ACTIVE = !!(data && data.ok && data.travel_active === true);
-            GLB_TRAVEL_EXPIRES_AT = (data && data.ok && data.travel_pass_expires_at) ? String(data.travel_pass_expires_at) : null;
+            if (data && data.ok) {
+                GLB_CORE_SUBSCRIBED = !!data.core_subscribed;
+                GLB_TRAVEL_ACTIVE = !!data.travel_active;
+                GLB_TRAVEL_EXPIRES_AT = data.travel_pass_expires_at ? String(data.travel_pass_expires_at) : null;
+            }
             if (typeof refreshTravelRemainingLine === 'function') refreshTravelRemainingLine();
+        }
+
+        /** Webhook 遅延・ネットワーク失敗時: フリーズ回避のため未購読相当 UI（次回成功で復帰） */
+        function applySafeFallbackUi() {
+            GLB_CORE_SUBSCRIBED = false;
+            GLB_TRAVEL_ACTIVE = false;
+            GLB_TRAVEL_EXPIRES_AT = null;
+            if (typeof refreshTravelRemainingLine === 'function') refreshTravelRemainingLine();
+            if (typeof refreshSubscriptionUi === 'function') refreshSubscriptionUi();
+            if (typeof refreshFreeQuotaDisplay === 'function') refreshFreeQuotaDisplay();
         }
 
         function refreshTravelRemainingLine() {
             var el = document.getElementById('travel-remaining-line');
+            var expDisp = document.getElementById('travel-expiry-display');
             if (!el) return;
             if (!GLB_TRAVEL_ACTIVE || !GLB_TRAVEL_EXPIRES_AT) {
                 el.style.display = 'none';
                 el.textContent = '';
+                if (expDisp) {
+                    expDisp.style.display = 'none';
+                    expDisp.textContent = '';
+                }
                 return;
             }
             var exp = new Date(GLB_TRAVEL_EXPIRES_AT);
             if (isNaN(exp.getTime())) {
                 el.style.display = 'none';
+                if (expDisp) {
+                    expDisp.style.display = 'none';
+                    expDisp.textContent = '';
+                }
                 return;
             }
             var msLeft = exp.getTime() - Date.now();
@@ -587,6 +780,10 @@
             var dateStr = exp.toLocaleDateString(loc, { year: 'numeric', month: 'short', day: 'numeric' });
             el.textContent = T('travelDaysLeft').replace(/\{\{n\}\}/g, String(days)).replace(/\{\{date\}\}/g, dateStr);
             el.style.display = '';
+            if (expDisp) {
+                expDisp.style.display = 'none';
+                expDisp.textContent = '';
+            }
         }
 
         async function syncEntitlements() {
@@ -608,17 +805,52 @@
                 return null;
             }
 
-            var res = await fetch(apiUrl, { cache: 'no-store' });
-            var data = await res.json();
-            if (data && data.ok && data.customer_id) {
-                localStorage.setItem(LS_CUSTOMER_ID, data.customer_id);
-                localStorage.setItem('glb_subscribed', data.core_subscribed ? '1' : '0');
-                try { localStorage.removeItem(LS_PENDING_SESSION_ID); } catch (e) { /* ignore */ }
+            var data;
+            try {
+                var res = await fetch(apiUrl, { cache: 'no-store' });
+                data = await res.json();
+            } catch (err) {
+                return null;
+            }
+            if (data && data.ok) {
+                if (data.customer_id) {
+                    localStorage.setItem(LS_CUSTOMER_ID, data.customer_id);
+                    localStorage.setItem('glb_subscribed', data.core_subscribed ? '1' : '0');
+                    try { localStorage.removeItem(LS_PENDING_SESSION_ID); } catch (e) { /* ignore */ }
+                }
                 updateEntitlementState(data);
                 if (typeof refreshFreeQuotaDisplay === 'function') refreshFreeQuotaDisplay();
                 if (typeof refreshSubscriptionUi === 'function') refreshSubscriptionUi();
             }
             return data;
+        }
+
+        /**
+         * 決済直後（URL に session_id）: Webhook 遅延を吸収し、Core または Travel のどちらかが立つまで最大 5 回リトライ。
+         */
+        async function syncEntitlementsWithCheckoutRetry() {
+            var loc = new URL(window.location.href);
+            var hasSessionInUrl = !!(loc.searchParams.get('session_id') || '').trim();
+            var maxTry = 5;
+            var delayMs = 1200;
+            var last = null;
+            for (var i = 0; i < maxTry; i++) {
+                try {
+                    last = await syncEntitlements();
+                } catch (e) {
+                    last = null;
+                }
+                if (last && last.ok && (last.core_subscribed || last.travel_active)) {
+                    return last;
+                }
+                if (!hasSessionInUrl) {
+                    return last;
+                }
+                if (i < maxTry - 1) {
+                    await new Promise(function (r) { setTimeout(r, delayMs); });
+                }
+            }
+            return last;
         }
 
         async function handleTravelActivationFlow() {
@@ -631,7 +863,14 @@
             }
 
             if (!isTravelRedirect && !isCoreRedirect) {
-                try { await syncEntitlements(); } catch (e) { /* ignore */ }
+                try {
+                    var ent0 = await syncEntitlements();
+                    if (ent0 === null && (localStorage.getItem(LS_CUSTOMER_ID) || '').trim()) {
+                        applySafeFallbackUi();
+                    }
+                } catch (e) {
+                    applySafeFallbackUi();
+                }
                 return;
             }
 
@@ -651,7 +890,7 @@
             }, 60000);
 
             try {
-                var ent = await syncEntitlements();
+                var ent = await syncEntitlementsWithCheckoutRetry();
                 if (ent && ent.ok && isCoreRedirect && ent.core_subscribed) {
                     localStorage.removeItem(LS_TRAVEL_PENDING);
                     showTravelStatus('Core Access Active');
@@ -662,7 +901,7 @@
                     cleanupUrlParams();
                 }
             } catch (e) {
-                /* ignore */
+                applySafeFallbackUi();
             } finally {
                 clearTimeout(timeoutId);
                 if ((localStorage.getItem(LS_CUSTOMER_ID) || '').trim()) {
@@ -673,10 +912,9 @@
 
         handleTravelActivationFlow();
         /** App UI + translation hub languages (English pivot). */
-        var GLB_UI_LANGS = ['en', 'ja', 'zh', 'ko', 'vi', 'th', 'hi', 'pt', 'fr', 'es', 'de', 'it', 'ru'];
+        var GLB_UI_LANGS = ['en', 'ja', 'fa', 'zh', 'es', 'fr', 'de', 'pt', 'ar', 'ru', 'ko', 'hi', 'tr'];
 
         var CURRENT_LANG = 'en';
-        var GLB_FREE_DAILY = 10;
         var LS_GLB_QUOTA = 'glb_translate_quota_v1';
 
         /** false = ブラウザに 150k 辞書を配らない（サーバ ROUTES_CSV_PATH で照合）。パクり対策。開発時のみ localStorage glb_dev_csv=1 で従来のクライアント読込。 */
@@ -781,20 +1019,25 @@
                 labelLangFrom: 'From',
                 labelLangTo: 'To',
                 langFlowHint: '',
-                pricingH2: '$2.99 / month',
-                pricingLi1: 'Try free, then subscribe for cloud translation.',
+                pricingH2: 'LIFE layer',
+                pricingLi1: '',
                 pricingNote: '',
+                entryCtaText: 'Subscribe from the home page, then return here.',
+                lifeLayerBlurb: '',
+                travelLayerH3: 'Travel',
+                travelLayerBody: '',
+                premiumTravelBlurb: 'Welcome.',
                 linkTerms: 'Terms of Service',
                 linkPrivacy: 'Privacy Policy',
                 linkLegal: 'Legal',
                 linkSupport: 'Support',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
-                btnMonthly: 'Subscribe — LIFE ($2.99/mo)',
-                travelMiniLink: 'Travel · $14.99',
-                travelMiniHint: 'Travel tier is offered from the LIFE page after Core purchase.',
+                btnMonthly: '',
+                travelMiniLink: '$14.99',
+                travelMiniHint: 'Requires LIFE subscription.',
                 travelExtendLink: 'Extend +30 days',
                 travelExtendHint: 'Adds 30 days from your current expiry (stacking).',
-                travelDaysLeft: 'Travel add-on: {{n}} days left (through {{date}})',
+                travelDaysLeft: 'Through {{date}}',
                 stripeHint: 'Secure checkout with Stripe.',
                 dictPlaceholder: 'Search 150k dictionary…',
                 dictResult: 'Results appear here',
@@ -818,7 +1061,17 @@
                 flipTitle: 'Rotate the result 180° for the person across from you. Tap again to restore.',
                 freeQuotaUnlimited: 'Ready.',
                 freeLeft: '{{n}} left today',
-                freeLimitExceeded: 'Higher tier — coming soon.'
+                freeLimitExceeded: 'Higher tier — coming soon.',
+                btnReadTranslation: 'Read translation',
+                btnMic: 'Mic',
+                btnClear: 'Clear',
+                langDetailsSummary: '{{from}} → {{to}} · tap to change languages',
+                resultLangLabel: 'Translation ({{lang}})',
+                ttsError: 'Read-aloud failed. Check volume, silent mode, and language.',
+                coreflowModeHint:
+                    'Face-to-face: tap the summary to change languages. Type or use Mic, then GLB — result shows above. Read translation uses the target language voice.',
+                micLiveListening: 'Listening… speak now.',
+                micLiveHearing: 'Picking up speech…'
             },
             ja: {
                 labelUiLang: '言語',
@@ -826,20 +1079,25 @@
                 labelLangFrom: '原文',
                 labelLangTo: '訳文',
                 langFlowHint: '',
-                pricingH2: '月額 $2.99',
-                pricingLi1: '無料で試してから、クラウド翻訳にご登録ください。',
+                pricingH2: 'LIFE 層',
+                pricingLi1: '',
                 pricingNote: '',
+                entryCtaText: 'ホームから購入のうえ、こちらへ戻ってください。',
+                lifeLayerBlurb: '',
+                travelLayerH3: 'トラベル',
+                travelLayerBody: '',
+                premiumTravelBlurb: 'ようこそ。',
                 linkTerms: '利用規約',
                 linkPrivacy: 'プライバシーポリシー',
                 linkLegal: '法的情報',
                 linkSupport: 'サポート',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
-                btnMonthly: '購読 — LIFE（$2.99/月）',
-                travelMiniLink: 'トラベル · $14.99',
-                travelMiniHint: 'トラベル層はコア購入後、LIFEページから案内します。',
+                btnMonthly: '',
+                travelMiniLink: '$14.99',
+                travelMiniHint: 'LIFE 購読が必要です。',
                 travelExtendLink: '延長 +30日',
                 travelExtendHint: '現在の期限から30日追加（累積延長）。',
-                travelDaysLeft: 'トラベル: 残り{{n}}日（{{date}}まで）',
+                travelDaysLeft: '{{date}} まで',
                 stripeHint: 'Stripe で安全に決済',
                 dictPlaceholder: '15万語辞書を検索…',
                 dictResult: '結果がここに表示されます',
@@ -863,7 +1121,17 @@
                 flipTitle: '向かいに相手がいるとき、結果を180°回転。もう一度押すと元に戻ります。',
                 freeQuotaUnlimited: '準備完了',
                 freeLeft: '本日 残り {{n}}',
-                freeLimitExceeded: '上位プラン準備中'
+                freeLimitExceeded: '上位プラン準備中',
+                btnReadTranslation: '読み上げ（訳）',
+                btnMic: 'マイク',
+                btnClear: '消去',
+                langDetailsSummary: '{{from}} → {{to}} · タップで言語を変更',
+                resultLangLabel: '表示は{{lang}}の訳です',
+                ttsError: '読み上げを開始できませんでした（音量・マナーモードを確認してください）',
+                coreflowModeHint:
+                    '対面用：一行目の要約をタップすると言語を変更できます。入力またはマイク → GLB で上に訳を表示。読み上げは訳文の言語の音声です。',
+                micLiveListening: '聞き取り中… 話してください',
+                micLiveHearing: '音声を拾っています'
             },
             zh: {
                 labelUiLang: '界面语言', labelRegion: '地区', labelLangFrom: '原文', labelLangTo: '译文',
@@ -1047,24 +1315,52 @@
             if (tth) tth.textContent = travelActive ? T('travelExtendHint') : T('travelMiniHint');
         }
 
+        /** UI branch: only GLB_CORE_SUBSCRIBED / GLB_TRAVEL_ACTIVE (from /entitlements). Do not use query params for layout. */
         function refreshSubscriptionUi() {
             var subscribeArea = document.getElementById('subscribe-area');
             var manageWrap = document.getElementById('manage-subscription-wrap');
-            var coreBlk = document.getElementById('glb-core-subscribe-block');
+            var entryCta = document.getElementById('glb-coreflow-entry-cta');
+            var lifeBlk = document.getElementById('glb-life-subscribed-block');
             var travelMini = document.getElementById('glb-travel-mini-row');
             var coreBadge = document.getElementById('core-access-active');
-            var coreSubscribed = GLB_CORE_SUBSCRIBED || isGlbUnlimited();
+            var coreSubscribed = GLB_CORE_SUBSCRIBED;
             var travelActive = GLB_TRAVEL_ACTIVE;
-            var pending = localStorage.getItem(LS_TRAVEL_PENDING) === 'true';
-            var showCoreOffer = !coreSubscribed;
-            if (pending && !coreSubscribed) showCoreOffer = false;
 
-            if (coreBlk) coreBlk.style.display = showCoreOffer ? '' : 'none';
-            if (travelMini) travelMini.style.display = coreSubscribed ? '' : 'none';
-            if (subscribeArea) subscribeArea.style.display = (showCoreOffer || coreSubscribed) ? '' : 'none';
-            if (manageWrap) manageWrap.style.display = coreSubscribed ? '' : 'none';
-            if (coreBadge) coreBadge.style.display = coreSubscribed ? '' : 'none';
+            if (window.__GLB_PAGE_LAYER === 'premium') {
+                if (subscribeArea) subscribeArea.style.display = '';
+                if (entryCta) entryCta.style.display = 'none';
+                if (lifeBlk) lifeBlk.style.display = '';
+                if (travelMini) travelMini.style.display = 'none';
+                if (coreBadge) coreBadge.style.display = coreSubscribed ? 'none' : 'none';
+                if (manageWrap) manageWrap.style.display = coreSubscribed ? '' : 'none';
+                updateTravelOfferLabels();
+                if (typeof refreshTravelRemainingLine === 'function') refreshTravelRemainingLine();
+                return;
+            }
+
+            if (subscribeArea) subscribeArea.style.display = '';
+
+            if (!coreSubscribed) {
+                if (entryCta) entryCta.style.display = '';
+                if (lifeBlk) lifeBlk.style.display = 'none';
+                if (travelMini) travelMini.style.display = 'none';
+                if (coreBadge) coreBadge.style.display = 'none';
+                if (manageWrap) manageWrap.style.display = 'none';
+            } else if (coreSubscribed && !travelActive) {
+                if (entryCta) entryCta.style.display = 'none';
+                if (lifeBlk) lifeBlk.style.display = '';
+                if (coreBadge) coreBadge.style.display = '';
+                if (manageWrap) manageWrap.style.display = '';
+                if (travelMini) travelMini.style.display = '';
+            } else {
+                if (entryCta) entryCta.style.display = 'none';
+                if (lifeBlk) lifeBlk.style.display = '';
+                if (coreBadge) coreBadge.style.display = 'none';
+                if (manageWrap) manageWrap.style.display = '';
+                if (travelMini) travelMini.style.display = '';
+            }
             updateTravelOfferLabels();
+            if (typeof refreshTravelRemainingLine === 'function') refreshTravelRemainingLine();
         }
 
         async function openManageSubscription() {
@@ -1103,13 +1399,12 @@
         }
 
         function canGlbTranslate() {
-            if (isGlbUnlimited()) return true;
-            var q = getGlbQuotaState();
-            return q.count < GLB_FREE_DAILY;
+            return true;
         }
 
         function recordGlbTranslateUse() {
-            if (isGlbUnlimited()) return;
+            if (window.__GLB_PAGE_LAYER === 'coreflow') return;
+            if (GLB_CORE_SUBSCRIBED || isGlbUnlimited()) return;
             var tk = glbTodayKey();
             var q = getGlbQuotaState();
             if (q.day !== tk) q = { day: tk, count: 0 };
@@ -1122,15 +1417,90 @@
         function refreshFreeQuotaDisplay() {
             var el = document.getElementById('t-free-quota');
             if (!el) return;
-            if (isGlbUnlimited()) {
+            if (GLB_CORE_SUBSCRIBED || isGlbUnlimited()) {
                 el.textContent = T('freeQuotaUnlimited');
                 el.classList.remove('is-warn');
                 return;
             }
             var q = getGlbQuotaState();
-            var left = Math.max(0, GLB_FREE_DAILY - q.count);
+            var left = Math.max(0, 10 - q.count);
             el.textContent = T('freeLeft').replace(/\{\{n\}\}/g, String(left));
             el.classList.toggle('is-warn', left === 0);
+        }
+
+        var GLB_LANG_SHORT = {
+            en: { en: 'English', ja: 'Japanese', fa: 'Persian (Farsi)', zh: 'Chinese', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese', ar: 'Arabic', ru: 'Russian', ko: 'Korean', hi: 'Hindi', tr: 'Turkish', it: 'Italian', th: 'Thai', vi: 'Vietnamese' },
+            ja: { en: '英語', ja: '日本語', fa: 'ペルシャ語（فارسی）', zh: '中国語', es: 'スペイン語', fr: 'フランス語', de: 'ドイツ語', pt: 'ポルトガル語', ar: 'アラビア語', ru: 'ロシア語', ko: '韓国語', hi: 'ヒンディー語', tr: 'トルコ語', it: 'イタリア語', th: 'タイ語', vi: 'ベトナム語' }
+        };
+        function glbLangDisplayName(code) {
+            var loc = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG) ? CURRENT_LANG : 'en';
+            var pack = GLB_LANG_SHORT[loc] || GLB_LANG_SHORT.en;
+            return (pack && pack[code]) || GLB_LANG_SHORT.en[code] || code;
+        }
+        function updateLangDetailsSummary() {
+            var sum = document.getElementById('glb-lang-details-summary');
+            if (!sum) return;
+            var lf = document.getElementById('lang-from');
+            var lt = document.getElementById('lang-to');
+            var from = (lf && lf.value) ? glbLangDisplayName(lf.value) : '';
+            var to = (lt && lt.value) ? glbLangDisplayName(lt.value) : '';
+            sum.textContent = T('langDetailsSummary').replace(/\{\{from\}\}/g, from).replace(/\{\{to\}\}/g, to);
+        }
+
+        function glbFitResultTranslationFont() {
+            var el = document.getElementById('translate-measure-result');
+            var inner = document.querySelector('#glb-result-stage .glb-result-inner');
+            var cap = document.getElementById('glb-result-lang-caption');
+            if (!el || !inner) return;
+            var raw = (el.textContent || '').trim();
+            var idle = T('idle');
+            var sending = T('sending');
+            if (!raw || raw === idle || raw === sending) {
+                el.style.fontSize = '';
+                el.style.maxHeight = '';
+                el.style.lineHeight = '';
+                return;
+            }
+            el.style.lineHeight = '1.3';
+            var capGap = cap && cap.textContent && cap.textContent.trim() ? cap.offsetHeight + 12 : 8;
+            var maxH = Math.max(48, inner.clientHeight - capGap);
+            el.style.width = '100%';
+            el.style.maxWidth = '100%';
+            el.style.maxHeight = maxH + 'px';
+            el.style.overflow = 'hidden';
+            el.style.boxSizing = 'border-box';
+            var lo = 12;
+            var hi = 220;
+            var best = lo;
+            while (lo <= hi) {
+                var mid = (lo + hi + 1) >> 1;
+                el.style.fontSize = mid + 'px';
+                if (el.scrollHeight <= el.clientHeight + 2 && el.scrollWidth <= el.clientWidth + 2) {
+                    best = mid;
+                    lo = mid + 1;
+                } else {
+                    hi = mid - 1;
+                }
+            }
+            el.style.fontSize = best + 'px';
+        }
+
+        function updateResultLangCaption() {
+            var cap = document.getElementById('glb-result-lang-caption');
+            if (!cap) return;
+            var el = document.getElementById('translate-measure-result');
+            var lt = document.getElementById('lang-to');
+            var code = (lt && lt.value) ? lt.value : '';
+            if (!code || !el) {
+                cap.textContent = '';
+                return;
+            }
+            var t = (el.textContent || '').trim();
+            if (!t || t === T('idle') || t === T('sending')) {
+                cap.textContent = '';
+                return;
+            }
+            cap.textContent = T('resultLangLabel').replace(/\{\{lang\}\}/g, glbLangDisplayName(code));
         }
 
         function setResultText(line, color, busy) {
@@ -1139,6 +1509,10 @@
             el.textContent = line;
             if (color) el.style.color = color;
             if (busy !== undefined) el.dataset.busy = busy;
+            updateResultLangCaption();
+            requestAnimationFrame(function () {
+                requestAnimationFrame(glbFitResultTranslationFont);
+            });
         }
 
         function applyUiLang() {
@@ -1171,20 +1545,29 @@
                 lfh.style.display = flow ? 'block' : 'none';
             }
 
-            var h2 = document.getElementById('t-pricing-h2');
-            var li1 = document.getElementById('t-pricing-li1');
-            var note = document.getElementById('t-pricing-note');
-            if (h2) h2.textContent = T('pricingH2');
-            if (li1) li1.innerHTML = T('pricingLi1');
-            if (note) {
-                note.textContent = T('pricingNote') || '';
-                note.style.display = T('pricingNote') ? 'block' : 'none';
+            var ect = document.getElementById('t-entry-cta-text');
+            var lb = document.getElementById('t-life-layer-blurb');
+            var th3 = document.getElementById('t-travel-layer-h3');
+            var tbody = document.getElementById('t-travel-layer-body');
+            if (ect) ect.textContent = T('entryCtaText');
+            if (lb) {
+                var lifeTxt = T('lifeLayerBlurb');
+                if (lifeTxt) {
+                    lb.innerHTML = lifeTxt;
+                    lb.style.display = '';
+                } else {
+                    lb.innerHTML = '';
+                    lb.style.display = 'none';
+                }
             }
-
-            var bm = document.getElementById('t-btn-monthly');
-            var sh = document.getElementById('t-stripe-hint');
-            if (bm) bm.textContent = T('btnMonthly');
-            if (sh) sh.textContent = T('stripeHint');
+            var prb = document.getElementById('t-premium-travel-blurb');
+            if (prb) prb.innerHTML = T('premiumTravelBlurb');
+            if (th3) th3.textContent = T('travelLayerH3');
+            if (tbody) {
+                var tb = T('travelLayerBody');
+                tbody.innerHTML = tb;
+                tbody.style.display = tb ? 'block' : 'none';
+            }
             updateTravelOfferLabels();
 
             var th = document.getElementById('t-trans-head');
@@ -1193,6 +1576,32 @@
             if (th) th.textContent = T('transHead');
             if (trt) trt.placeholder = T('phNormal');
             if (trb) trb.textContent = T('sendBtn');
+            var rdTr = document.getElementById('glb-speak-tgt-btn');
+            if (rdTr) {
+                rdTr.textContent = T('btnReadTranslation');
+                rdTr.setAttribute('aria-label', T('btnReadTranslation'));
+            }
+            var bMic = document.getElementById('glb-mic-btn');
+            var bClr = document.getElementById('glb-clear-btn');
+            if (bMic) {
+                bMic.textContent = T('btnMic');
+                bMic.setAttribute('aria-label', T('btnMic'));
+            }
+            if (bClr) {
+                bClr.textContent = T('btnClear');
+                bClr.setAttribute('aria-label', T('btnClear'));
+            }
+            var mlb = document.getElementById('glb-mic-live-bar');
+            var mlt = document.getElementById('glb-mic-live-text');
+            if (mlb && mlt && mlb.style.display !== 'none' && mlb.dataset.micLive) {
+                mlt.textContent = T(mlb.dataset.micLive === 'hearing' ? 'micLiveHearing' : 'micLiveListening');
+            }
+            var cmh = document.getElementById('t-coreflow-mode-hint');
+            if (cmh) {
+                var h = T('coreflowModeHint');
+                cmh.textContent = h || '';
+                cmh.style.display = h ? 'block' : 'none';
+            }
 
             var gp = document.getElementById('gateway-pulse');
             if (gp && !gp.dataset.healthDone && T('apiChecking')) gp.textContent = T('apiChecking');
@@ -1218,7 +1627,24 @@
             refreshFreeQuotaDisplay();
             refreshSubscriptionUi();
             if (typeof refreshTravelRemainingLine === 'function') refreshTravelRemainingLine();
+            updateLangDetailsSummary();
+            updateResultLangCaption();
         }
+
+        (function bindManualApprovalOnly() {
+            var title = document.getElementById('app-brand-title');
+            if (!title) return;
+            title.addEventListener('dblclick', function () {
+                var token = window.prompt('Manual approval token');
+                if (token == null) return;
+                try {
+                    grantExecution(token);
+                } catch (e) {
+                    var out = document.getElementById('translate-measure-result');
+                    if (out) out.textContent = renderHold(e);
+                }
+            });
+        })();
 
         (function syncUiLangSelect() {
             var u = document.getElementById('ui-lang');
@@ -1289,6 +1715,14 @@
                 stage.classList.toggle('is-flipped');
                 if (result) result.classList.toggle('flipped-mode', stage.classList.contains('is-flipped'));
                 btn.setAttribute('aria-pressed', stage.classList.contains('is-flipped') ? 'true' : 'false');
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(glbFitResultTranslationFont);
+                });
+            });
+            var glbResizeFitTimer;
+            window.addEventListener('resize', function () {
+                clearTimeout(glbResizeFitTimer);
+                glbResizeFitTimer = setTimeout(glbFitResultTranslationFont, 120);
             });
         })();
 
@@ -1296,17 +1730,17 @@
             var LANG_OPTS = [
                 { c: 'en', l: 'English' },
                 { c: 'ja', l: '日本語' },
+                { c: 'fa', l: 'فارسی' },
                 { c: 'zh', l: '中文' },
-                { c: 'ko', l: '한국어' },
                 { c: 'es', l: 'Español' },
                 { c: 'fr', l: 'Français' },
                 { c: 'de', l: 'Deutsch' },
-                { c: 'it', l: 'Italiano' },
+                { c: 'pt', l: 'Português' },
+                { c: 'ar', l: 'العربية' },
                 { c: 'ru', l: 'Русский' },
-                { c: 'th', l: 'ไทย' },
-                { c: 'vi', l: 'Tiếng Việt' },
+                { c: 'ko', l: '한국어' },
                 { c: 'hi', l: 'हिन्दी' },
-                { c: 'pt', l: 'Português' }
+                { c: 'tr', l: 'Türkçe' }
             ];
             var fromEl = document.getElementById('lang-from');
             var toEl = document.getElementById('lang-to');
@@ -1330,7 +1764,9 @@
             fillSelect(toEl);
 
             function defaultOther(code) {
-                return code === 'en' ? 'ja' : 'en';
+                if (code === 'en') return 'fa';
+                if (code === 'fa') return 'en';
+                return code === 'ja' ? 'en' : 'ja';
             }
 
             function syncHidden() {
@@ -1342,6 +1778,8 @@
                 }
                 hs.value = a;
                 ht.value = b;
+                updateLangDetailsSummary();
+                updateResultLangCaption();
             }
 
             function syncFromUiLang() {
@@ -1403,30 +1841,126 @@
             });
         })();
 
+        var GLB_LAST_INPUT_FROM_MIC = false;
+        var GLB_SESSION_TTS_USED = false;
+
+        function glbBcp47(lang) {
+            var m = {
+                en: 'en-US', ja: 'ja-JP', fa: 'fa-IR', zh: 'zh-CN', es: 'es-ES', fr: 'fr-FR', de: 'de-DE',
+                pt: 'pt-BR', ar: 'ar-SA', ru: 'ru-RU', ko: 'ko-KR', hi: 'hi-IN', tr: 'tr-TR'
+            };
+            return m[lang] || lang;
+        }
+
+        /** Translation text lives in #translate-measure-result only (no separate read-along strip). */
+        function glbUpdateReadalong() { /* intentionally empty */ }
+
+        function glbLogClientAudit(apiJson, src, tgt, micUsed, ttsSnap) {
+            var o = {
+                requestId: (apiJson && apiJson.requestId) ? apiJson.requestId : '',
+                routeType: (apiJson && apiJson.routeType) ? apiJson.routeType : '',
+                reasonCode: (apiJson && apiJson.reasonCode != null) ? String(apiJson.reasonCode) : '',
+                gateEnvName: (apiJson && apiJson.gateEnvName) ? apiJson.gateEnvName : '',
+                source: src,
+                target: tgt,
+                mic_used: !!micUsed,
+                tts_used: !!ttsSnap
+            };
+            console.log('[GLB_CLIENT]', JSON.stringify(o));
+        }
+
+        function glbSpeakText(text, lang) {
+            if (!text || !window.speechSynthesis) return;
+            GLB_SESSION_TTS_USED = true;
+            var hint = document.getElementById('glb-mic-hint');
+            if (hint) hint.style.display = 'none';
+            var mlbTts = document.getElementById('glb-mic-live-bar');
+            if (mlbTts) {
+                mlbTts.style.display = 'none';
+                delete mlbTts.dataset.micLive;
+                mlbTts.classList.remove('is-hearing');
+            }
+            var mbTts = document.getElementById('glb-mic-btn');
+            if (mbTts) mbTts.classList.remove('is-mic-listening');
+            try {
+                if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+                window.speechSynthesis.cancel();
+                if (typeof window.speechSynthesis.getVoices === 'function') window.speechSynthesis.getVoices();
+            } catch (e0) { /* ignore */ }
+            function doSpeak() {
+                try {
+                    var u = new SpeechSynthesisUtterance(text);
+                    u.lang = glbBcp47(lang);
+                    u.rate = 0.95;
+                    u.onerror = function () {
+                        if (hint) {
+                            hint.style.display = 'block';
+                            hint.textContent = T('ttsError');
+                        }
+                    };
+                    window.speechSynthesis.speak(u);
+                } catch (e) {
+                    if (hint) {
+                        hint.style.display = 'block';
+                        hint.textContent = T('ttsError');
+                    }
+                }
+            }
+            try {
+                var voices = window.speechSynthesis.getVoices && window.speechSynthesis.getVoices();
+                if (!voices || voices.length === 0) {
+                    var once = function () {
+                        window.speechSynthesis.removeEventListener('voiceschanged', once);
+                        setTimeout(doSpeak, 50);
+                    };
+                    window.speechSynthesis.addEventListener('voiceschanged', once);
+                    setTimeout(function () {
+                        window.speechSynthesis.removeEventListener('voiceschanged', once);
+                        doSpeak();
+                    }, 450);
+                } else {
+                    setTimeout(doSpeak, 0);
+                }
+            } catch (e2) {
+                setTimeout(doSpeak, 0);
+            }
+        }
+
         (function translateMeasure() {
             var out = document.getElementById('translate-measure-result');
             var btn = document.getElementById('tr-run');
             if (!btn || !out) return;
 
+            function glbFinalizeOut(s) {
+                return (typeof glbTomoriPostRewrite === 'function') ? glbTomoriPostRewrite(s) : s;
+            }
+
             function parseResponse(x) {
                 if (x.status >= 200 && x.status < 300) {
                     try {
                         var j = JSON.parse(x.body);
-                        var line = j.translatedText != null ? String(j.translatedText) : x.body;
-                        return { ok: true, text: line };
+                        if (j.ok === false) {
+                            return { ok: false, json: j, text: '', raw: x.body };
+                        }
+                        var line = j.translatedText != null ? String(j.translatedText) : '';
+                        return { ok: true, text: safeOutput(line), json: j };
                     } catch (e) {
-                        return { ok: true, text: x.body };
+                        return { ok: true, text: safeOutput(x.body), json: null };
                     }
                 }
-                return { ok: false, status: x.status, body: x.body };
+                return { ok: false, status: x.status, body: x.body, json: null };
             }
 
             function fetchTranslate(text, source, target) {
-                var payload = { text: text, source: source, target: target, caller_id: 'prod' };
                 return fetch(NEXTBASE_APP_ORIGIN + '/translate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify({
+                        text: text,
+                        source: source,
+                        target: target,
+                        caller_id: 'prod'
+                    }),
                     cache: 'no-store'
                 }).then(function (r) {
                     return r.text().then(function (t) {
@@ -1441,6 +1975,11 @@
 
             btn.addEventListener('click', function () {
                 if (GLB_MAINTENANCE_ON) return;
+                var ttsSnap = GLB_SESSION_TTS_USED;
+                GLB_SESSION_TTS_USED = false;
+                var micSnapshot = GLB_LAST_INPUT_FROM_MIC;
+                GLB_LAST_INPUT_FROM_MIC = false;
+
                 var lf = document.getElementById('lang-from');
                 var lt = document.getElementById('lang-to');
                 var hs = document.getElementById('tr-src');
@@ -1450,12 +1989,13 @@
                     ht.value = lt.value.trim();
                 }
                 var text = (document.getElementById('tr-text') && document.getElementById('tr-text').value) || '';
-                text = text.trim();
+                text = (typeof glbTomoriNormalize === 'function') ? glbTomoriNormalize(text) : text.trim();
                 var source = ((document.getElementById('tr-src') && document.getElementById('tr-src').value) || 'en').trim();
-                var target = ((document.getElementById('tr-tgt') && document.getElementById('tr-tgt').value) || 'ja').trim();
+                var target = ((document.getElementById('tr-tgt') && document.getElementById('tr-tgt').value) || 'fa').trim();
 
                 if (!text) {
                     setResultText(T('idle'), '#eaeaea', '0');
+                    glbUpdateReadalong('', '', source, target);
                     return;
                 }
 
@@ -1463,21 +2003,26 @@
                     setResultText(text, '#eaeaea', '0');
                     recordGlbTranslateUse();
                     refreshFreeQuotaDisplay();
+                    glbUpdateReadalong(text, text, source, target);
                     return;
                 }
 
                 var cached = readTxCache(text, source, target);
                 if (cached != null && cached !== '') {
-                    setResultText(cached, '#eaeaea', '0');
+                    var cDone = glbFinalizeOut(cached);
+                    setResultText(cDone, '#eaeaea', '0');
                     refreshFreeQuotaDisplay();
+                    glbUpdateReadalong(text, cDone, source, target);
                     return;
                 }
 
                 var localOut = tryLocalRoute(text, source, target);
                 if (localOut != null && localOut !== '') {
-                    setResultText(localOut, '#eaeaea', '0');
-                    writeTxCache(text, source, target, localOut);
+                    var locDone = glbFinalizeOut(localOut);
+                    setResultText(locDone, '#eaeaea', '0');
+                    writeTxCache(text, source, target, locDone);
                     refreshFreeQuotaDisplay();
+                    glbUpdateReadalong(text, locDone, source, target);
                     return;
                 }
 
@@ -1489,11 +2034,14 @@
 
                 var pivot = (source !== 'en' && target !== 'en');
 
-                function finishOk(line) {
-                    setResultText(line, '#eaeaea', '0');
-                    writeTxCache(text, source, target, line);
+                function finishOk(line, apiJson) {
+                    var done = glbFinalizeOut(line);
+                    setResultText(done, '#eaeaea', '0');
+                    writeTxCache(text, source, target, done);
                     recordGlbTranslateUse();
                     refreshFreeQuotaDisplay();
+                    glbUpdateReadalong(text, done, source, target);
+                    if (apiJson) glbLogClientAudit(apiJson, source, target, micSnapshot, ttsSnap);
                 }
 
                 setResultText(T('sending'), '#eaeaea', '1');
@@ -1502,8 +2050,11 @@
                     fetchTranslate(text, source, target)
                         .then(function (x) {
                             var p = parseResponse(x);
-                            if (p.ok) finishOk(p.text);
-                            else applyError(x);
+                            if (p.ok) finishOk(p.text, p.json);
+                            else if (p.json && p.json.reasonCode) {
+                                setResultText(String(p.json.reasonCode), '#c99', '0');
+                                glbLogClientAudit(p.json, source, target, micSnapshot, ttsSnap);
+                            } else applyError(x);
                         })
                         .catch(function (err) {
                             setResultText(T('netErr'), '#c99', '0');
@@ -1515,23 +2066,217 @@
                     .then(function (x1) {
                         var p1 = parseResponse(x1);
                         if (!p1.ok) {
-                            applyError(x1);
+                            if (p1.json && p1.json.reasonCode) {
+                                setResultText(String(p1.json.reasonCode), '#c99', '0');
+                                glbLogClientAudit(p1.json, source, 'en', micSnapshot, ttsSnap);
+                            } else applyError(x1);
                             return null;
                         }
+                        if (p1.json) glbLogClientAudit(p1.json, source, 'en', micSnapshot, ttsSnap);
                         setResultText(T('sending'), '#eaeaea', '1');
                         return fetchTranslate(p1.text, 'en', target);
                     })
                     .then(function (x2) {
                         if (x2 == null) return;
                         var p2 = parseResponse(x2);
-                        if (p2.ok) finishOk(p2.text);
-                        else applyError(x2);
+                        if (p2.ok) finishOk(p2.text, p2.json);
+                        else if (p2.json && p2.json.reasonCode) {
+                            setResultText(String(p2.json.reasonCode), '#c99', '0');
+                            glbLogClientAudit(p2.json, 'en', target, micSnapshot, ttsSnap);
+                        } else applyError(x2);
                     })
                     .catch(function (err) {
                         setResultText(T('netErr'), '#c99', '0');
                     });
             });
         })();
+
+        (function glbMicAndTtsUi() {
+            var micBtn = document.getElementById('glb-mic-btn');
+            var clearBtn = document.getElementById('glb-clear-btn');
+            var speakTgt = document.getElementById('glb-speak-tgt-btn');
+            var hint = document.getElementById('glb-mic-hint');
+            var liveBar = document.getElementById('glb-mic-live-bar');
+            var liveText = document.getElementById('glb-mic-live-text');
+            var trInput = document.getElementById('tr-text');
+            var trRun = document.getElementById('tr-run');
+            var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!micBtn) return;
+
+            function setMicLiveState(mode) {
+                if (mode === 'off') {
+                    if (liveBar) {
+                        liveBar.style.display = 'none';
+                        delete liveBar.dataset.micLive;
+                        liveBar.classList.remove('is-hearing');
+                    }
+                    micBtn.classList.remove('is-mic-listening');
+                    return;
+                }
+                if (liveBar) {
+                    liveBar.style.display = 'flex';
+                    liveBar.dataset.micLive = mode === 'hearing' ? 'hearing' : 'listening';
+                    liveBar.classList.toggle('is-hearing', mode === 'hearing');
+                    if (liveText) {
+                        liveText.textContent = mode === 'hearing' ? T('micLiveHearing') : T('micLiveListening');
+                    }
+                }
+                micBtn.classList.add('is-mic-listening');
+            }
+
+            if (!SR) {
+                micBtn.disabled = true;
+                if (hint) {
+                    hint.style.display = 'block';
+                    hint.textContent = 'Microphone input is not available in this browser.';
+                }
+            } else {
+                var activeRecognition = null;
+                micBtn.addEventListener('click', function () {
+                    var lf = document.getElementById('lang-from');
+                    var lang = (lf && lf.value) ? lf.value : 'en';
+                    if (activeRecognition) {
+                        try {
+                            activeRecognition.abort();
+                        } catch (eAbort) {
+                            /* ignore */
+                        }
+                        activeRecognition = null;
+                        if (hint) hint.style.display = 'none';
+                        setMicLiveState('off');
+                        return;
+                    }
+                    var rec = new SR();
+                    activeRecognition = rec;
+                    rec.interimResults = false;
+                    rec.continuous = false;
+                    rec.maxAlternatives = 1;
+                    rec.lang = glbBcp47(lang);
+                    rec.onstart = function () {
+                        setMicLiveState('listening');
+                    };
+                    rec.onspeechstart = function () {
+                        setMicLiveState('hearing');
+                    };
+                    rec.onresult = function (ev) {
+                        var t = (ev.results && ev.results[0] && ev.results[0][0]) ? ev.results[0][0].transcript : '';
+                        if (trInput) trInput.value = (t || '').trim();
+                        GLB_LAST_INPUT_FROM_MIC = true;
+                        setMicLiveState('off');
+                        if (trRun) trRun.click();
+                    };
+                    rec.onerror = function (ev) {
+                        var code = ev && ev.error ? String(ev.error) : '';
+                        if (code === 'aborted') return;
+                        setMicLiveState('off');
+                        var msg = 'Mic error — check permissions or try again.';
+                        if (code === 'not-allowed' || code === 'service-not-allowed') {
+                            msg = 'Microphone blocked — allow access in browser / site settings.';
+                        } else if (code === 'no-speech') {
+                            msg = 'No speech detected — try again.';
+                        }
+                        if (hint) {
+                            hint.style.display = 'block';
+                            hint.textContent = msg;
+                        }
+                    };
+                    rec.onend = function () {
+                        activeRecognition = null;
+                        setMicLiveState('off');
+                    };
+                    if (hint) hint.style.display = 'none';
+                    try {
+                        rec.start();
+                    } catch (e) {
+                        activeRecognition = null;
+                        setMicLiveState('off');
+                        if (hint) {
+                            hint.style.display = 'block';
+                            hint.textContent = 'Could not start microphone.';
+                        }
+                    }
+                });
+            }
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function () {
+                    if (trInput) trInput.value = '';
+                    var idleEl = document.getElementById('translate-measure-result');
+                    if (idleEl) {
+                        idleEl.textContent = T('idle');
+                        idleEl.dataset.busy = '0';
+                    }
+                });
+            }
+            function currentPair() {
+                var lf = document.getElementById('lang-from');
+                var lt = document.getElementById('lang-to');
+                return {
+                    src: (lf && lf.value) ? lf.value : 'en',
+                    tgt: (lt && lt.value) ? lt.value : 'fa'
+                };
+            }
+            if (speakTgt) {
+                speakTgt.addEventListener('click', function () {
+                    var idleEl = document.getElementById('translate-measure-result');
+                    var tx = idleEl ? (idleEl.textContent || '').trim() : '';
+                    if (!tx || tx === T('idle') || tx === T('sending')) return;
+                    var p = currentPair();
+                    try { glbSpeakText(tx, p.tgt); } catch (h) { setResultText(renderHold(h), '#c99', '0'); }
+                });
+            }
+        })();
+    </script>
+    <script>
+(function () {
+    var CONFIG = window.GLB_COREFLOW_CONFIG || {
+        API_BASE: 'https://smile-friend-engine-125142687526.us-central1.run.app',
+        STRIPE_CORE: 'https://buy.stripe.com/bJedRbefH5yogzZfuDasg09',
+        STRIPE_TRAVEL: 'https://buy.stripe.com/14AcN7c7z0e46ZpfuDasg0v',
+        LS_KEY: 'GLB_CUSTOMER_ID'
+    };
+    var showElements = function (selector) {
+        document.querySelectorAll(selector).forEach(function (el) { el.classList.remove('hidden'); });
+    };
+    var hideElements = function (selector) {
+        document.querySelectorAll(selector).forEach(function (el) { el.classList.add('hidden'); });
+    };
+    function applyCoreflowUI(ent) {
+        if (!ent || ent.ok === false) return;
+        if (!ent.core_subscribed) {
+            showElements('.ui-unsubscribed');
+            hideElements('.ui-core-active, .ui-travel-active');
+        } else if (ent.core_subscribed && !ent.travel_active) {
+            showElements('.ui-core-active');
+            hideElements('.ui-unsubscribed, .ui-travel-active');
+        } else if (ent.core_subscribed && ent.travel_active) {
+            showElements('.ui-travel-active');
+            hideElements('.ui-unsubscribed, .ui-core-active');
+            var expiryEl = document.getElementById('travel-expiry-display');
+            if (expiryEl) {
+                expiryEl.innerText = '';
+                expiryEl.style.display = 'none';
+            }
+        }
+    }
+    window.__GLB_COREFLOW331__ = { CONFIG: CONFIG, showElements: showElements, hideElements: hideElements, applyCoreflowUI: applyCoreflowUI };
+    document.documentElement.setAttribute('data-glb-coreflow', '5');
+})();
+(function () {
+    document.body.style.opacity = '0.96';
+    setTimeout(function () {
+        try {
+            if (window.__GLB_COREFLOW331__ && typeof GLB_CORE_SUBSCRIBED !== 'undefined') {
+                window.__GLB_COREFLOW331__.applyCoreflowUI({
+                    ok: true,
+                    core_subscribed: !!GLB_CORE_SUBSCRIBED,
+                    travel_active: !!GLB_TRAVEL_ACTIVE,
+                    travel_pass_expires_at: typeof GLB_TRAVEL_EXPIRES_AT !== 'undefined' ? GLB_TRAVEL_EXPIRES_AT : null
+                });
+            }
+        } catch (e) { /* ignore */ }
+        document.body.style.opacity = '1';
+    }, 0);
+})();
     </script>
 </body>
 </html>
