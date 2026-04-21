@@ -12,5 +12,9 @@ services:
     name: glb-noir
     runtime: static
     branch: main
+    # Avoid Render auto-pip when a requirements*.txt exists elsewhere; build is HTML-only.
     buildCommand: npm run build
     staticPublishPath: .
+    envVars:
+      - key: SKIP_INSTALL_DEPS
+        value: "true"

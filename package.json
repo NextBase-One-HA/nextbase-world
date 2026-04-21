@@ -4,6 +4,6 @@
   "version": "1.0.0",
   "description": "Static HTML frontends for GLB (no bundler). Render build is a no-op; files are served from repo root.",
   "scripts": {
-    "build": "node -e \"require('fs').accessSync('index.html'); console.log('glb-noir: static HTML ok');\""
+    "build": "node build.js"
   }
 }
