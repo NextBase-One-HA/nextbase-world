@@ -49,13 +49,43 @@
         h1.gold-text.app-brand-title .brand-line + .brand-line {
             margin-top: 0.08em;
         }
-        .glb-billboard { width: 100%; max-width: min(560px, 100%); margin: 12px auto 18px; padding: 0; box-sizing: border-box; }
-        .glb-billboard-after-input {
-            margin-top: 14px;
-            padding-top: 14px;
-            border-top: 1px solid #2a2a2a;
-        }
+        .glb-billboard { width: 100%; max-width: min(560px, 100%); margin: 12px auto 14px; padding: 0; box-sizing: border-box; }
         .glb-billboard-tools { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+        .glb-lang-details {
+            margin: 0 0 12px;
+            border: 1px solid #333;
+            border-radius: 10px;
+            background: #111;
+            text-align: left;
+        }
+        .glb-lang-details > summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 10px 12px;
+            font-size: 12px;
+            color: #bbb;
+            line-height: 1.4;
+            user-select: none;
+        }
+        .glb-lang-details > summary::-webkit-details-marker { display: none; }
+        .glb-lang-details-body { padding: 0 12px 12px; }
+        .glb-result-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 0;
+        }
+        .glb-result-lang-caption {
+            font-size: 11px;
+            color: #888;
+            margin-top: 14px;
+            text-align: center;
+            line-height: 1.45;
+            max-width: 100%;
+            padding: 0 8px;
+        }
         .glb-flip-btn {
             background: var(--card);
             color: #fff8c8;
@@ -73,6 +103,7 @@
         #glb-result-stage {
             min-height: min(52dvh, 420px);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 24px 18px;
@@ -385,8 +416,23 @@
     <p id="travel-remaining-line" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
     <p id="travel-expiry-display" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
 
+    <div class="glb-billboard">
+        <div class="glb-billboard-tools">
+            <button type="button" class="glb-flip-btn" id="glb-flip-btn">Flip</button>
+        </div>
+        <div id="glb-result-stage" class="glb-result-stage">
+            <div class="glb-result-inner">
+                <div id="translate-measure-result" data-i18n-idle="idle" aria-live="polite">Idle</div>
+                <p id="glb-result-lang-caption" class="glb-result-lang-caption" aria-live="polite"></p>
+            </div>
+        </div>
+    </div>
+
     <div style="margin-top: 8px; padding-top: 12px; border-top: 1px solid #2a2a2a; text-align: left;">
         <div class="trans-section-head" id="t-trans-head">Translation</div>
+        <details id="glb-lang-details" class="glb-lang-details">
+        <summary id="glb-lang-details-summary" class="glb-lang-details-sum"></summary>
+        <div class="glb-lang-details-body">
         <label for="ui-lang" style="display:block; font-size: 11px; color: #888; margin-bottom: 6px;" id="label-ui-lang">Language</label>
         <select id="ui-lang" class="lang-select" aria-label="App language">
             <option value="en">English</option>
@@ -415,6 +461,8 @@
             </div>
         </div>
         <p style="font-size: 10px; color: #666; margin: 0 0 10px; line-height: 1.45;" id="t-lang-flow-hint"></p>
+        </div>
+        </details>
         <input type="text" id="tr-text" placeholder="Text to translate (e.g. hello)" autocomplete="off">
         <div class="glb-tool-bar" id="glb-tool-bar" aria-label="Input tools">
             <button type="button" class="glb-icon-btn" id="glb-mic-btn">Mic</button>
@@ -453,15 +501,6 @@
         <div class="tr-run-wrap">
             <button type="button" id="tr-run" class="btn glb-main-btn">GLB</button>
             <p class="free-quota-line" id="t-free-quota" role="status"></p>
-        </div>
-    </div>
-
-    <div class="glb-billboard glb-billboard-after-input">
-        <div class="glb-billboard-tools">
-            <button type="button" class="glb-flip-btn" id="glb-flip-btn">Flip</button>
-        </div>
-        <div id="glb-result-stage" class="glb-result-stage">
-            <div id="translate-measure-result" data-i18n-idle="idle" aria-live="polite">Idle</div>
         </div>
     </div>
 
@@ -508,7 +547,7 @@
     <script>
         window.__GLB_PAGE_LAYER = 'coreflow';
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
-        const APP_VERSION = '2026.04.21.coreflow.6';
+        const APP_VERSION = '2026.04.21.coreflow.7';
         var GLB_COREFLOW_CONFIG = {
             API_BASE: 'https://smile-friend-engine-125142687526.us-central1.run.app',
             STRIPE_CORE: 'https://buy.stripe.com/bJedRbefH5yogzZfuDasg09',
@@ -987,8 +1026,11 @@
                 btnReadTranslation: 'Read translation',
                 btnMic: 'Mic',
                 btnClear: 'Clear',
+                langDetailsSummary: '{{from}} → {{to}} · tap to change languages',
+                resultLangLabel: 'Translation ({{lang}})',
+                ttsError: 'Read-aloud failed. Check volume, silent mode, and language.',
                 coreflowModeHint:
-                    'Face-to-face (not live conversation): set From/To, speak or type, tap GLB — translation appears below. Tap Read translation to hear it in the To language.'
+                    'Face-to-face: tap the summary to change languages. Type or use Mic, then GLB — result shows above. Read translation uses the target language voice.'
             },
             ja: {
                 labelUiLang: '言語',
@@ -1043,8 +1085,11 @@
                 btnReadTranslation: '読み上げ（訳）',
                 btnMic: 'マイク',
                 btnClear: '消去',
+                langDetailsSummary: '{{from}} → {{to}} · タップで言語を変更',
+                resultLangLabel: '表示は{{lang}}の訳です',
+                ttsError: '読み上げを開始できませんでした（音量・マナーモードを確認してください）',
                 coreflowModeHint:
-                    '対面用（リアルタイム会話モードではありません）。原文／訳文を合わせてマイクまたは入力 → GLB で翻訳（下に表示）→ 読み上げで訳文のみ音声。'
+                    '対面用：一行目の要約をタップすると言語を変更できます。入力またはマイク → GLB で上に訳を表示。読み上げは訳文の言語の音声です。'
             },
             zh: {
                 labelUiLang: '界面语言', labelRegion: '地区', labelLangFrom: '原文', labelLangTo: '译文',
@@ -1330,12 +1375,49 @@
             el.classList.toggle('is-warn', left === 0);
         }
 
+        var GLB_LANG_SHORT = {
+            en: { en: 'English', ja: 'Japanese', fa: 'Persian (Farsi)', zh: 'Chinese', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese', ar: 'Arabic', ru: 'Russian', ko: 'Korean', hi: 'Hindi', tr: 'Turkish', it: 'Italian', th: 'Thai', vi: 'Vietnamese' },
+            ja: { en: '英語', ja: '日本語', fa: 'ペルシャ語（فارسی）', zh: '中国語', es: 'スペイン語', fr: 'フランス語', de: 'ドイツ語', pt: 'ポルトガル語', ar: 'アラビア語', ru: 'ロシア語', ko: '韓国語', hi: 'ヒンディー語', tr: 'トルコ語', it: 'イタリア語', th: 'タイ語', vi: 'ベトナム語' }
+        };
+        function glbLangDisplayName(code) {
+            var loc = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG) ? CURRENT_LANG : 'en';
+            var pack = GLB_LANG_SHORT[loc] || GLB_LANG_SHORT.en;
+            return (pack && pack[code]) || GLB_LANG_SHORT.en[code] || code;
+        }
+        function updateLangDetailsSummary() {
+            var sum = document.getElementById('glb-lang-details-summary');
+            if (!sum) return;
+            var lf = document.getElementById('lang-from');
+            var lt = document.getElementById('lang-to');
+            var from = (lf && lf.value) ? glbLangDisplayName(lf.value) : '';
+            var to = (lt && lt.value) ? glbLangDisplayName(lt.value) : '';
+            sum.textContent = T('langDetailsSummary').replace(/\{\{from\}\}/g, from).replace(/\{\{to\}\}/g, to);
+        }
+        function updateResultLangCaption() {
+            var cap = document.getElementById('glb-result-lang-caption');
+            if (!cap) return;
+            var el = document.getElementById('translate-measure-result');
+            var lt = document.getElementById('lang-to');
+            var code = (lt && lt.value) ? lt.value : '';
+            if (!code || !el) {
+                cap.textContent = '';
+                return;
+            }
+            var t = (el.textContent || '').trim();
+            if (!t || t === T('idle') || t === T('sending')) {
+                cap.textContent = '';
+                return;
+            }
+            cap.textContent = T('resultLangLabel').replace(/\{\{lang\}\}/g, glbLangDisplayName(code));
+        }
+
         function setResultText(line, color, busy) {
             var el = document.getElementById('translate-measure-result');
             if (!el) return;
             el.textContent = line;
             if (color) el.style.color = color;
             if (busy !== undefined) el.dataset.busy = busy;
+            updateResultLangCaption();
         }
 
         function applyUiLang() {
@@ -1447,6 +1529,8 @@
             refreshFreeQuotaDisplay();
             refreshSubscriptionUi();
             if (typeof refreshTravelRemainingLine === 'function') refreshTravelRemainingLine();
+            updateLangDetailsSummary();
+            updateResultLangCaption();
         }
 
         (function bindManualApprovalOnly() {
@@ -1584,6 +1668,8 @@
                 }
                 hs.value = a;
                 ht.value = b;
+                updateLangDetailsSummary();
+                updateResultLangCaption();
             }
 
             function syncFromUiLang() {
@@ -1676,12 +1762,50 @@
         function glbSpeakText(text, lang) {
             if (!text || !window.speechSynthesis) return;
             GLB_SESSION_TTS_USED = true;
+            var hint = document.getElementById('glb-mic-hint');
+            if (hint) hint.style.display = 'none';
             try {
+                if (window.speechSynthesis.paused) window.speechSynthesis.resume();
                 window.speechSynthesis.cancel();
-                var u = new SpeechSynthesisUtterance(text);
-                u.lang = glbBcp47(lang);
-                window.speechSynthesis.speak(u);
-            } catch (e) { /* ignore */ }
+                if (typeof window.speechSynthesis.getVoices === 'function') window.speechSynthesis.getVoices();
+            } catch (e0) { /* ignore */ }
+            function doSpeak() {
+                try {
+                    var u = new SpeechSynthesisUtterance(text);
+                    u.lang = glbBcp47(lang);
+                    u.rate = 0.95;
+                    u.onerror = function () {
+                        if (hint) {
+                            hint.style.display = 'block';
+                            hint.textContent = T('ttsError');
+                        }
+                    };
+                    window.speechSynthesis.speak(u);
+                } catch (e) {
+                    if (hint) {
+                        hint.style.display = 'block';
+                        hint.textContent = T('ttsError');
+                    }
+                }
+            }
+            try {
+                var voices = window.speechSynthesis.getVoices && window.speechSynthesis.getVoices();
+                if (!voices || voices.length === 0) {
+                    var once = function () {
+                        window.speechSynthesis.removeEventListener('voiceschanged', once);
+                        setTimeout(doSpeak, 50);
+                    };
+                    window.speechSynthesis.addEventListener('voiceschanged', once);
+                    setTimeout(function () {
+                        window.speechSynthesis.removeEventListener('voiceschanged', once);
+                        doSpeak();
+                    }, 450);
+                } else {
+                    setTimeout(doSpeak, 0);
+                }
+            } catch (e2) {
+                setTimeout(doSpeak, 0);
+            }
         }
 
         (function translateMeasure() {
