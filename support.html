@@ -55,10 +55,15 @@
       <p>3) Choose <strong>Cancel plan</strong></p>
       <p>This flow is available anytime. Cancellation and payment-method updates are handled directly in Stripe Customer Portal.</p>
     </div>
-    <div class="box">
-      <p><strong>Paid but still seeing free limit?</strong></p>
-      <p>If you paid but still see the 10/day limit, press <strong>Status reload</strong> below. This forces a fresh entitlement sync from the billing API and overwrites local browser flags.</p>
-      <button type="button" class="btn-reload" id="billing-sync-btn">Status reload</button>
+    <div class="box support-section">
+      <p><strong>Status Reload / 課金ステータスの再読込</strong></p>
+      <p>If you've subscribed but are still seeing the 10-use limit, please use the button below to sync your status.</p>
+      <p>課金したにもかかわらず10回制限が表示される場合は、下のボタンを押してステータスを同期してください。</p>
+      <button type="button" class="btn-reload" id="sync-button">Sync Subscription Status / ステータスを同期する</button>
+      <p class="note" style="margin-top:10px; border-top:none; padding-top:0;">
+        ※ This process will re-verify your payment via SmileFriend API.<br>
+        ※ この操作により SmileFriend API を通じて支払い状況を再確認します。
+      </p>
       <p class="status-line" id="billing-sync-status" aria-live="polite"></p>
     </div>
 
@@ -79,7 +84,7 @@
   <script>
     (function billingStatusSync() {
       var API_ORIGIN = "https://smile-friend-engine-125142687526.us-central1.run.app";
-      var btn = document.getElementById("billing-sync-btn");
+      var btn = document.getElementById("sync-button");
       var out = document.getElementById("billing-sync-status");
       if (!btn || !out) return;
 
@@ -89,7 +94,7 @@
 
       btn.addEventListener("click", async function () {
         btn.disabled = true;
-        setStatus("Syncing status...");
+        setStatus("Syncing status... / ステータスを同期中...");
         try {
           var customerId = (localStorage.getItem("GLB_CUSTOMER_ID") || "").trim();
           var url = new URL(window.location.href);
@@ -104,9 +109,9 @@
           if (!data || data.ok !== true) throw new Error("entitlements_not_ok");
           if (data.customer_id) localStorage.setItem("GLB_CUSTOMER_ID", String(data.customer_id));
           localStorage.setItem("glb_subscribed", data.core_subscribed ? "1" : "0");
-          setStatus(data.core_subscribed ? "Synced: paid mode is active." : "Synced: free mode is active.");
+          setStatus(data.core_subscribed ? "Synced: paid mode is active. / 同期完了: 課金モードです。" : "Synced: free mode is active. / 同期完了: 無料モードです。");
         } catch (e) {
-          setStatus("Could not sync right now. Please retry.");
+          setStatus("Could not sync right now. Please retry. / 今は同期できません。再試行してください。");
         } finally {
           btn.disabled = false;
         }
