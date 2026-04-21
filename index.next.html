@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- GLB-Noir: same shell as index.html; canonical Travel return is this file (?travel=1&session_id=…). -->
+<!-- nextbase-world · index.next.html — 無料＝翻訳1日10回 / $2.99月額後は entitlements 確認→index.coreflow.html へ。Travel: ?travel=1&session_id=… -->
 <html lang="en" class="notranslate" translate="no">
 <head>
     <meta charset="UTF-8">
@@ -49,6 +49,11 @@
             margin-top: 0.08em;
         }
         .glb-billboard { width: 100%; max-width: min(560px, 100%); margin: 12px auto 18px; padding: 0; box-sizing: border-box; }
+        .glb-billboard-after-input {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #2a2a2a;
+        }
         .glb-billboard-tools { display: flex; justify-content: flex-end; margin-bottom: 8px; }
         .glb-flip-btn {
             background: var(--card);
@@ -126,7 +131,6 @@
         }
         input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: #fff; font-size: 16px; margin-bottom: 12px; outline: none; box-sizing: border-box; box-shadow: 0 0 10px var(--gold-glow-soft); }
         input:focus { box-shadow: 0 0 16px var(--gold-glow-mid); border-color: #fff4a8; }
-        #result-area { min-height: 72px; padding: 14px; background: var(--card); border-radius: 10px; margin-bottom: 24px; text-align: left; line-height: 1.5; font-size: 15px; border: 1px solid #2a2a2a; }
         .btn {
             background: linear-gradient(180deg, #fff6a8 0%, var(--gold) 45%, var(--gold-deep) 100%);
             color: #0a0a06;
@@ -267,9 +271,12 @@
                 font-size: clamp(1.05rem, 5.8vw, 1.55rem);
                 letter-spacing: 0.08em;
             }
+            /* 対面表示は維持しつつ、入力・マイクが折りたたみで消えないよう高さを抑える */
             #glb-result-stage {
-                min-height: min(44dvh, 340px);
-                padding: 18px 14px;
+                min-height: min(26dvh, 200px);
+                max-height: min(40dvh, 320px);
+                padding: 14px 12px;
+                overflow: auto;
             }
             #glb-result-stage #translate-measure-result {
                 font-size: clamp(22px, 7.2vw, 40px);
@@ -289,6 +296,66 @@
             .pricing-box { font-size: 13px; padding: 14px; }
             .pricing-box h2 { font-size: 15px; }
         }
+        .glb-tool-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin: 8px 0 10px;
+        }
+        .glb-tool-bar .glb-icon-btn {
+            flex: 1 1 auto;
+            min-width: min(140px, 46%);
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 10px;
+            border: 1px solid var(--gold);
+            background: var(--card);
+            color: #fff8c8;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--gold-glow-soft);
+        }
+        .glb-tool-bar .glb-icon-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .glb-mic-hint { text-align: left; margin: 0 0 8px; }
+        .readalong-panel {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+            background: #111;
+            text-align: left;
+        }
+        .readalong-row {
+            display: grid;
+            grid-template-columns: 52px 1fr 40px;
+            gap: 8px;
+            align-items: start;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        .readalong-row:last-child { margin-bottom: 0; }
+        .readalong-label { color: #a89860; font-size: 11px; font-weight: 700; padding-top: 4px; }
+        .readalong-text {
+            color: #e8e8e8;
+            line-height: 1.4;
+            word-break: break-word;
+            font-size: 14px;
+        }
+        .readalong-rom { color: #aaa; font-size: 13px; }
+        .readalong-play {
+            border: 1px solid rgba(255, 230, 100, 0.35);
+            background: #1a1a1a;
+            color: #ffe566;
+            border-radius: 8px;
+            padding: 6px 0;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .readalong-play:disabled { opacity: 0.35; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -305,32 +372,23 @@
     </div>
     <p id="travel-status" style="display:none; margin: 0 0 12px; color:#f5e6b8; font-size:12px; text-align:center;"></p>
 
-    <div class="glb-billboard">
-        <div class="glb-billboard-tools">
-            <button type="button" class="glb-flip-btn" id="glb-flip-btn">Flip</button>
-        </div>
-        <div id="glb-result-stage" class="glb-result-stage">
-            <div id="translate-measure-result" data-i18n-idle="idle" aria-live="polite">Idle</div>
-        </div>
-    </div>
-
     <div style="margin-top: 8px; padding-top: 12px; border-top: 1px solid #2a2a2a; text-align: left;">
         <div class="trans-section-head" id="t-trans-head">Translation</div>
         <label for="ui-lang" style="display:block; font-size: 11px; color: #888; margin-bottom: 6px;" id="label-ui-lang">Language</label>
         <select id="ui-lang" class="lang-select" aria-label="App language">
             <option value="en">English</option>
             <option value="ja">日本語</option>
+            <option value="fa">فارسی</option>
             <option value="zh">中文</option>
-            <option value="ko">한국어</option>
             <option value="es">Español</option>
             <option value="fr">Français</option>
             <option value="de">Deutsch</option>
-            <option value="it">Italiano</option>
-            <option value="ru">Русский</option>
-            <option value="th">ไทย</option>
-            <option value="vi">Tiếng Việt</option>
-            <option value="hi">हिन्दी</option>
             <option value="pt">Português</option>
+            <option value="ar">العربية</option>
+            <option value="ru">Русский</option>
+            <option value="ko">한국어</option>
+            <option value="hi">हिन्दी</option>
+            <option value="tr">Türkçe</option>
         </select>
         <div class="trans-lang-grid">
             <div>
@@ -345,6 +403,30 @@
         </div>
         <p style="font-size: 10px; color: #666; margin: 0 0 10px; line-height: 1.45;" id="t-lang-flow-hint"></p>
         <input type="text" id="tr-text" placeholder="Text to translate (e.g. hello)" autocomplete="off">
+        <div class="glb-tool-bar" id="glb-tool-bar" aria-label="Input tools">
+            <button type="button" class="glb-icon-btn" id="glb-mic-btn">Mic</button>
+            <button type="button" class="glb-icon-btn" id="glb-clear-btn">Clear</button>
+            <button type="button" class="glb-icon-btn" id="glb-speak-src-btn">Speak source</button>
+            <button type="button" class="glb-icon-btn" id="glb-speak-tgt-btn">Speak translation</button>
+        </div>
+        <p id="glb-mic-hint" class="glb-mic-hint" style="display:none;font-size:10px;color:#777;"></p>
+        <div id="readalong-panel" class="readalong-panel" style="display:none;" aria-label="Read-along">
+            <div class="readalong-row">
+                <span class="readalong-label">EN</span>
+                <div id="readalong-en" class="readalong-text"></div>
+                <button type="button" class="readalong-play" id="readalong-play-en" title="Speak">▶</button>
+            </div>
+            <div class="readalong-row">
+                <span class="readalong-label">فارسی</span>
+                <div id="readalong-fa" class="readalong-text"></div>
+                <button type="button" class="readalong-play" id="readalong-play-fa" title="Speak">▶</button>
+            </div>
+            <div class="readalong-row">
+                <span class="readalong-label">Romanized</span>
+                <div id="readalong-rom" class="readalong-text readalong-rom"></div>
+                <button type="button" class="readalong-play" id="readalong-play-rom" title="Speak">▶</button>
+            </div>
+        </div>
         <input type="hidden" id="tr-src" value="en">
         <input type="hidden" id="tr-tgt" value="en">
         <div style="display:none;" aria-hidden="true">
@@ -378,6 +460,15 @@
         </div>
     </div>
 
+    <div class="glb-billboard glb-billboard-after-input">
+        <div class="glb-billboard-tools">
+            <button type="button" class="glb-flip-btn" id="glb-flip-btn">Flip</button>
+        </div>
+        <div id="glb-result-stage" class="glb-result-stage">
+            <div id="translate-measure-result" data-i18n-idle="idle" aria-live="polite">Idle</div>
+        </div>
+    </div>
+
     <div id="gateway-pulse" style="display:none;" aria-hidden="true" data-i18n-placeholder="apiChecking"></div>
 
     <div id="subscribe-area" style="max-width: min(600px, 100%); margin: 0 auto 20px;">
@@ -389,7 +480,7 @@
                 </ul>
                 <p class="note" id="t-pricing-note"></p>
             </div>
-            <!-- Core: success URL https://nextbase-one-ha.github.io/nextbase-world/index.html?subscribed=1&session_id={CHECKOUT_SESSION_ID} -->
+            <!-- Core $2.99: Stripe success URL → index.next.html?subscribed=1&session_id={CHECKOUT_SESSION_ID}（認証後に index.coreflow.html へ自動遷移）。index.next.html?stay=1 で無料画面に留まる -->
             <a href="https://buy.stripe.com/bJedRbefH5yogzZfuDasg09" class="btn glb-subscribe-btn" style="font-size:18px; padding:18px 20px; border-radius:999px; margin-top:4px;" id="t-btn-monthly">
                 Subscribe ($2.99/mo)
             </a>
@@ -413,9 +504,6 @@
         <p id="manage-subscription-note" class="stripe-hint" style="margin-top:6px;">Open Stripe Customer Portal for plan management.</p>
     </div>
 
-    <input type="text" id="q" placeholder="Search 150k dictionary…" autocomplete="off">
-    <div id="result-area" data-i18n-default="dictResult">Results appear here</div>
-
     <footer class="footer legal-footer" id="glb-legal-footer" lang="en">
         <div class="legal-links">
             <a href="https://nextbase-one-ha.github.io/nextbase-world/terms.html" id="link-terms">Terms of Service</a>
@@ -433,9 +521,57 @@
     <script>
         /** Translate /health: smile-friend-engine (us-central1) */
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
-        const APP_VERSION = '2026.04.16.2';
+        const APP_VERSION = '2026.04.21.6';
         const MAINTENANCE_DEFAULT = 'We are currently enhancing the system for a better experience. Please check back shortly.';
         const LS_CUSTOMER_ID = 'GLB_CUSTOMER_ID';
+        let EXECUTION_ALLOWED = false;
+        const HOLD_FIXED = {
+            STATE: 'HOLD',
+            REASON: '',
+            FIX_TARGET: '',
+            OWNER: 'system',
+            RECHECK_METHOD: '',
+            NEXT_ACTION: ''
+        };
+        function holdPayload(reason, fixTarget, recheckMethod, nextAction) {
+            return {
+                STATE: 'HOLD',
+                REASON: reason,
+                FIX_TARGET: fixTarget,
+                OWNER: 'system',
+                RECHECK_METHOD: recheckMethod,
+                NEXT_ACTION: nextAction
+            };
+        }
+        function assertExecutionAllowed() {
+            if (!EXECUTION_ALLOWED) {
+                throw holdPayload('NO_NORI_APPROVAL', 'execution_gate', 'wait_for_manual_approval', 'do_nothing');
+            }
+        }
+        function safeOutput(text) {
+            return text;
+        }
+        function renderHold(payload) {
+            var h = payload || HOLD_FIXED;
+            return [
+                'STATE: HOLD',
+                'REASON: ' + (h.REASON || ''),
+                'FIX_TARGET: ' + (h.FIX_TARGET || ''),
+                'OWNER: ' + (h.OWNER || 'system'),
+                'RECHECK_METHOD: ' + (h.RECHECK_METHOD || ''),
+                'NEXT_ACTION: ' + (h.NEXT_ACTION || '')
+            ].join('\n');
+        }
+        function grantExecution(manualToken) {
+            var expected = localStorage.getItem('GLB_MANUAL_APPROVAL_TOKEN') || '';
+            if (!expected || String(manualToken || '') !== expected) {
+                throw holdPayload('NO_NORI_APPROVAL', 'execution_gate', 'wait_for_manual_approval', 'do_nothing');
+            }
+            EXECUTION_ALLOWED = true;
+        }
+        function revokeExecution() {
+            EXECUTION_ALLOWED = false;
+        }
         const LS_TRAVEL_PENDING = 'glb_travel_pending';
         var GLB_CORE_SUBSCRIBED = false;
         var GLB_TRAVEL_ACTIVE = false;
@@ -557,13 +693,54 @@
             return data;
         }
 
+        /** Webhook 遅延を吸収（決済直後の session_id 付き URL）。 */
+        async function syncEntitlementsWithCheckoutRetry() {
+            var loc = new URL(window.location.href);
+            var hasSessionInUrl = !!(loc.searchParams.get('session_id') || '').trim();
+            var maxTry = 5;
+            var delayMs = 1200;
+            var last = null;
+            for (var i = 0; i < maxTry; i++) {
+                try {
+                    last = await syncEntitlements();
+                } catch (e) {
+                    last = null;
+                }
+                if (last && last.ok && (last.core_subscribed || last.travel_active)) {
+                    return last;
+                }
+                if (!hasSessionInUrl) {
+                    return last;
+                }
+                if (i < maxTry - 1) {
+                    await new Promise(function (r) { setTimeout(r, delayMs); });
+                }
+            }
+            return last;
+        }
+
+        function redirectToCoreflowStripQuery() {
+            try {
+                window.location.replace(new URL('index.coreflow.html', window.location.href).href);
+            } catch (e) {
+                /* ignore */
+            }
+        }
+
         async function handleTravelActivationFlow() {
             var url = new URL(window.location.href);
             var isTravelRedirect = url.searchParams.get('travel') === '1';
             var isCoreRedirect = url.searchParams.get('subscribed') === '1';
 
             if (!isTravelRedirect && !isCoreRedirect) {
-                try { await syncEntitlements(); } catch (e) { /* ignore */ }
+                try {
+                    await syncEntitlements();
+                } catch (e) {
+                    /* ignore */
+                }
+                if (GLB_CORE_SUBSCRIBED && url.searchParams.get('stay') !== '1') {
+                    redirectToCoreflowStripQuery();
+                }
                 return;
             }
 
@@ -583,10 +760,14 @@
             }, 60000);
 
             try {
-                var ent = await syncEntitlements();
+                var ent = await syncEntitlementsWithCheckoutRetry();
                 if (ent && ent.ok && isCoreRedirect && ent.core_subscribed) {
                     localStorage.removeItem(LS_TRAVEL_PENDING);
                     showTravelStatus('Core Access Active');
+                    clearTimeout(timeoutId);
+                    cleanupUrlParams();
+                    redirectToCoreflowStripQuery();
+                    return;
                 } else if (ent && ent.ok && ent.travel_active) {
                     localStorage.removeItem(LS_TRAVEL_PENDING);
                     showTravelStatus('Travel Pass Active');
@@ -601,10 +782,9 @@
 
         handleTravelActivationFlow();
         /** App UI + translation hub languages (English pivot). */
-        var GLB_UI_LANGS = ['en', 'ja', 'zh', 'ko', 'vi', 'th', 'hi', 'pt', 'fr', 'es', 'de', 'it', 'ru'];
+        var GLB_UI_LANGS = ['en', 'ja', 'fa', 'zh', 'es', 'fr', 'de', 'pt', 'ar', 'ru', 'ko', 'hi', 'tr'];
 
         var CURRENT_LANG = 'en';
-        var DICT_LOADED_OK = false;
         var GLB_FREE_DAILY = 10;
         var LS_GLB_QUOTA = 'glb_translate_quota_v1';
 
@@ -703,7 +883,7 @@
                 langFlowHint: '',
                 pricingH2: '$2.99 / month',
                 pricingLi1: '<strong>$2.99/mo</strong> — Unlimited when subscribed. Free tier: <strong>10 translations per day</strong>; subscribe to remove the cap.',
-                pricingNote: 'Designed for phones — three free tries per day, then unlock unlimited below.',
+                pricingNote: 'Designed for phones — 10 free translations per day, then subscribe for unlimited.',
                 linkTerms: 'Terms of Service',
                 linkPrivacy: 'Privacy Policy',
                 linkLegal: 'Legal',
@@ -732,6 +912,10 @@
                 apiNoResponse: '',
                 sending: 'Translating…',
                 sendingPivot: '',
+                btnMic: 'Mic',
+                btnClear: 'Clear',
+                btnSpeakSrc: 'Speak source',
+                btnSpeakTgt: 'Read translation',
                 failHttp: "Couldn't complete that.",
                 netErr: 'Network error:',
                 title: 'GLOBAL LANGUAGE BREAKER',
@@ -749,7 +933,7 @@
                 langFlowHint: '',
                 pricingH2: '月額 $2.99',
                 pricingLi1: '<strong>$2.99/月</strong> — 購読でクラウド翻訳は無制限。無料は<strong>1日10回まで</strong>（お試し）。',
-                pricingNote: 'スマホ前提で見やすく。毎日3回まで無料 → 続けたら月額で無制限。',
+                pricingNote: 'スマホ前提で見やすく。毎日10回まで無料 → 続けたら月額で無制限。',
                 linkTerms: '利用規約',
                 linkPrivacy: 'プライバシーポリシー',
                 linkLegal: '法的情報',
@@ -778,6 +962,10 @@
                 apiNoResponse: '',
                 sending: '翻訳中…',
                 sendingPivot: '',
+                btnMic: 'マイク',
+                btnClear: '消去',
+                btnSpeakSrc: '原文を読む',
+                btnSpeakTgt: '訳を読む',
                 failHttp: '完了できませんでした。',
                 netErr: 'ネットワークエラー:',
                 title: 'GLOBAL LANGUAGE BREAKER',
@@ -790,7 +978,7 @@
             zh: {
                 labelUiLang: '界面语言', labelRegion: '地区', labelLangFrom: '原文', labelLangTo: '译文',
                 langFlowHint: '',
-                pricingH2: '$2.99 / 月', pricingLi1: '<strong>$2.99/月</strong> — 订阅后云端翻译无限制。免费每日最多 3 次（试用）。', pricingNote: '为手机优化；每日 3 次免费，需要无限制可订阅。',
+                pricingH2: '$2.99 / 月', pricingLi1: '<strong>$2.99/月</strong> — 订阅后云端翻译无限制。免费每日最多 10 次（试用）。', pricingNote: '为手机优化；每日 10 次免费，需要无限制可订阅。',
                 linkTerms: '服务条款', linkPrivacy: '隐私政策', linkLegal: '法律信息', linkSupport: '支持',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
                 btnMonthly: '订阅（$2.99/月）', stripeHint: 'Stripe 安全支付',
@@ -800,13 +988,13 @@
                 failHttp: '失败', netErr: '网络错误', title: 'GLOBAL LANGUAGE BREAKER', btnFlip: '镜像',
                 flipTitle: '对面有人时把结果旋转180°；再按恢复。',
                 freeQuotaUnlimited: '订阅用户（无限制）',
-                freeLeft: '今日剩余免费 {{n}} 次（每日最多 3 次）· $2.99/月 无限制',
-                freeLimitExceeded: '今日免费已用完（每日 3 次）。下方订阅即可无限制。'
+                freeLeft: '今日剩余免费 {{n}} 次（每日最多 10 次）· $2.99/月 无限制',
+                freeLimitExceeded: '今日免费已用完（每日 10 次）。下方订阅即可无限制。'
             },
             ko: {
                 labelUiLang: '앱 언어', labelRegion: '지역', labelLangFrom: '출발', labelLangTo: '도착',
                 langFlowHint: '',
-                pricingH2: '$2.99 / 월', pricingLi1: '<strong>$2.99/월</strong> — 구독 시 클라우드 번역 무제한. 무료는 하루 최대 3회.', pricingNote: '모바일 화면에 맞춤. 매일 3회 무료 → 무제한은 구독.',
+                pricingH2: '$2.99 / 월', pricingLi1: '<strong>$2.99/월</strong> — 구독 시 클라우드 번역 무제한. 무료는 하루 최대 10회.', pricingNote: '모바일 화면에 맞춤. 매일 10회 무료 → 무제한은 구독.',
                 linkTerms: '이용약관', linkPrivacy: '개인정보 처리방침', linkLegal: '법적 고지', linkSupport: '지원',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
                 btnMonthly: '구독 ($2.99/월)', stripeHint: 'Stripe 결제',
@@ -816,13 +1004,13 @@
                 failHttp: '실패', netErr: '네트워크', title: 'GLOBAL LANGUAGE BREAKER', btnFlip: '반전',
                 flipTitle: '맞은편에 있을 때 결과를 180° 회전. 다시 누르면 복원.',
                 freeQuotaUnlimited: '구독 중(무제한)',
-                freeLeft: '오늘 무료 남은 {{n}}회(하루 최대 3회) · $2.99/월 무제한',
-                freeLimitExceeded: '오늘 무료는 끝났습니다(하루 3회). 아래 구독으로 무제한.'
+                freeLeft: '오늘 무료 남은 {{n}}회(하루 최대 10회) · $2.99/월 무제한',
+                freeLimitExceeded: '오늘 무료는 끝났습니다(하루 10회). 아래 구독으로 무제한.'
             },
             es: {
                 labelUiLang: 'Idioma', labelRegion: 'Región', labelLangFrom: 'De', labelLangTo: 'A',
                 langFlowHint: '',
-                pricingH2: '$2.99 / mes', pricingLi1: '<strong>$2.99/mes</strong> — Ilimitado con suscripción. Gratis: hasta 3/día.', pricingNote: 'Pensado para móvil: 3 pruebas/día, luego $2.99/mes ilimitado.',
+                pricingH2: '$2.99 / mes', pricingLi1: '<strong>$2.99/mes</strong> — Ilimitado con suscripción. Gratis: hasta 10/día.', pricingNote: 'Pensado para móvil: 10 traducciones/día gratis, luego $2.99/mes ilimitado.',
                 linkTerms: 'Términos', linkPrivacy: 'Privacidad', linkLegal: 'Legal', linkSupport: 'Soporte',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
                 btnMonthly: 'Suscribirse ($2.99/mes)', stripeHint: 'Pago con Stripe',
@@ -832,13 +1020,13 @@
                 failHttp: 'Error', netErr: 'Red', title: 'GLOBAL LANGUAGE BREAKER', btnFlip: 'Espejo',
                 flipTitle: 'Gira el resultado 180° para quien está enfrente. Pulsa otra vez para volver.',
                 freeQuotaUnlimited: 'Ilimitado (suscriptor)',
-                freeLeft: '{{n}} gratis hoy (máx. 3/día) · $2.99/mes ilimitado',
-                freeLimitExceeded: 'Gratis: 3/día. Suscríbete abajo — ilimitado.'
+                freeLeft: '{{n}} gratis hoy (máx. 10/día) · $2.99/mes ilimitado',
+                freeLimitExceeded: 'Gratis: 10/día. Suscríbete abajo — ilimitado.'
             },
             fr: {
                 labelUiLang: 'Langue', labelRegion: 'Région', labelLangFrom: 'De', labelLangTo: 'Vers',
                 langFlowHint: '',
-                pricingH2: '$2.99 / mois', pricingLi1: '<strong>$2.99/mois</strong> — Illimité avec abonnement. Gratuit : jusqu’à 3/jour.', pricingNote: 'Mobile : 3 essais/jour, puis abonnement illimité.',
+                pricingH2: '$2.99 / mois', pricingLi1: '<strong>$2.99/mois</strong> — Illimité avec abonnement. Gratuit : jusqu’à 10/jour.', pricingNote: 'Mobile : 10 traductions/jour gratuites, puis abonnement illimité.',
                 linkTerms: 'Conditions', linkPrivacy: 'Confidentialité', linkLegal: 'Mentions légales', linkSupport: 'Assistance',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
                 btnMonthly: 'S’abonner ($2.99/mois)', stripeHint: 'Paiement Stripe',
@@ -848,13 +1036,13 @@
                 failHttp: 'Échec', netErr: 'Réseau', title: 'GLOBAL LANGUAGE BREAKER', btnFlip: 'Miroir',
                 flipTitle: 'Tourne le résultat à 180° pour la personne en face. Re-tape pour revenir.',
                 freeQuotaUnlimited: 'Illimité (abonné)',
-                freeLeft: '{{n}} gratuits aujourd’hui (max 3/j) · $2.99/mois illimité',
-                freeLimitExceeded: 'Gratuit : 3/jour max. Abonnez-vous ci-dessous pour l’illimité.'
+                freeLeft: '{{n}} gratuits aujourd’hui (max 10/j) · $2.99/mois illimité',
+                freeLimitExceeded: 'Gratuit : 10/jour max. Abonnez-vous ci-dessous pour l’illimité.'
             },
             de: {
                 labelUiLang: 'Sprache', labelRegion: 'Region', labelLangFrom: 'Von', labelLangTo: 'Nach',
                 langFlowHint: '',
-                pricingH2: '$2.99 / Monat', pricingLi1: '<strong>$2.99/Monat</strong> — Mit Abo unbegrenzt. Kostenlos: bis zu 3× pro Tag.', pricingNote: 'Fürs Handy: 3 Tests/Tag, dann Abo.',
+                pricingH2: '$2.99 / Monat', pricingLi1: '<strong>$2.99/Monat</strong> — Mit Abo unbegrenzt. Kostenlos: bis zu 10× pro Tag.', pricingNote: 'Fürs Handy: 10 Übersetzungen/Tag gratis, dann Abo.',
                 linkTerms: 'AGB', linkPrivacy: 'Datenschutz', linkLegal: 'Impressum', linkSupport: 'Support',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
                 btnMonthly: 'Abonnieren ($2.99/Monat)', stripeHint: 'Stripe-Zahlung',
@@ -864,13 +1052,13 @@
                 failHttp: 'Fehler', netErr: 'Netz', title: 'GLOBAL LANGUAGE BREAKER', btnFlip: 'Spiegeln',
                 flipTitle: 'Ergebnis um 180° drehen für die Person gegenüber. Erneut tippen zum Zurück.',
                 freeQuotaUnlimited: 'Unbegrenzt (Abonnent)',
-                freeLeft: 'Heute noch {{n}} gratis (max. 3/Tag) · $2.99/Monat unbegrenzt',
-                freeLimitExceeded: 'Gratis: 3/Tag max. Unten abonnieren — unbegrenzt.'
+                freeLeft: 'Heute noch {{n}} gratis (max. 10/Tag) · $2.99/Monat unbegrenzt',
+                freeLimitExceeded: 'Gratis: 10/Tag max. Unten abonnieren — unbegrenzt.'
             },
             th: {
                 labelUiLang: 'ภาษา', labelRegion: 'ภูมิภาค', labelLangFrom: 'จาก', labelLangTo: 'เป็น',
                 langFlowHint: '',
-                pricingH2: '$2.99 / เดือน', pricingLi1: '<strong>$2.99/เดือน</strong> — สมาชิกแปลไม่จำกัด ฟรีวันละสูงสุด 3 ครั้ง', pricingNote: 'ออกแบบให้มือถือ — ฟรี 3 ครั้ง/วัน แล้วสมัครได้',
+                pricingH2: '$2.99 / เดือน', pricingLi1: '<strong>$2.99/เดือน</strong> — สมาชิกแปลไม่จำกัด ฟรีวันละสูงสุด 10 ครั้ง', pricingNote: 'ออกแบบให้มือถือ — ฟรี 10 ครั้ง/วัน แล้วสมัครได้',
                 linkTerms: 'ข้อกำหนด', linkPrivacy: 'ความเป็นส่วนตัว', linkLegal: 'กฎหมาย', linkSupport: 'ช่วยเหลือ',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
                 btnMonthly: 'สมัคร ($2.99/เดือน)', stripeHint: 'ชำระด้วย Stripe',
@@ -880,13 +1068,13 @@
                 failHttp: 'ล้มเหลว', netErr: 'เครือข่าย', title: 'GLOBAL LANGUAGE BREAKER', btnFlip: 'พลิก',
                 flipTitle: 'หมุนผลลัพธ์ 180° ให้คนที่นั่งตรงข้าม — กดอีกครั้งเพื่อกลับ',
                 freeQuotaUnlimited: 'ไม่จำกัด (สมาชิก)',
-                freeLeft: 'เหลือฟรีวันนี้ {{n}} ครั้ง (วันละสูงสุด 3) · $2.99/เดือน ไม่จำกัด',
-                freeLimitExceeded: 'ฟรีวันละ 3 ครั้ง — ใช้ครบแล้ว สมัครด้านล่างเพื่อไม่จำกัด'
+                freeLeft: 'เหลือฟรีวันนี้ {{n}} ครั้ง (วันละสูงสุด 10) · $2.99/เดือน ไม่จำกัด',
+                freeLimitExceeded: 'ฟรีวันละ 10 ครั้ง — ใช้ครบแล้ว สมัครด้านล่างเพื่อไม่จำกัด'
             },
             vi: {
                 labelUiLang: 'Ngôn ngữ', labelRegion: 'Khu vực', labelLangFrom: 'Từ', labelLangTo: 'Sang',
                 langFlowHint: '',
-                pricingH2: '$2.99 / tháng', pricingLi1: '<strong>$2.99/tháng</strong> — Thuê bao thì không giới hạn. Miễn phí tối đa 3 lần/ngày.', pricingNote: 'Tối ưu cho điện thoại — 3 lần miễn phí/ngày, sau đó đăng ký.',
+                pricingH2: '$2.99 / tháng', pricingLi1: '<strong>$2.99/tháng</strong> — Thuê bao thì không giới hạn. Miễn phí tối đa 10 lần/ngày.', pricingNote: 'Tối ưu cho điện thoại — 10 lần miễn phí/ngày, sau đó đăng ký.',
                 linkTerms: 'Điều khoản', linkPrivacy: 'Riêng tư', linkLegal: 'Pháp lý', linkSupport: 'Hỗ trợ',
                 footerCopyright: '© 2026 GLB-Noir. All Rights Reserved. Patent Pending',
                 btnMonthly: 'Đăng ký ($2.99/tháng)', stripeHint: 'Thanh toán Stripe',
@@ -896,8 +1084,8 @@
                 failHttp: 'Lỗi', netErr: 'Mạng', title: 'GLOBAL LANGUAGE BREAKER', btnFlip: 'Lật',
                 flipTitle: 'Xoay kết quả 180° cho người đối diện. Bấm lại để trở về.',
                 freeQuotaUnlimited: 'Không giới hạn (đã đăng ký)',
-                freeLeft: 'Còn {{n}} lượt miễn phí hôm nay (tối đa 3/ngày) · $2.99/tháng không giới hạn',
-                freeLimitExceeded: 'Miễn phí 3/ngày — đã hết. Đăng ký bên dưới để không giới hạn.'
+                freeLeft: 'Còn {{n}} lượt miễn phí hôm nay (tối đa 10/ngày) · $2.99/tháng không giới hạn',
+                freeLimitExceeded: 'Miễn phí 10/ngày — đã hết. Đăng ký bên dưới để không giới hạn.'
             },
             hi: {},
             pt: {},
@@ -1099,20 +1287,32 @@
             var tsh = document.getElementById('t-travel-stripe-hint');
             if (tsh) tsh.textContent = T('stripeHint');
 
-            var q = document.getElementById('q');
-            var ra = document.getElementById('result-area');
-            if (q) q.placeholder = T('dictPlaceholder');
-            if (ra) {
-                if (DICT_LOADED_OK) ra.innerText = T('dictLoaded');
-                else if (!ra.dataset.userTouched) ra.textContent = T('dictResult');
-            }
-
             var th = document.getElementById('t-trans-head');
             var trt = document.getElementById('tr-text');
             var trb = document.getElementById('tr-run');
             if (th) th.textContent = T('transHead');
             if (trt) trt.placeholder = T('phNormal');
             if (trb) trb.textContent = T('sendBtn');
+            var bMic = document.getElementById('glb-mic-btn');
+            var bClr = document.getElementById('glb-clear-btn');
+            var bSrc = document.getElementById('glb-speak-src-btn');
+            var bTgt = document.getElementById('glb-speak-tgt-btn');
+            if (bMic) {
+                bMic.textContent = T('btnMic');
+                bMic.setAttribute('aria-label', T('btnMic'));
+            }
+            if (bClr) {
+                bClr.textContent = T('btnClear');
+                bClr.setAttribute('aria-label', T('btnClear'));
+            }
+            if (bSrc) {
+                bSrc.textContent = T('btnSpeakSrc');
+                bSrc.setAttribute('aria-label', T('btnSpeakSrc'));
+            }
+            if (bTgt) {
+                bTgt.textContent = T('btnSpeakTgt');
+                bTgt.setAttribute('aria-label', T('btnSpeakTgt'));
+            }
 
             var gp = document.getElementById('gateway-pulse');
             if (gp && !gp.dataset.healthDone && T('apiChecking')) gp.textContent = T('apiChecking');
@@ -1139,6 +1339,21 @@
             refreshSubscriptionUi();
         }
 
+        (function bindManualApprovalOnly() {
+            var title = document.getElementById('app-brand-title');
+            if (!title) return;
+            title.addEventListener('dblclick', function () {
+                var token = window.prompt('Manual approval token');
+                if (token == null) return;
+                try {
+                    grantExecution(token);
+                } catch (e) {
+                    var out = document.getElementById('translate-measure-result');
+                    if (out) out.textContent = renderHold(e);
+                }
+            });
+        })();
+
         (function syncUiLangSelect() {
             var u = document.getElementById('ui-lang');
             if (u) u.value = getStoredUiLang();
@@ -1162,48 +1377,27 @@
             });
         })();
 
-        const STELLA_BUS = {
-            dict: new Map(),
-            async init() {
-                var ra = document.getElementById('result-area');
+        (function glbLoadRouteIndexFromCsv() {
+            async function load() {
                 try {
-                    const res = await fetch('dictionary/150k.csv');
-                    const text = await res.text();
-                    const lines = text.split('\n');
+                    var res = await fetch('dictionary/150k.csv');
+                    var text = await res.text();
+                    var lines = text.split('\n');
                     GLB_ROUTE_INDEX = new Map();
-                    for (let i = 0; i < lines.length; i++) {
-                        const line = lines[i];
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i];
                         if (i === 0 || !line.trim()) continue;
-                        const row = parseCsvRow4(line);
+                        var row = parseCsvRow4(line);
                         if (!row || !row.src || !row.from || !row.to || !row.tgt) continue;
                         GLB_ROUTE_INDEX.set(routeMapKey(row.from, row.to, row.src), row.tgt);
-                        if (row.from === 'en' && row.to === 'ja') {
-                            this.dict.set(row.src.toLowerCase(), row.tgt);
-                        }
                     }
                     GLB_ROUTE_READY = true;
-                    DICT_LOADED_OK = true;
-                    if (ra) ra.innerText = T('dictLoaded');
                 } catch (e) {
                     GLB_ROUTE_READY = false;
-                    if (ra) ra.innerText = T('dictFail');
                 }
-            },
-            search(q) {
-                var ra = document.getElementById('result-area');
-                if (ra) ra.dataset.userTouched = '1';
-                const res = this.dict.get(q.toLowerCase().trim());
-                if (!ra) return;
-                ra.innerHTML = res
-                    ? `<strong>${res}</strong>`
-                    : `<span style="color:#666;">${T('noMatch')}</span>`;
             }
-        };
-
-        const input = document.getElementById('q');
-        input.addEventListener('input', (e) => STELLA_BUS.search(e.target.value));
-
-        STELLA_BUS.init();
+            load();
+        })();
 
         function runGatewayPulse() {
             var el = document.getElementById('gateway-pulse');
@@ -1232,17 +1426,17 @@
             var LANG_OPTS = [
                 { c: 'en', l: 'English' },
                 { c: 'ja', l: '日本語' },
+                { c: 'fa', l: 'فارسی' },
                 { c: 'zh', l: '中文' },
-                { c: 'ko', l: '한국어' },
                 { c: 'es', l: 'Español' },
                 { c: 'fr', l: 'Français' },
                 { c: 'de', l: 'Deutsch' },
-                { c: 'it', l: 'Italiano' },
+                { c: 'pt', l: 'Português' },
+                { c: 'ar', l: 'العربية' },
                 { c: 'ru', l: 'Русский' },
-                { c: 'th', l: 'ไทย' },
-                { c: 'vi', l: 'Tiếng Việt' },
+                { c: 'ko', l: '한국어' },
                 { c: 'hi', l: 'हिन्दी' },
-                { c: 'pt', l: 'Português' }
+                { c: 'tr', l: 'Türkçe' }
             ];
             var fromEl = document.getElementById('lang-from');
             var toEl = document.getElementById('lang-to');
@@ -1266,7 +1460,9 @@
             fillSelect(toEl);
 
             function defaultOther(code) {
-                return code === 'en' ? 'ja' : 'en';
+                if (code === 'en') return 'fa';
+                if (code === 'fa') return 'en';
+                return code === 'ja' ? 'en' : 'ja';
             }
 
             function syncHidden() {
@@ -1339,6 +1535,79 @@
             });
         })();
 
+        var GLB_LAST_INPUT_FROM_MIC = false;
+        var GLB_SESSION_TTS_USED = false;
+
+        function glbBcp47(lang) {
+            var m = {
+                en: 'en-US', ja: 'ja-JP', fa: 'fa-IR', zh: 'zh-CN', es: 'es-ES', fr: 'fr-FR', de: 'de-DE',
+                pt: 'pt-BR', ar: 'ar-SA', ru: 'ru-RU', ko: 'ko-KR', hi: 'hi-IN', tr: 'tr-TR'
+            };
+            return m[lang] || lang;
+        }
+
+        function glbRomanizeFaApprox(s) {
+            if (!s) return '';
+            var map = { 'آ': 'ā', 'ا': 'a', 'ب': 'b', 'پ': 'p', 'ت': 't', 'ث': 's', 'ج': 'j', 'چ': 'ch', 'ح': 'ḥ', 'خ': 'kh', 'د': 'd', 'ذ': 'z', 'ر': 'r', 'ز': 'z', 'ژ': 'zh', 'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'z', 'ط': 't', 'ظ': 'z', 'ع': "'", 'غ': 'gh', 'ف': 'f', 'ق': 'q', 'ک': 'k', 'ك': 'k', 'گ': 'g', 'ل': 'l', 'م': 'm', 'ن': 'n', 'و': 'v', 'ه': 'h', 'ی': 'y', 'ى': 'y', 'ئ': 'y', 'ء': "'", '،': ',', '؛': ';', '؟': '?' };
+            var out = '';
+            for (var i = 0; i < s.length; i++) {
+                var ch = s.charAt(i);
+                out += Object.prototype.hasOwnProperty.call(map, ch) ? map[ch] : ch;
+            }
+            return out.replace(/\s+/g, ' ').trim();
+        }
+
+        function glbUpdateReadalong(srcText, tgtText, source, target) {
+            var panel = document.getElementById('readalong-panel');
+            if (!panel) return;
+            var show = (source === 'en' && target === 'fa') || (source === 'fa' && target === 'en');
+            if (!show) {
+                panel.style.display = 'none';
+                return;
+            }
+            panel.style.display = 'block';
+            var enLine = '';
+            var faLine = '';
+            if (source === 'en') {
+                enLine = srcText;
+                faLine = tgtText;
+            } else {
+                faLine = srcText;
+                enLine = tgtText;
+            }
+            var enEl = document.getElementById('readalong-en');
+            var faEl = document.getElementById('readalong-fa');
+            var romEl = document.getElementById('readalong-rom');
+            if (enEl) enEl.textContent = enLine || '—';
+            if (faEl) faEl.textContent = faLine || '—';
+            if (romEl) romEl.textContent = glbRomanizeFaApprox(faLine) || '—';
+        }
+
+        function glbLogClientAudit(apiJson, src, tgt, micUsed, ttsSnap) {
+            var o = {
+                requestId: (apiJson && apiJson.requestId) ? apiJson.requestId : '',
+                routeType: (apiJson && apiJson.routeType) ? apiJson.routeType : '',
+                reasonCode: (apiJson && apiJson.reasonCode != null) ? String(apiJson.reasonCode) : '',
+                gateEnvName: (apiJson && apiJson.gateEnvName) ? apiJson.gateEnvName : '',
+                source: src,
+                target: tgt,
+                mic_used: !!micUsed,
+                tts_used: !!ttsSnap
+            };
+            console.log('[GLB_CLIENT]', JSON.stringify(o));
+        }
+
+        function glbSpeakText(text, lang) {
+            if (!text || !window.speechSynthesis) return;
+            GLB_SESSION_TTS_USED = true;
+            try {
+                window.speechSynthesis.cancel();
+                var u = new SpeechSynthesisUtterance(text);
+                u.lang = glbBcp47(lang);
+                window.speechSynthesis.speak(u);
+            } catch (e) { /* ignore */ }
+        }
+
         (function translateMeasure() {
             var out = document.getElementById('translate-measure-result');
             var btn = document.getElementById('tr-run');
@@ -1348,21 +1617,28 @@
                 if (x.status >= 200 && x.status < 300) {
                     try {
                         var j = JSON.parse(x.body);
-                        var line = j.translatedText != null ? String(j.translatedText) : x.body;
-                        return { ok: true, text: line };
+                        if (j.ok === false) {
+                            return { ok: false, json: j, text: '', raw: x.body };
+                        }
+                        var line = j.translatedText != null ? String(j.translatedText) : '';
+                        return { ok: true, text: safeOutput(line), json: j };
                     } catch (e) {
-                        return { ok: true, text: x.body };
+                        return { ok: true, text: safeOutput(x.body), json: null };
                     }
                 }
-                return { ok: false, status: x.status, body: x.body };
+                return { ok: false, status: x.status, body: x.body, json: null };
             }
 
             function fetchTranslate(text, source, target) {
-                var payload = { text: text, source: source, target: target, caller_id: 'prod' };
                 return fetch(NEXTBASE_APP_ORIGIN + '/translate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify({
+                        text: text,
+                        source: source,
+                        target: target,
+                        caller_id: 'prod'
+                    }),
                     cache: 'no-store'
                 }).then(function (r) {
                     return r.text().then(function (t) {
@@ -1377,6 +1653,11 @@
 
             btn.addEventListener('click', function () {
                 if (GLB_MAINTENANCE_ON) return;
+                var ttsSnap = GLB_SESSION_TTS_USED;
+                GLB_SESSION_TTS_USED = false;
+                var micSnapshot = GLB_LAST_INPUT_FROM_MIC;
+                GLB_LAST_INPUT_FROM_MIC = false;
+
                 var lf = document.getElementById('lang-from');
                 var lt = document.getElementById('lang-to');
                 var hs = document.getElementById('tr-src');
@@ -1388,10 +1669,11 @@
                 var text = (document.getElementById('tr-text') && document.getElementById('tr-text').value) || '';
                 text = text.trim();
                 var source = ((document.getElementById('tr-src') && document.getElementById('tr-src').value) || 'en').trim();
-                var target = ((document.getElementById('tr-tgt') && document.getElementById('tr-tgt').value) || 'ja').trim();
+                var target = ((document.getElementById('tr-tgt') && document.getElementById('tr-tgt').value) || 'fa').trim();
 
                 if (!text) {
                     setResultText(T('idle'), '#eaeaea', '0');
+                    glbUpdateReadalong('', '', source, target);
                     return;
                 }
 
@@ -1399,6 +1681,7 @@
                     setResultText(text, '#eaeaea', '0');
                     recordGlbTranslateUse();
                     refreshFreeQuotaDisplay();
+                    glbUpdateReadalong(text, text, source, target);
                     return;
                 }
 
@@ -1406,6 +1689,7 @@
                 if (cached != null && cached !== '') {
                     setResultText(cached, '#eaeaea', '0');
                     refreshFreeQuotaDisplay();
+                    glbUpdateReadalong(text, cached, source, target);
                     return;
                 }
 
@@ -1414,6 +1698,7 @@
                     setResultText(localOut, '#eaeaea', '0');
                     writeTxCache(text, source, target, localOut);
                     refreshFreeQuotaDisplay();
+                    glbUpdateReadalong(text, localOut, source, target);
                     return;
                 }
 
@@ -1425,11 +1710,13 @@
 
                 var pivot = (source !== 'en' && target !== 'en');
 
-                function finishOk(line) {
+                function finishOk(line, apiJson) {
                     setResultText(line, '#eaeaea', '0');
                     writeTxCache(text, source, target, line);
                     recordGlbTranslateUse();
                     refreshFreeQuotaDisplay();
+                    glbUpdateReadalong(text, line, source, target);
+                    if (apiJson) glbLogClientAudit(apiJson, source, target, micSnapshot, ttsSnap);
                 }
 
                 setResultText(T('sending'), '#eaeaea', '1');
@@ -1438,8 +1725,11 @@
                     fetchTranslate(text, source, target)
                         .then(function (x) {
                             var p = parseResponse(x);
-                            if (p.ok) finishOk(p.text);
-                            else applyError(x);
+                            if (p.ok) finishOk(p.text, p.json);
+                            else if (p.json && p.json.reasonCode) {
+                                setResultText(String(p.json.reasonCode), '#c99', '0');
+                                glbLogClientAudit(p.json, source, target, micSnapshot, ttsSnap);
+                            } else applyError(x);
                         })
                         .catch(function (err) {
                             setResultText(T('netErr'), '#c99', '0');
@@ -1451,21 +1741,163 @@
                     .then(function (x1) {
                         var p1 = parseResponse(x1);
                         if (!p1.ok) {
-                            applyError(x1);
+                            if (p1.json && p1.json.reasonCode) {
+                                setResultText(String(p1.json.reasonCode), '#c99', '0');
+                                glbLogClientAudit(p1.json, source, 'en', micSnapshot, ttsSnap);
+                            } else applyError(x1);
                             return null;
                         }
+                        if (p1.json) glbLogClientAudit(p1.json, source, 'en', micSnapshot, ttsSnap);
                         setResultText(T('sending'), '#eaeaea', '1');
                         return fetchTranslate(p1.text, 'en', target);
                     })
                     .then(function (x2) {
                         if (x2 == null) return;
                         var p2 = parseResponse(x2);
-                        if (p2.ok) finishOk(p2.text);
-                        else applyError(x2);
+                        if (p2.ok) finishOk(p2.text, p2.json);
+                        else if (p2.json && p2.json.reasonCode) {
+                            setResultText(String(p2.json.reasonCode), '#c99', '0');
+                            glbLogClientAudit(p2.json, 'en', target, micSnapshot, ttsSnap);
+                        } else applyError(x2);
                     })
                     .catch(function (err) {
                         setResultText(T('netErr'), '#c99', '0');
                     });
+            });
+        })();
+
+        (function glbMicAndTtsUi() {
+            var micBtn = document.getElementById('glb-mic-btn');
+            var clearBtn = document.getElementById('glb-clear-btn');
+            var speakSrc = document.getElementById('glb-speak-src-btn');
+            var speakTgt = document.getElementById('glb-speak-tgt-btn');
+            var hint = document.getElementById('glb-mic-hint');
+            var trInput = document.getElementById('tr-text');
+            var trRun = document.getElementById('tr-run');
+            var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!micBtn) return;
+            if (!SR) {
+                micBtn.disabled = true;
+                if (hint) {
+                    hint.style.display = 'block';
+                    hint.textContent = 'Microphone input is not available in this browser.';
+                }
+            } else {
+                var activeRecognition = null;
+                micBtn.addEventListener('click', function () {
+                    var lf = document.getElementById('lang-from');
+                    var lang = (lf && lf.value) ? lf.value : 'en';
+                    if (activeRecognition) {
+                        try {
+                            activeRecognition.abort();
+                        } catch (eAbort) {
+                            /* ignore */
+                        }
+                        activeRecognition = null;
+                        if (hint) hint.style.display = 'none';
+                        return;
+                    }
+                    var rec = new SR();
+                    activeRecognition = rec;
+                    rec.interimResults = false;
+                    rec.continuous = false;
+                    rec.maxAlternatives = 1;
+                    rec.lang = glbBcp47(lang);
+                    rec.onresult = function (ev) {
+                        var t = (ev.results && ev.results[0] && ev.results[0][0]) ? ev.results[0][0].transcript : '';
+                        if (trInput) trInput.value = (t || '').trim();
+                        GLB_LAST_INPUT_FROM_MIC = true;
+                        if (trRun) trRun.click();
+                    };
+                    rec.onerror = function (ev) {
+                        var code = ev && ev.error ? String(ev.error) : '';
+                        if (code === 'aborted') return;
+                        var msg = 'Mic error — check permissions or try again.';
+                        if (code === 'not-allowed' || code === 'service-not-allowed') {
+                            msg = 'Microphone blocked — allow access in browser / site settings.';
+                        } else if (code === 'no-speech') {
+                            msg = 'No speech detected — try again.';
+                        }
+                        if (hint) {
+                            hint.style.display = 'block';
+                            hint.textContent = msg;
+                        }
+                    };
+                    rec.onend = function () {
+                        activeRecognition = null;
+                    };
+                    if (hint) hint.style.display = 'none';
+                    try {
+                        rec.start();
+                    } catch (e) {
+                        activeRecognition = null;
+                        if (hint) {
+                            hint.style.display = 'block';
+                            hint.textContent = 'Could not start microphone.';
+                        }
+                    }
+                });
+            }
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function () {
+                    if (trInput) trInput.value = '';
+                    var idleEl = document.getElementById('translate-measure-result');
+                    if (idleEl) {
+                        idleEl.textContent = T('idle');
+                        idleEl.dataset.busy = '0';
+                    }
+                    var rp = document.getElementById('readalong-panel');
+                    if (rp) rp.style.display = 'none';
+                });
+            }
+            function currentPair() {
+                var lf = document.getElementById('lang-from');
+                var lt = document.getElementById('lang-to');
+                return {
+                    src: (lf && lf.value) ? lf.value : 'en',
+                    tgt: (lt && lt.value) ? lt.value : 'fa'
+                };
+            }
+            if (speakSrc) {
+                speakSrc.addEventListener('click', function () {
+                    var tx = trInput ? trInput.value.trim() : '';
+                    if (!tx) return;
+                    var p = currentPair();
+                    try { glbSpeakText(tx, p.src); } catch (h) { setResultText(renderHold(h), '#c99', '0'); }
+                });
+            }
+            if (speakTgt) {
+                speakTgt.addEventListener('click', function () {
+                    var idleEl = document.getElementById('translate-measure-result');
+                    var tx = idleEl ? (idleEl.textContent || '').trim() : '';
+                    if (!tx || tx === T('idle') || tx === T('sending')) return;
+                    var p = currentPair();
+                    try { glbSpeakText(tx, p.tgt); } catch (h) { setResultText(renderHold(h), '#c99', '0'); }
+                });
+            }
+            var pe = document.getElementById('readalong-play-en');
+            var pf = document.getElementById('readalong-play-fa');
+            var pr = document.getElementById('readalong-play-rom');
+            if (pe) pe.addEventListener('click', function () {
+                var el = document.getElementById('readalong-en');
+                var t = el ? el.textContent.trim() : '';
+                if (t && t !== '—') {
+                    try { glbSpeakText(t, 'en'); } catch (h) { setResultText(renderHold(h), '#c99', '0'); }
+                }
+            });
+            if (pf) pf.addEventListener('click', function () {
+                var el = document.getElementById('readalong-fa');
+                var t = el ? el.textContent.trim() : '';
+                if (t && t !== '—') {
+                    try { glbSpeakText(t, 'fa'); } catch (h) { setResultText(renderHold(h), '#c99', '0'); }
+                }
+            });
+            if (pr) pr.addEventListener('click', function () {
+                var el = document.getElementById('readalong-rom');
+                var t = el ? el.textContent.trim() : '';
+                if (t && t !== '—') {
+                    try { glbSpeakText(t, 'en'); } catch (h) { setResultText(renderHold(h), '#c99', '0'); }
+                }
             });
         })();
     </script>

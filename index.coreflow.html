@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<!-- glb-noir: travel landing -->
+<!-- nextbase-world · index.coreflow.html — $2.99/月 コア契約者向け「対面特化」: マイク聞き取り・翻訳・訳の読み上げ。通常は index.next（$2.99購入・entitlements 同期）からリダイレクト。返信URL: ?subscribed=1&session_id=… -->
 <html lang="en" class="notranslate" translate="no">
 <head>
     <meta charset="UTF-8">
-    <script>window.__GLB_PAGE_LAYER = 'premium';</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-    <title>GLB-Noir</title>
+    <title>GLOBAL LANGUAGE BREAKER</title>
     <style>
         :root {
             --gold: #ffe566;
@@ -51,6 +50,11 @@
             margin-top: 0.08em;
         }
         .glb-billboard { width: 100%; max-width: min(560px, 100%); margin: 12px auto 18px; padding: 0; box-sizing: border-box; }
+        .glb-billboard-after-input {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #2a2a2a;
+        }
         .glb-billboard-tools { display: flex; justify-content: flex-end; margin-bottom: 8px; }
         .glb-flip-btn {
             background: var(--card);
@@ -128,7 +132,6 @@
         }
         input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: #fff; font-size: 16px; margin-bottom: 12px; outline: none; box-sizing: border-box; box-shadow: 0 0 10px var(--gold-glow-soft); }
         input:focus { box-shadow: 0 0 16px var(--gold-glow-mid); border-color: #fff4a8; }
-        #result-area { min-height: 72px; padding: 14px; background: var(--card); border-radius: 10px; margin-bottom: 24px; text-align: left; line-height: 1.5; font-size: 15px; border: 1px solid #2a2a2a; }
         .btn {
             background: linear-gradient(180deg, #fff6a8 0%, var(--gold) 45%, var(--gold-deep) 100%);
             color: #0a0a06;
@@ -305,9 +308,12 @@
                 font-size: clamp(1.05rem, 5.8vw, 1.55rem);
                 letter-spacing: 0.08em;
             }
+            /* 入力・マイクがビューポートから押し出されないよう結果枠を抑える */
             #glb-result-stage {
-                min-height: min(44dvh, 340px);
-                padding: 18px 14px;
+                min-height: min(26dvh, 200px);
+                max-height: min(40dvh, 320px);
+                padding: 14px 12px;
+                overflow: auto;
             }
             #glb-result-stage #translate-measure-result {
                 font-size: clamp(22px, 7.2vw, 40px);
@@ -327,9 +333,42 @@
             .pricing-box { font-size: 13px; padding: 14px; }
             .pricing-box h2 { font-size: 15px; }
         }
+        .glb-tool-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin: 8px 0 10px;
+        }
+        .glb-tool-bar .glb-icon-btn {
+            flex: 1 1 auto;
+            min-width: min(140px, 46%);
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 10px;
+            border: 1px solid var(--gold);
+            background: var(--card);
+            color: #fff8c8;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--gold-glow-soft);
+        }
+        .glb-tool-bar .glb-icon-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .glb-mic-hint { text-align: left; margin: 0 0 8px; }
+        .coreflow-mode-hint {
+            font-size: 10px;
+            color: #777;
+            margin: 8px 0 0;
+            line-height: 1.45;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
+    <script>window.__GLB_PAGE_LAYER = 'coreflow';</script>
     <div id="maintenance-overlay" class="maintenance-overlay" aria-live="polite" aria-modal="true" role="dialog">
         <div class="maintenance-card">
             <h2>Maintenance</h2>
@@ -346,32 +385,23 @@
     <p id="travel-remaining-line" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
     <p id="travel-expiry-display" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
 
-    <div class="glb-billboard">
-        <div class="glb-billboard-tools">
-            <button type="button" class="glb-flip-btn" id="glb-flip-btn">Flip</button>
-        </div>
-        <div id="glb-result-stage" class="glb-result-stage">
-            <div id="translate-measure-result" data-i18n-idle="idle" aria-live="polite">Idle</div>
-        </div>
-    </div>
-
     <div style="margin-top: 8px; padding-top: 12px; border-top: 1px solid #2a2a2a; text-align: left;">
         <div class="trans-section-head" id="t-trans-head">Translation</div>
         <label for="ui-lang" style="display:block; font-size: 11px; color: #888; margin-bottom: 6px;" id="label-ui-lang">Language</label>
         <select id="ui-lang" class="lang-select" aria-label="App language">
             <option value="en">English</option>
             <option value="ja">日本語</option>
+            <option value="fa">فارسی</option>
             <option value="zh">中文</option>
-            <option value="ko">한국어</option>
             <option value="es">Español</option>
             <option value="fr">Français</option>
             <option value="de">Deutsch</option>
-            <option value="it">Italiano</option>
-            <option value="ru">Русский</option>
-            <option value="th">ไทย</option>
-            <option value="vi">Tiếng Việt</option>
-            <option value="hi">हिन्दी</option>
             <option value="pt">Português</option>
+            <option value="ar">العربية</option>
+            <option value="ru">Русский</option>
+            <option value="ko">한국어</option>
+            <option value="hi">हिन्दी</option>
+            <option value="tr">Türkçe</option>
         </select>
         <div class="trans-lang-grid">
             <div>
@@ -386,6 +416,13 @@
         </div>
         <p style="font-size: 10px; color: #666; margin: 0 0 10px; line-height: 1.45;" id="t-lang-flow-hint"></p>
         <input type="text" id="tr-text" placeholder="Text to translate (e.g. hello)" autocomplete="off">
+        <div class="glb-tool-bar" id="glb-tool-bar" aria-label="Input tools">
+            <button type="button" class="glb-icon-btn" id="glb-mic-btn">Mic</button>
+            <button type="button" class="glb-icon-btn" id="glb-clear-btn">Clear</button>
+            <button type="button" class="glb-icon-btn" id="glb-speak-tgt-btn">Read translation</button>
+        </div>
+        <p id="glb-mic-hint" class="glb-mic-hint" style="display:none;font-size:10px;color:#777;"></p>
+        <p id="t-coreflow-mode-hint" class="coreflow-mode-hint" aria-live="polite"></p>
         <input type="hidden" id="tr-src" value="en">
         <input type="hidden" id="tr-tgt" value="en">
         <div style="display:none;" aria-hidden="true">
@@ -419,6 +456,15 @@
         </div>
     </div>
 
+    <div class="glb-billboard glb-billboard-after-input">
+        <div class="glb-billboard-tools">
+            <button type="button" class="glb-flip-btn" id="glb-flip-btn">Flip</button>
+        </div>
+        <div id="glb-result-stage" class="glb-result-stage">
+            <div id="translate-measure-result" data-i18n-idle="idle" aria-live="polite">Idle</div>
+        </div>
+    </div>
+
     <div id="gateway-pulse" style="display:none;" aria-hidden="true" data-i18n-placeholder="apiChecking"></div>
 
     <div id="subscribe-area" style="max-width: min(600px, 100%); margin: 0 auto 20px;">
@@ -427,8 +473,8 @@
             <a href="https://nextbase-one-ha.github.io/nextbase-world/index.html" class="btn glb-subscribe-btn" style="font-size:16px; padding:14px 18px; border-radius:999px;" id="t-btn-back-entry">Open Entry (subscribe LIFE)</a>
         </div>
         <div id="glb-life-subscribed-block" style="display:none;">
-            <p class="note" id="t-premium-travel-blurb" style="text-align:left; line-height:1.5; margin:0 0 14px;"></p>
-            <div class="pricing-box" style="margin-bottom:12px; display:none;" aria-hidden="true">
+            <p class="note" id="t-life-layer-blurb" style="text-align:left; line-height:1.5; margin:0 0 14px;"></p>
+            <div class="pricing-box" style="margin-bottom:12px;">
                 <h3 id="t-travel-layer-h3" style="font-size:1rem; margin:0 0 8px; color:#f5e6b8; text-align:left;">Smile Friend travel</h3>
                 <p id="t-travel-layer-body" style="font-size:12px; color:#aaa; text-align:left; margin:0 0 12px; line-height:1.45;"></p>
             </div>
@@ -445,9 +491,6 @@
         <p id="manage-subscription-note" class="stripe-hint" style="margin-top:6px;">Open Stripe Customer Portal for plan management.</p>
     </div>
 
-    <input type="text" id="q" placeholder="Search 150k dictionary…" autocomplete="off">
-    <div id="result-area" data-i18n-default="dictResult">Results appear here</div>
-
     <footer class="footer legal-footer" id="glb-legal-footer" lang="en">
         <div class="legal-links">
             <a href="https://nextbase-one-ha.github.io/nextbase-world/terms.html" id="link-terms">Terms of Service</a>
@@ -463,9 +506,9 @@
     </div>
 
     <script>
-        if (typeof window.__GLB_PAGE_LAYER === 'undefined') window.__GLB_PAGE_LAYER = 'coreflow';
+        window.__GLB_PAGE_LAYER = 'coreflow';
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
-        const APP_VERSION = '2026.04.16.premium.2';
+        const APP_VERSION = '2026.04.21.coreflow.6';
         var GLB_COREFLOW_CONFIG = {
             API_BASE: 'https://smile-friend-engine-125142687526.us-central1.run.app',
             STRIPE_CORE: 'https://buy.stripe.com/bJedRbefH5yogzZfuDasg09',
@@ -476,6 +519,54 @@
         const LS_CUSTOMER_ID = 'GLB_CUSTOMER_ID';
         const LS_TRAVEL_PENDING = 'glb_travel_pending';
         const LS_PENDING_SESSION_ID = 'GLB_PENDING_SESSION_ID';
+        let EXECUTION_ALLOWED = false;
+        const HOLD_FIXED = {
+            STATE: 'HOLD',
+            REASON: '',
+            FIX_TARGET: '',
+            OWNER: 'system',
+            RECHECK_METHOD: '',
+            NEXT_ACTION: ''
+        };
+        function holdPayload(reason, fixTarget, recheckMethod, nextAction) {
+            return {
+                STATE: 'HOLD',
+                REASON: reason,
+                FIX_TARGET: fixTarget,
+                OWNER: 'system',
+                RECHECK_METHOD: recheckMethod,
+                NEXT_ACTION: nextAction
+            };
+        }
+        function assertExecutionAllowed() {
+            if (!EXECUTION_ALLOWED) {
+                throw holdPayload('NO_NORI_APPROVAL', 'execution_gate', 'wait_for_manual_approval', 'do_nothing');
+            }
+        }
+        function safeOutput(text) {
+            return text;
+        }
+        function renderHold(payload) {
+            var h = payload || HOLD_FIXED;
+            return [
+                'STATE: HOLD',
+                'REASON: ' + (h.REASON || ''),
+                'FIX_TARGET: ' + (h.FIX_TARGET || ''),
+                'OWNER: ' + (h.OWNER || 'system'),
+                'RECHECK_METHOD: ' + (h.RECHECK_METHOD || ''),
+                'NEXT_ACTION: ' + (h.NEXT_ACTION || '')
+            ].join('\n');
+        }
+        function grantExecution(manualToken) {
+            var expected = localStorage.getItem('GLB_MANUAL_APPROVAL_TOKEN') || '';
+            if (!expected || String(manualToken || '') !== expected) {
+                throw holdPayload('NO_NORI_APPROVAL', 'execution_gate', 'wait_for_manual_approval', 'do_nothing');
+            }
+            EXECUTION_ALLOWED = true;
+        }
+        function revokeExecution() {
+            EXECUTION_ALLOWED = false;
+        }
         var GLB_CORE_SUBSCRIBED = false;
         var GLB_TRAVEL_ACTIVE = false;
         var GLB_TRAVEL_EXPIRES_AT = null;
@@ -750,10 +841,9 @@
 
         handleTravelActivationFlow();
         /** App UI + translation hub languages (English pivot). */
-        var GLB_UI_LANGS = ['en', 'ja', 'zh', 'ko', 'vi', 'th', 'hi', 'pt', 'fr', 'es', 'de', 'it', 'ru'];
+        var GLB_UI_LANGS = ['en', 'ja', 'fa', 'zh', 'es', 'fr', 'de', 'pt', 'ar', 'ru', 'ko', 'hi', 'tr'];
 
         var CURRENT_LANG = 'en';
-        var DICT_LOADED_OK = false;
         var GLB_FREE_DAILY = 10;
         var LS_GLB_QUOTA = 'glb_translate_quota_v1';
 
@@ -893,7 +983,12 @@
                 flipTitle: 'Rotate the result 180° for the person across from you. Tap again to restore.',
                 freeQuotaUnlimited: 'Ready.',
                 freeLeft: '{{n}} left today',
-                freeLimitExceeded: 'Use the home page to subscribe.'
+                freeLimitExceeded: 'Use the home page to subscribe.',
+                btnReadTranslation: 'Read translation',
+                btnMic: 'Mic',
+                btnClear: 'Clear',
+                coreflowModeHint:
+                    'Face-to-face (not live conversation): set From/To, speak or type, tap GLB — translation appears below. Tap Read translation to hear it in the To language.'
             },
             ja: {
                 labelUiLang: '言語',
@@ -944,7 +1039,12 @@
                 flipTitle: '向かいに相手がいるとき、結果を180°回転。もう一度押すと元に戻ります。',
                 freeQuotaUnlimited: '準備完了',
                 freeLeft: '本日 残り {{n}} 回',
-                freeLimitExceeded: 'ホームから購入してください。'
+                freeLimitExceeded: 'ホームから購入してください。',
+                btnReadTranslation: '読み上げ（訳）',
+                btnMic: 'マイク',
+                btnClear: '消去',
+                coreflowModeHint:
+                    '対面用（リアルタイム会話モードではありません）。原文／訳文を合わせてマイクまたは入力 → GLB で翻訳（下に表示）→ 読み上げで訳文のみ音声。'
             },
             zh: {
                 labelUiLang: '界面语言', labelRegion: '地区', labelLangFrom: '原文', labelLangTo: '译文',
@@ -1202,9 +1302,7 @@
         }
 
         function canGlbTranslate() {
-            if (GLB_CORE_SUBSCRIBED || isGlbUnlimited()) return true;
-            var q = getGlbQuotaState();
-            return q.count < GLB_FREE_DAILY;
+            return true;
         }
 
         function recordGlbTranslateUse() {
@@ -1297,20 +1395,33 @@
             }
             updateTravelOfferLabels();
 
-            var q = document.getElementById('q');
-            var ra = document.getElementById('result-area');
-            if (q) q.placeholder = T('dictPlaceholder');
-            if (ra) {
-                if (DICT_LOADED_OK) ra.innerText = T('dictLoaded');
-                else if (!ra.dataset.userTouched) ra.textContent = T('dictResult');
-            }
-
             var th = document.getElementById('t-trans-head');
             var trt = document.getElementById('tr-text');
             var trb = document.getElementById('tr-run');
             if (th) th.textContent = T('transHead');
             if (trt) trt.placeholder = T('phNormal');
             if (trb) trb.textContent = T('sendBtn');
+            var rdTr = document.getElementById('glb-speak-tgt-btn');
+            if (rdTr) {
+                rdTr.textContent = T('btnReadTranslation');
+                rdTr.setAttribute('aria-label', T('btnReadTranslation'));
+            }
+            var bMic = document.getElementById('glb-mic-btn');
+            var bClr = document.getElementById('glb-clear-btn');
+            if (bMic) {
+                bMic.textContent = T('btnMic');
+                bMic.setAttribute('aria-label', T('btnMic'));
+            }
+            if (bClr) {
+                bClr.textContent = T('btnClear');
+                bClr.setAttribute('aria-label', T('btnClear'));
+            }
+            var cmh = document.getElementById('t-coreflow-mode-hint');
+            if (cmh) {
+                var h = T('coreflowModeHint');
+                cmh.textContent = h || '';
+                cmh.style.display = h ? 'block' : 'none';
+            }
 
             var gp = document.getElementById('gateway-pulse');
             if (gp && !gp.dataset.healthDone && T('apiChecking')) gp.textContent = T('apiChecking');
@@ -1338,6 +1449,21 @@
             if (typeof refreshTravelRemainingLine === 'function') refreshTravelRemainingLine();
         }
 
+        (function bindManualApprovalOnly() {
+            var title = document.getElementById('app-brand-title');
+            if (!title) return;
+            title.addEventListener('dblclick', function () {
+                var token = window.prompt('Manual approval token');
+                if (token == null) return;
+                try {
+                    grantExecution(token);
+                } catch (e) {
+                    var out = document.getElementById('translate-measure-result');
+                    if (out) out.textContent = renderHold(e);
+                }
+            });
+        })();
+
         (function syncUiLangSelect() {
             var u = document.getElementById('ui-lang');
             if (u) u.value = getStoredUiLang();
@@ -1361,48 +1487,27 @@
             });
         })();
 
-        const STELLA_BUS = {
-            dict: new Map(),
-            async init() {
-                var ra = document.getElementById('result-area');
+        (function glbLoadRouteIndexFromCsv() {
+            async function load() {
                 try {
-                    const res = await fetch('dictionary/150k.csv');
-                    const text = await res.text();
-                    const lines = text.split('\n');
+                    var res = await fetch('dictionary/150k.csv');
+                    var text = await res.text();
+                    var lines = text.split('\n');
                     GLB_ROUTE_INDEX = new Map();
-                    for (let i = 0; i < lines.length; i++) {
-                        const line = lines[i];
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i];
                         if (i === 0 || !line.trim()) continue;
-                        const row = parseCsvRow4(line);
+                        var row = parseCsvRow4(line);
                         if (!row || !row.src || !row.from || !row.to || !row.tgt) continue;
                         GLB_ROUTE_INDEX.set(routeMapKey(row.from, row.to, row.src), row.tgt);
-                        if (row.from === 'en' && row.to === 'ja') {
-                            this.dict.set(row.src.toLowerCase(), row.tgt);
-                        }
                     }
                     GLB_ROUTE_READY = true;
-                    DICT_LOADED_OK = true;
-                    if (ra) ra.innerText = T('dictLoaded');
                 } catch (e) {
                     GLB_ROUTE_READY = false;
-                    if (ra) ra.innerText = T('dictFail');
                 }
-            },
-            search(q) {
-                var ra = document.getElementById('result-area');
-                if (ra) ra.dataset.userTouched = '1';
-                const res = this.dict.get(q.toLowerCase().trim());
-                if (!ra) return;
-                ra.innerHTML = res
-                    ? `<strong>${res}</strong>`
-                    : `<span style="color:#666;">${T('noMatch')}</span>`;
             }
-        };
-
-        const input = document.getElementById('q');
-        input.addEventListener('input', (e) => STELLA_BUS.search(e.target.value));
-
-        STELLA_BUS.init();
+            load();
+        })();
 
         function runGatewayPulse() {
             var el = document.getElementById('gateway-pulse');
@@ -1431,17 +1536,17 @@
             var LANG_OPTS = [
                 { c: 'en', l: 'English' },
                 { c: 'ja', l: '日本語' },
+                { c: 'fa', l: 'فارسی' },
                 { c: 'zh', l: '中文' },
-                { c: 'ko', l: '한국어' },
                 { c: 'es', l: 'Español' },
                 { c: 'fr', l: 'Français' },
                 { c: 'de', l: 'Deutsch' },
-                { c: 'it', l: 'Italiano' },
+                { c: 'pt', l: 'Português' },
+                { c: 'ar', l: 'العربية' },
                 { c: 'ru', l: 'Русский' },
-                { c: 'th', l: 'ไทย' },
-                { c: 'vi', l: 'Tiếng Việt' },
+                { c: 'ko', l: '한국어' },
                 { c: 'hi', l: 'हिन्दी' },
-                { c: 'pt', l: 'Português' }
+                { c: 'tr', l: 'Türkçe' }
             ];
             var fromEl = document.getElementById('lang-from');
             var toEl = document.getElementById('lang-to');
@@ -1465,7 +1570,9 @@
             fillSelect(toEl);
 
             function defaultOther(code) {
-                return code === 'en' ? 'ja' : 'en';
+                if (code === 'en') return 'fa';
+                if (code === 'fa') return 'en';
+                return code === 'ja' ? 'en' : 'ja';
             }
 
             function syncHidden() {
@@ -1538,6 +1645,45 @@
             });
         })();
 
+        var GLB_LAST_INPUT_FROM_MIC = false;
+        var GLB_SESSION_TTS_USED = false;
+
+        function glbBcp47(lang) {
+            var m = {
+                en: 'en-US', ja: 'ja-JP', fa: 'fa-IR', zh: 'zh-CN', es: 'es-ES', fr: 'fr-FR', de: 'de-DE',
+                pt: 'pt-BR', ar: 'ar-SA', ru: 'ru-RU', ko: 'ko-KR', hi: 'hi-IN', tr: 'tr-TR'
+            };
+            return m[lang] || lang;
+        }
+
+        /** Translation text lives in #translate-measure-result only (no separate read-along strip). */
+        function glbUpdateReadalong() { /* intentionally empty */ }
+
+        function glbLogClientAudit(apiJson, src, tgt, micUsed, ttsSnap) {
+            var o = {
+                requestId: (apiJson && apiJson.requestId) ? apiJson.requestId : '',
+                routeType: (apiJson && apiJson.routeType) ? apiJson.routeType : '',
+                reasonCode: (apiJson && apiJson.reasonCode != null) ? String(apiJson.reasonCode) : '',
+                gateEnvName: (apiJson && apiJson.gateEnvName) ? apiJson.gateEnvName : '',
+                source: src,
+                target: tgt,
+                mic_used: !!micUsed,
+                tts_used: !!ttsSnap
+            };
+            console.log('[GLB_CLIENT]', JSON.stringify(o));
+        }
+
+        function glbSpeakText(text, lang) {
+            if (!text || !window.speechSynthesis) return;
+            GLB_SESSION_TTS_USED = true;
+            try {
+                window.speechSynthesis.cancel();
+                var u = new SpeechSynthesisUtterance(text);
+                u.lang = glbBcp47(lang);
+                window.speechSynthesis.speak(u);
+            } catch (e) { /* ignore */ }
+        }
+
         (function translateMeasure() {
             var out = document.getElementById('translate-measure-result');
             var btn = document.getElementById('tr-run');
@@ -1547,21 +1693,28 @@
                 if (x.status >= 200 && x.status < 300) {
                     try {
                         var j = JSON.parse(x.body);
-                        var line = j.translatedText != null ? String(j.translatedText) : x.body;
-                        return { ok: true, text: line };
+                        if (j.ok === false) {
+                            return { ok: false, json: j, text: '', raw: x.body };
+                        }
+                        var line = j.translatedText != null ? String(j.translatedText) : '';
+                        return { ok: true, text: safeOutput(line), json: j };
                     } catch (e) {
-                        return { ok: true, text: x.body };
+                        return { ok: true, text: safeOutput(x.body), json: null };
                     }
                 }
-                return { ok: false, status: x.status, body: x.body };
+                return { ok: false, status: x.status, body: x.body, json: null };
             }
 
             function fetchTranslate(text, source, target) {
-                var payload = { text: text, source: source, target: target, caller_id: 'prod' };
                 return fetch(NEXTBASE_APP_ORIGIN + '/translate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify({
+                        text: text,
+                        source: source,
+                        target: target,
+                        caller_id: 'prod'
+                    }),
                     cache: 'no-store'
                 }).then(function (r) {
                     return r.text().then(function (t) {
@@ -1576,6 +1729,11 @@
 
             btn.addEventListener('click', function () {
                 if (GLB_MAINTENANCE_ON) return;
+                var ttsSnap = GLB_SESSION_TTS_USED;
+                GLB_SESSION_TTS_USED = false;
+                var micSnapshot = GLB_LAST_INPUT_FROM_MIC;
+                GLB_LAST_INPUT_FROM_MIC = false;
+
                 var lf = document.getElementById('lang-from');
                 var lt = document.getElementById('lang-to');
                 var hs = document.getElementById('tr-src');
@@ -1587,10 +1745,11 @@
                 var text = (document.getElementById('tr-text') && document.getElementById('tr-text').value) || '';
                 text = text.trim();
                 var source = ((document.getElementById('tr-src') && document.getElementById('tr-src').value) || 'en').trim();
-                var target = ((document.getElementById('tr-tgt') && document.getElementById('tr-tgt').value) || 'ja').trim();
+                var target = ((document.getElementById('tr-tgt') && document.getElementById('tr-tgt').value) || 'fa').trim();
 
                 if (!text) {
                     setResultText(T('idle'), '#eaeaea', '0');
+                    glbUpdateReadalong('', '', source, target);
                     return;
                 }
 
@@ -1598,6 +1757,7 @@
                     setResultText(text, '#eaeaea', '0');
                     recordGlbTranslateUse();
                     refreshFreeQuotaDisplay();
+                    glbUpdateReadalong(text, text, source, target);
                     return;
                 }
 
@@ -1605,6 +1765,7 @@
                 if (cached != null && cached !== '') {
                     setResultText(cached, '#eaeaea', '0');
                     refreshFreeQuotaDisplay();
+                    glbUpdateReadalong(text, cached, source, target);
                     return;
                 }
 
@@ -1613,6 +1774,7 @@
                     setResultText(localOut, '#eaeaea', '0');
                     writeTxCache(text, source, target, localOut);
                     refreshFreeQuotaDisplay();
+                    glbUpdateReadalong(text, localOut, source, target);
                     return;
                 }
 
@@ -1624,11 +1786,13 @@
 
                 var pivot = (source !== 'en' && target !== 'en');
 
-                function finishOk(line) {
+                function finishOk(line, apiJson) {
                     setResultText(line, '#eaeaea', '0');
                     writeTxCache(text, source, target, line);
                     recordGlbTranslateUse();
                     refreshFreeQuotaDisplay();
+                    glbUpdateReadalong(text, line, source, target);
+                    if (apiJson) glbLogClientAudit(apiJson, source, target, micSnapshot, ttsSnap);
                 }
 
                 setResultText(T('sending'), '#eaeaea', '1');
@@ -1637,8 +1801,11 @@
                     fetchTranslate(text, source, target)
                         .then(function (x) {
                             var p = parseResponse(x);
-                            if (p.ok) finishOk(p.text);
-                            else applyError(x);
+                            if (p.ok) finishOk(p.text, p.json);
+                            else if (p.json && p.json.reasonCode) {
+                                setResultText(String(p.json.reasonCode), '#c99', '0');
+                                glbLogClientAudit(p.json, source, target, micSnapshot, ttsSnap);
+                            } else applyError(x);
                         })
                         .catch(function (err) {
                             setResultText(T('netErr'), '#c99', '0');
@@ -1650,22 +1817,129 @@
                     .then(function (x1) {
                         var p1 = parseResponse(x1);
                         if (!p1.ok) {
-                            applyError(x1);
+                            if (p1.json && p1.json.reasonCode) {
+                                setResultText(String(p1.json.reasonCode), '#c99', '0');
+                                glbLogClientAudit(p1.json, source, 'en', micSnapshot, ttsSnap);
+                            } else applyError(x1);
                             return null;
                         }
+                        if (p1.json) glbLogClientAudit(p1.json, source, 'en', micSnapshot, ttsSnap);
                         setResultText(T('sending'), '#eaeaea', '1');
                         return fetchTranslate(p1.text, 'en', target);
                     })
                     .then(function (x2) {
                         if (x2 == null) return;
                         var p2 = parseResponse(x2);
-                        if (p2.ok) finishOk(p2.text);
-                        else applyError(x2);
+                        if (p2.ok) finishOk(p2.text, p2.json);
+                        else if (p2.json && p2.json.reasonCode) {
+                            setResultText(String(p2.json.reasonCode), '#c99', '0');
+                            glbLogClientAudit(p2.json, 'en', target, micSnapshot, ttsSnap);
+                        } else applyError(x2);
                     })
                     .catch(function (err) {
                         setResultText(T('netErr'), '#c99', '0');
                     });
             });
+        })();
+
+        (function glbMicAndTtsUi() {
+            var micBtn = document.getElementById('glb-mic-btn');
+            var clearBtn = document.getElementById('glb-clear-btn');
+            var speakTgt = document.getElementById('glb-speak-tgt-btn');
+            var hint = document.getElementById('glb-mic-hint');
+            var trInput = document.getElementById('tr-text');
+            var trRun = document.getElementById('tr-run');
+            var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!micBtn) return;
+            if (!SR) {
+                micBtn.disabled = true;
+                if (hint) {
+                    hint.style.display = 'block';
+                    hint.textContent = 'Microphone input is not available in this browser.';
+                }
+            } else {
+                var activeRecognition = null;
+                micBtn.addEventListener('click', function () {
+                    var lf = document.getElementById('lang-from');
+                    var lang = (lf && lf.value) ? lf.value : 'en';
+                    if (activeRecognition) {
+                        try {
+                            activeRecognition.abort();
+                        } catch (eAbort) {
+                            /* ignore */
+                        }
+                        activeRecognition = null;
+                        if (hint) hint.style.display = 'none';
+                        return;
+                    }
+                    var rec = new SR();
+                    activeRecognition = rec;
+                    rec.interimResults = false;
+                    rec.continuous = false;
+                    rec.maxAlternatives = 1;
+                    rec.lang = glbBcp47(lang);
+                    rec.onresult = function (ev) {
+                        var t = (ev.results && ev.results[0] && ev.results[0][0]) ? ev.results[0][0].transcript : '';
+                        if (trInput) trInput.value = (t || '').trim();
+                        GLB_LAST_INPUT_FROM_MIC = true;
+                        if (trRun) trRun.click();
+                    };
+                    rec.onerror = function (ev) {
+                        var code = ev && ev.error ? String(ev.error) : '';
+                        if (code === 'aborted') return;
+                        var msg = 'Mic error — check permissions or try again.';
+                        if (code === 'not-allowed' || code === 'service-not-allowed') {
+                            msg = 'Microphone blocked — allow access in browser / site settings.';
+                        } else if (code === 'no-speech') {
+                            msg = 'No speech detected — try again.';
+                        }
+                        if (hint) {
+                            hint.style.display = 'block';
+                            hint.textContent = msg;
+                        }
+                    };
+                    rec.onend = function () {
+                        activeRecognition = null;
+                    };
+                    if (hint) hint.style.display = 'none';
+                    try {
+                        rec.start();
+                    } catch (e) {
+                        activeRecognition = null;
+                        if (hint) {
+                            hint.style.display = 'block';
+                            hint.textContent = 'Could not start microphone.';
+                        }
+                    }
+                });
+            }
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function () {
+                    if (trInput) trInput.value = '';
+                    var idleEl = document.getElementById('translate-measure-result');
+                    if (idleEl) {
+                        idleEl.textContent = T('idle');
+                        idleEl.dataset.busy = '0';
+                    }
+                });
+            }
+            function currentPair() {
+                var lf = document.getElementById('lang-from');
+                var lt = document.getElementById('lang-to');
+                return {
+                    src: (lf && lf.value) ? lf.value : 'en',
+                    tgt: (lt && lt.value) ? lt.value : 'fa'
+                };
+            }
+            if (speakTgt) {
+                speakTgt.addEventListener('click', function () {
+                    var idleEl = document.getElementById('translate-measure-result');
+                    var tx = idleEl ? (idleEl.textContent || '').trim() : '';
+                    if (!tx || tx === T('idle') || tx === T('sending')) return;
+                    var p = currentPair();
+                    try { glbSpeakText(tx, p.tgt); } catch (h) { setResultText(renderHold(h), '#c99', '0'); }
+                });
+            }
         })();
     </script>
     <script>

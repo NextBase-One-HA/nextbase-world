@@ -125,7 +125,6 @@
         }
         input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: #fff; font-size: 16px; margin-bottom: 12px; outline: none; box-sizing: border-box; box-shadow: 0 0 10px var(--gold-glow-soft); }
         input:focus { box-shadow: 0 0 16px var(--gold-glow-mid); border-color: #fff4a8; }
-        #result-area { min-height: 72px; padding: 14px; background: var(--card); border-radius: 10px; margin-bottom: 24px; text-align: left; line-height: 1.5; font-size: 15px; border: 1px solid #2a2a2a; }
         .btn {
             background: linear-gradient(180deg, #fff6a8 0%, var(--gold) 45%, var(--gold-deep) 100%);
             color: #0a0a06;
@@ -439,9 +438,6 @@
         <p id="manage-subscription-note" class="stripe-hint" style="margin-top:6px;">Open Stripe Customer Portal for plan management.</p>
     </div>
 
-    <input type="text" id="q" placeholder="Search 150k dictionary…" autocomplete="off">
-    <div id="result-area" data-i18n-default="dictResult">Results appear here</div>
-
     <footer class="footer legal-footer" id="glb-legal-footer" lang="en">
         <div class="legal-links">
             <a href="https://nextbase-one-ha.github.io/nextbase-world/terms.html" id="link-terms">Terms of Service</a>
@@ -459,7 +455,7 @@
     <script>
         /** Translate /health: smile-friend-engine (us-central1) */
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
-        const APP_VERSION = '2026.04.16.entry.2';
+        const APP_VERSION = '2026.04.21.entry.1';
         const MAINTENANCE_DEFAULT = 'We are currently enhancing the system for a better experience. Please check back shortly.';
         const LS_CUSTOMER_ID = 'GLB_CUSTOMER_ID';
         const LS_TRAVEL_PENDING = 'glb_travel_pending';
@@ -676,7 +672,6 @@
         var GLB_UI_LANGS = ['en', 'ja', 'zh', 'ko', 'vi', 'th', 'hi', 'pt', 'fr', 'es', 'de', 'it', 'ru'];
 
         var CURRENT_LANG = 'en';
-        var DICT_LOADED_OK = false;
         var GLB_FREE_DAILY = 10;
         var LS_GLB_QUOTA = 'glb_translate_quota_v1';
 
@@ -1169,14 +1164,6 @@
             if (sh) sh.textContent = T('stripeHint');
             updateTravelOfferLabels();
 
-            var q = document.getElementById('q');
-            var ra = document.getElementById('result-area');
-            if (q) q.placeholder = T('dictPlaceholder');
-            if (ra) {
-                if (DICT_LOADED_OK) ra.innerText = T('dictLoaded');
-                else if (!ra.dataset.userTouched) ra.textContent = T('dictResult');
-            }
-
             var th = document.getElementById('t-trans-head');
             var trt = document.getElementById('tr-text');
             var trb = document.getElementById('tr-run');
@@ -1233,48 +1220,27 @@
             });
         })();
 
-        const STELLA_BUS = {
-            dict: new Map(),
-            async init() {
-                var ra = document.getElementById('result-area');
+        (function glbLoadRouteIndexFromCsv() {
+            async function load() {
                 try {
-                    const res = await fetch('dictionary/150k.csv');
-                    const text = await res.text();
-                    const lines = text.split('\n');
+                    var res = await fetch('dictionary/150k.csv');
+                    var text = await res.text();
+                    var lines = text.split('\n');
                     GLB_ROUTE_INDEX = new Map();
-                    for (let i = 0; i < lines.length; i++) {
-                        const line = lines[i];
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i];
                         if (i === 0 || !line.trim()) continue;
-                        const row = parseCsvRow4(line);
+                        var row = parseCsvRow4(line);
                         if (!row || !row.src || !row.from || !row.to || !row.tgt) continue;
                         GLB_ROUTE_INDEX.set(routeMapKey(row.from, row.to, row.src), row.tgt);
-                        if (row.from === 'en' && row.to === 'ja') {
-                            this.dict.set(row.src.toLowerCase(), row.tgt);
-                        }
                     }
                     GLB_ROUTE_READY = true;
-                    DICT_LOADED_OK = true;
-                    if (ra) ra.innerText = T('dictLoaded');
                 } catch (e) {
                     GLB_ROUTE_READY = false;
-                    if (ra) ra.innerText = T('dictFail');
                 }
-            },
-            search(q) {
-                var ra = document.getElementById('result-area');
-                if (ra) ra.dataset.userTouched = '1';
-                const res = this.dict.get(q.toLowerCase().trim());
-                if (!ra) return;
-                ra.innerHTML = res
-                    ? `<strong>${res}</strong>`
-                    : `<span style="color:#666;">${T('noMatch')}</span>`;
             }
-        };
-
-        const input = document.getElementById('q');
-        input.addEventListener('input', (e) => STELLA_BUS.search(e.target.value));
-
-        STELLA_BUS.init();
+            load();
+        })();
 
         function runGatewayPulse() {
             var el = document.getElementById('gateway-pulse');
