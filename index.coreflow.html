@@ -1367,7 +1367,7 @@
             try {
                 var customerId = (localStorage.getItem(LS_CUSTOMER_ID) || '').trim();
                 if (!customerId) throw new Error('missing_customer_id');
-                var res = await fetch(NEXTBASE_APP_ORIGIN + '/create-portal-session', {
+                var res = await fetch(NEXTBASE_APP_ORIGIN + '/billing/portal', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ customer_id: customerId })
