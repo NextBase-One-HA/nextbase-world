@@ -566,7 +566,19 @@
             GLB_CORE_SUBSCRIBED = !!(data && data.ok && data.core_subscribed === true) || localSub;
             GLB_TRAVEL_ACTIVE = !!(data && data.ok && data.travel_active === true);
             GLB_TRAVEL_EXPIRES_AT = (data && data.ok && data.travel_pass_expires_at) ? String(data.travel_pass_expires_at) : null;
+            updatePaidStatusIndicator();
             if (typeof refreshTravelRemainingLine === 'function') refreshTravelRemainingLine();
+        }
+
+        function updatePaidStatusIndicator() {
+            var badge = document.getElementById('core-access-active');
+            if (!badge) return;
+            if (GLB_CORE_SUBSCRIBED || isGlbUnlimited()) {
+                badge.textContent = '2.99 Unlimited Active';
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
         }
 
         function refreshTravelRemainingLine() {
@@ -1130,10 +1142,12 @@
             var el = document.getElementById('t-free-quota');
             if (!el) return;
             if (isGlbUnlimited()) {
-                el.textContent = T('freeQuotaUnlimited');
+                el.textContent = '2.99 Unlimited Active';
+                el.style.display = 'none';
                 el.classList.remove('is-warn');
                 return;
             }
+            el.style.display = '';
             var q = getGlbQuotaState();
             var left = Math.max(0, GLB_FREE_DAILY - q.count);
             el.textContent = T('freeLeft').replace(/\{\{n\}\}/g, String(left));
@@ -1498,7 +1512,7 @@
                     return;
                 }
 
-                if (!canGlbTranslate()) {
+                if (!isGlbUnlimited() && !canGlbTranslate()) {
                     setResultText(T('freeLimitExceeded'), '#c99', '0');
                     refreshFreeQuotaDisplay();
                     return;
