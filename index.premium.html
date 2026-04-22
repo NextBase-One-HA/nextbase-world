@@ -683,6 +683,29 @@
             } catch (e) { /* ignore */ }
         }
 
+        function forceRedirectToCore(reason) {
+            var target = 'https://nextbase-one-ha.github.io/nextbase-world/index.next.html';
+            console.log('REDIRECT_EXECUTE', target, 'reason=' + reason);
+            glbTraceExpiry('redirect_execute', { target: target, reason: reason, href: window.location.href });
+            try { window.location.replace(target); } catch (e0) { /* ignore */ }
+            setTimeout(function () {
+                try {
+                    if (window.location.href.indexOf('/index.next.html') === -1) {
+                        glbTraceExpiry('redirect_fallback_assign', { target: target, reason: reason, href: window.location.href });
+                        window.location.assign(target);
+                    }
+                } catch (e1) { /* ignore */ }
+            }, 60);
+            setTimeout(function () {
+                try {
+                    if (window.location.href.indexOf('/index.next.html') === -1 && window.top && window.top.location) {
+                        glbTraceExpiry('redirect_fallback_top', { target: target, reason: reason, href: window.location.href });
+                        window.top.location.href = target;
+                    }
+                } catch (e2) { /* ignore */ }
+            }, 140);
+        }
+
         function glbIsPaidFlag() {
             return glbCorePaidActive();
         }
@@ -769,10 +792,7 @@
                         source: after && after.source ? after.source : null
                     });
                     try { sessionStorage.setItem('GLB_FORCE_CORE_AFTER_TRAVEL_EXPIRE', '1'); } catch (e0) { /* ignore */ }
-                    var target = '/nextbase-world/index.next.html';
-                    console.log('REDIRECT_EXECUTE', target, 'reason=travel_expired');
-                    glbTraceExpiry('redirect_execute', { target: target, reason: 'travel_expired' });
-                    window.location.replace(target);
+                    forceRedirectToCore('travel_expired');
                     return;
                 }
                 if (!glbCorePaidActive()) {

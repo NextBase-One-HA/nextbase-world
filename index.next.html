@@ -652,6 +652,52 @@
         var GLB_SYSTEM_STATUS_TTL = 30000;
         var GLB_MAINTENANCE_ON = false;
 
+        function glbTraceCore(step, payload) {
+            try {
+                var trace = [];
+                try { trace = JSON.parse(sessionStorage.getItem('GLB_TIME_DRIFT_TRACE') || '[]'); } catch (e0) { trace = []; }
+                trace.push({ t: Date.now(), step: 'index_next:' + step, payload: payload || null });
+                if (trace.length > 120) trace = trace.slice(trace.length - 120);
+                sessionStorage.setItem('GLB_TIME_DRIFT_TRACE', JSON.stringify(trace));
+            } catch (e) { /* ignore */ }
+        }
+
+        function normalizeTravelExpiredStateOnNext() {
+            try {
+                var forceCore = sessionStorage.getItem('GLB_FORCE_CORE_AFTER_TRAVEL_EXPIRE') === '1';
+                var cur = parseBillingState();
+                if (!cur) return;
+                var sourceExpired = cur.source === 'travel_expired';
+                if (!forceCore && !sourceExpired) return;
+                var tp = (cur.travelPass && typeof cur.travelPass === 'object') ? cur.travelPass : {};
+                var exp = Number(tp.expiresAt || 0) || 0;
+                persistBillingState({
+                    plan: PLAN_CORE_299,
+                    active: true,
+                    source: 'travel_expired',
+                    travelPass: {
+                        enabled: false,
+                        startedAt: tp.startedAt || null,
+                        expiresAt: exp,
+                        expired: true,
+                        timeSource: tp.timeSource || 'local_pending_sync'
+                    }
+                });
+                var after = parseBillingState();
+                glbTraceCore('normalize_travel_expired', {
+                    forceCore: forceCore,
+                    prevPlan: cur.plan || null,
+                    prevSource: cur.source || null,
+                    prevExpired: !!(tp && tp.expired === true),
+                    afterPlan: after && after.plan ? after.plan : null,
+                    afterSource: after && after.source ? after.source : null,
+                    afterExpired: !!(after && after.travelPass && after.travelPass.expired === true),
+                    afterEnabled: !!(after && after.travelPass && after.travelPass.enabled === true)
+                });
+                try { sessionStorage.removeItem('GLB_FORCE_CORE_AFTER_TRAVEL_EXPIRE'); } catch (e1) { /* ignore */ }
+            } catch (e2) { /* ignore */ }
+        }
+
         function parseBillingState() {
             try {
                 var raw = localStorage.getItem(LS_BILLING_STATE);
@@ -675,6 +721,35 @@
                 for (k in patch) {
                     if (Object.prototype.hasOwnProperty.call(patch, k)) next[k] = patch[k];
                 }
+
+                // Final-state protection: once travel is marked expired, do not allow drift back to travel plan
+                // unless a fresh travel checkout redirect is explicitly happening.
+                var freshTravelCheckout = false;
+                try {
+                    var u = new URL(window.location.href);
+                    freshTravelCheckout = !!((u.searchParams.get('session_id') || '').trim() && u.searchParams.get('travel') === '1');
+                } catch (e0) { freshTravelCheckout = false; }
+                var forceCore = false;
+                try { forceCore = sessionStorage.getItem('GLB_FORCE_CORE_AFTER_TRAVEL_EXPIRE') === '1'; } catch (e1) { forceCore = false; }
+                var expiredLocked = !!(
+                    forceCore ||
+                    (cur && cur.source === 'travel_expired') ||
+                    (next && next.source === 'travel_expired')
+                );
+                if (expiredLocked && !freshTravelCheckout) {
+                    var tp = (next.travelPass && typeof next.travelPass === 'object') ? next.travelPass : ((cur.travelPass && typeof cur.travelPass === 'object') ? cur.travelPass : {});
+                    next.plan = PLAN_CORE_299;
+                    next.active = true;
+                    next.source = 'travel_expired';
+                    next.travelPass = {
+                        enabled: false,
+                        startedAt: tp.startedAt || null,
+                        expiresAt: Number(tp.expiresAt || 0) || 0,
+                        expired: true,
+                        timeSource: tp.timeSource || 'local_pending_sync'
+                    };
+                }
+
                 next.updatedAt = Date.now();
                 if (next.active === false) next.plan = null;
                 localStorage.setItem(LS_BILLING_STATE, JSON.stringify(next));
@@ -710,6 +785,8 @@
             } catch (e) { /* ignore */ }
         })();
 
+        normalizeTravelExpiredStateOnNext();
+
         function glbBillingPaidActive() {
             var s = parseBillingState();
             if (!s || s.active !== true) return false;
@@ -725,10 +802,22 @@
                 var u = new URL(window.location.href);
                 var sid = (u.searchParams.get('session_id') || '').trim();
                 var subq = u.searchParams.get('subscribed');
+                var cur = parseBillingState();
+                var forceCore = sessionStorage.getItem('GLB_FORCE_CORE_AFTER_TRAVEL_EXPIRE') === '1';
                 if (sid) {
-                    persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'stripe_success', updatedAt: Date.now() });
+                    if (!(cur && cur.source === 'travel_expired') && !forceCore) {
+                        persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'stripe_success', updatedAt: Date.now() });
+                        glbTraceCore('prime_write_core_sid', { sid: true });
+                    } else {
+                        glbTraceCore('prime_skip_due_travel_expired', { sid: true });
+                    }
                 } else if (subq === '1' || subq === 'true') {
-                    persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'url_subscribed', updatedAt: Date.now() });
+                    if (!(cur && cur.source === 'travel_expired') && !forceCore) {
+                        persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'url_subscribed', updatedAt: Date.now() });
+                        glbTraceCore('prime_write_core_subq', { subq: true });
+                    } else {
+                        glbTraceCore('prime_skip_due_travel_expired', { subq: true });
+                    }
                 }
             } catch (e) { /* ignore */ }
         })();
@@ -856,6 +945,13 @@
         }
 
         async function syncEntitlements() {
+            normalizeTravelExpiredStateOnNext();
+            var beforeSync = parseBillingState();
+            glbTraceCore('sync_start', {
+                plan: beforeSync && beforeSync.plan ? beforeSync.plan : null,
+                source: beforeSync && beforeSync.source ? beforeSync.source : null,
+                expired: !!(beforeSync && beforeSync.travelPass && beforeSync.travelPass.expired === true)
+            });
             var url = new URL(window.location.href);
             var sessionId = (url.searchParams.get('session_id') || '').trim();
             var customerId = (localStorage.getItem(LS_CUSTOMER_ID) || '').trim();
