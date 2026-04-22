@@ -3,7 +3,20 @@
   PROJECT_PUBLIC_ROOT: https://nextbase-one-ha.github.io/nextbase-world/
   本ファイル: .../travel.html（14.99 Travel 30-Day Pass UI）。Stripe 14.99 success は必ず
   .../travel.html?travel=1&session_id={CHECKOUT_SESSION_ID}（Dashboard 絶対URL）。
-  14.99 cancel 正本: .../index.premium.html（index.html の DOCTYPE と同一表を参照）。
+  14.99 cancel 正本: .../index.premium.html。Core 正本・Stripe / PORTAL 注記は index.html / index.next.html DOCTYPE と同一。index.coreflow.html 廃止。
+
+  【旅行モード正本・再上書き版】
+  旅行モードの主役は、ユーザー一人ひとりである。NEXT BASE / GLB / AI は主役ではなく、旅をより良くするための補助である。
+  旅行モードの使命は、まず不安を0にすること。ただしそれは当然の基盤機能であり、主たる価値は
+  「旅の70%を占める楽しい時間を、もっと自然に、もっと快適に、もっとスマートにすること」に置く。
+  設計優先順位（固定）: 1.楽しさを伸ばす 2.快適さを高める 3.自然に通じる 4.スマートに振る舞える 5.準備の不安をなくす 6.緊急時も当然のように支える
+  旅行モードは「トラブル回避の道具」ではなく「旅そのものをより気持ちよくする補助装置」である。
+  緊急対応は削らない。見せ方の主軸は常に「楽しさ・快適さ・自然さ・スマートさ」に置く。
+  販売・UI・文言: 主語は常にユーザー／AIは裏方／不安0は当然の基盤／売る価値は「もっと良い旅になること」／恐怖・危険・生存を主軸にしない。
+  商品価値（固定）: 海外で自然に通じる／現地で気持ちよく過ごせる／スマートに見える／出発前から安心して準備できる／緊急時も当然のように守られている。
+  NEXT BASE の役割は主役を奪うことではなく、ユーザーの旅を静かに支え、より良いものにすること。
+  UIカテゴリ固定順（タイル）: Restaurant → Taxi → Hotel → Airport → Immigration → Emergency
+  PHASE_TRAVEL_MARKETING_01: 出発前ガイド（#glb-travel-predep-guide）＋スマート振る舞い tips（#glb-travel-prep）。
 -->
 <html lang="en" class="notranslate" translate="no">
 <head>
@@ -465,17 +478,94 @@
             line-height: 1.25;
         }
         .glb-travel-tile:active { opacity: 0.92; filter: brightness(1.06); }
+        /* Emergency: 常設だが危険訴求の主役にしない（ゴールド系で他タイルと調和） */
         .glb-travel-tile--emergency {
-            grid-column: 1 / -1;
-            min-height: 58px;
-            font-size: 15px;
-            border-color: rgba(255, 80, 80, 0.85);
-            background: linear-gradient(180deg, #2a1212 0%, #140606 100%);
-            color: #ffe8e8;
-            box-shadow:
-                0 0 22px rgba(255, 60, 60, 0.35),
-                inset 0 0 20px rgba(120, 20, 20, 0.25);
+            border-color: rgba(255, 230, 100, 0.55);
+            background: linear-gradient(180deg, #1c1a12 0%, #11100c 100%);
+            color: #fff8e8;
+            box-shadow: 0 0 16px rgba(255, 210, 80, 0.18), inset 0 0 14px rgba(80, 70, 30, 0.12);
         }
+        .glb-travel-prep {
+            margin: 0 0 14px;
+            padding: 10px 12px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 230, 100, 0.2);
+            background: #101010;
+            text-align: left;
+        }
+        .glb-travel-prep > summary {
+            list-style: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 800;
+            color: #e8ddaa;
+            letter-spacing: 0.04em;
+            line-height: 1.45;
+        }
+        .glb-travel-prep > summary::-webkit-details-marker { display: none; }
+        .glb-travel-prep-sum-sub {
+            display: block;
+            margin-top: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #9a9478;
+            letter-spacing: 0.06em;
+        }
+        .glb-travel-prep-body {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #2a2a2a;
+            font-size: 11px;
+            color: #c8c4b0;
+            line-height: 1.55;
+        }
+        .glb-travel-prep-body p { margin: 0 0 8px; }
+        .glb-travel-departure-band {
+            margin: 0 0 14px;
+            padding: 12px 12px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 230, 100, 0.28);
+            background: linear-gradient(180deg, #141210 0%, #0e0e0e 100%);
+            text-align: left;
+        }
+        .glb-travel-pass-hero {
+            margin: 0 0 10px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 230, 100, 0.22);
+            background: rgba(30, 28, 18, 0.85);
+            font-size: 12px;
+            font-weight: 800;
+            color: #f5ecc8;
+            letter-spacing: 0.03em;
+            line-height: 1.45;
+        }
+        .glb-travel-predep-guide {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #2a2a2a;
+        }
+        .glb-travel-predep-guide h3 {
+            margin: 0 0 8px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #e8ddaa;
+            letter-spacing: 0.04em;
+        }
+        .glb-travel-predep-guide .glb-predep-lead {
+            margin: 0 0 8px;
+            font-size: 11px;
+            color: #a8a090;
+            line-height: 1.5;
+        }
+        .glb-travel-predep-guide ul {
+            margin: 0;
+            padding-left: 1.15em;
+            font-size: 11px;
+            color: #c8c2b0;
+            line-height: 1.5;
+        }
+        .glb-travel-predep-guide li { margin-bottom: 6px; }
         .glb-travel-cat-overlay {
             position: fixed;
             inset: 0;
@@ -618,14 +708,40 @@
     <div class="header">
         <h1 class="gold-text app-brand-title" id="app-brand-title"><span class="brand-line">GLOBAL LANGUAGE</span><span class="brand-line">BREAKER</span></h1>
     </div>
-    <p id="travel-status" style="display:none; margin: 0 0 12px; color:#f5e6b8; font-size:12px; text-align:center;"></p>
-    <p id="core-access-active" style="display:none; margin: 0 0 12px; color:#f5e6b8; font-size:12px; text-align:center; font-weight:700;">Core Access Active</p>
-    <p id="travel-remaining-line" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
-    <p id="travel-expiry-display" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
+    <section class="glb-travel-departure-band" id="glb-travel-departure-band" aria-label="Travel Pass status and pre-departure guide">
+        <p id="glb-travel-pass-hero" class="glb-travel-pass-hero" style="display:none;" role="status" aria-live="polite"></p>
+        <p id="travel-status" style="display:none; margin: 0 0 10px; color:#f5e6b8; font-size:12px; text-align:center;"></p>
+        <p id="core-access-active" style="display:none; margin: 0 0 10px; color:#f5e6b8; font-size:12px; text-align:center; font-weight:700;">Core Access Active</p>
+        <p id="travel-remaining-line" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
+        <p id="travel-expiry-display" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
 
-    <!-- PHASE_TRAVEL_UI_30DAY_PLAN_03: 6カテゴリ即用タイル -->
+        <section class="glb-travel-predep-guide" id="glb-travel-predep-guide" aria-labelledby="glb-predep-guide-h">
+            <h3 id="glb-predep-guide-h">出発前ガイド：出発前に確認しておくこと</h3>
+            <p class="glb-predep-lead">旅の質を上げるための、軽やかなチェックリストです（注意喚起ではなく、準備の充足感を高めます）。</p>
+            <ul>
+                <li>チップやサービスの文化の感触を掴んでおく（自然でスマートな印象につながります）</li>
+                <li>現地通貨とカードが使えるかの目安を確認する</li>
+                <li>コンセント形状・電圧を確認する（必要なら変換プラグ）</li>
+                <li>入国・滞在に関する書類と宿泊先情報をひとまとめに用意する</li>
+            </ul>
+            <p class="glb-predep-lead" style="margin-top:10px; font-size:10px; color:#6a6658;">
+                EN: tipping norms · cash vs card · plugs/voltage · travel documents — quick reads before you head out.
+            </p>
+        </section>
+    </section>
+
+    <!-- 現地で：「注意」ではなくスマートな振る舞いのコツ（PHASE_TRAVEL_UI + MARKETING） -->
+    <details class="glb-travel-prep" id="glb-travel-prep">
+        <summary>この国でスマートに振る舞うコツ<span class="glb-travel-prep-sum-sub">Smart tips for a smooth trip — not warnings.</span></summary>
+        <div class="glb-travel-prep-body">
+            <p>Focus on comfort, ease, and sounding natural. Manners, tipping, and small cultural differences are framed as <strong>smart ways to enjoy your time</strong>, not fear of mistakes.</p>
+            <p lang="ja">不安を減らし、期待と安心を増やす表現を優先しています。下の6カテゴリ（Restaurant→…→Emergency）とつながっています。</p>
+        </div>
+    </details>
+
+    <!-- PHASE_TRAVEL_UI_30DAY_PLAN_03: 6カテゴリ即用タイル（順: Restaurant → Taxi → Hotel → Airport → Immigration → Emergency） -->
     <section id="glb-travel-six" class="glb-travel-six" aria-labelledby="glb-travel-six-heading">
-        <div id="glb-travel-six-heading" class="glb-travel-six-title">Travel phrases — tap a category</div>
+        <div id="glb-travel-six-heading" class="glb-travel-six-title">Travel mode — natural phrases for a great trip</div>
         <div id="glb-travel-six-grid" class="glb-travel-six-grid" role="navigation" aria-label="Six travel categories"></div>
     </section>
 
@@ -787,7 +903,7 @@
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
         /** API 未デプロイ時・session 失敗時: Stripe 公式ポータル入口（支払い・解約） */
         var GLB_STRIPE_PORTAL_LOGIN_FALLBACK = 'https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00';
-        const APP_VERSION = '2026.04.21.coreflow.11';
+        const APP_VERSION = '2026.04.22.travel.mktg.2';
         var GLB_COREFLOW_CONFIG = {
             API_BASE: 'https://smile-friend-engine-125142687526.us-central1.run.app',
             STRIPE_CORE: 'https://buy.stripe.com/bJedRbefH5yogzZfuDasg09',
@@ -968,30 +1084,64 @@
             }
         }
 
+        function glbTraceExpiry(step, payload) {
+            try {
+                var trace = window.__GLB_TIME_DRIFT_TRACE__ || [];
+                trace.push({ t: Date.now(), step: step, payload: payload || null });
+                if (trace.length > 80) trace = trace.slice(trace.length - 80);
+                window.__GLB_TIME_DRIFT_TRACE__ = trace;
+                sessionStorage.setItem('GLB_TIME_DRIFT_TRACE', JSON.stringify(trace));
+            } catch (e) { /* ignore */ }
+        }
+
         (function primeBillingFromUrl() {
             try {
                 var u = new URL(window.location.href);
                 var sid = (u.searchParams.get('session_id') || '').trim();
                 var subq = u.searchParams.get('subscribed');
                 var isTravelRedirect = u.searchParams.get('travel') === '1';
+                var current = parseBillingState();
+                glbTraceExpiry('prime:start', {
+                    sid: !!sid,
+                    isTravelRedirect: isTravelRedirect,
+                    currentPlan: current && current.plan ? current.plan : null,
+                    currentExp: current && current.travelPass ? Number(current.travelPass.expiresAt || 0) : 0
+                });
+
+                // Critical: never re-prime travel pass if a billing state already exists.
+                // This avoids overriding manually expired states during drift verification.
                 if (sid && isTravelRedirect) {
-                    var startedAt = Date.now();
-                    persistBillingState({
-                        plan: PLAN_TRAVEL_1499_30D,
-                        active: true,
-                        source: 'stripe_success',
-                        travelPass: {
-                            enabled: true,
-                            startedAt: startedAt,
-                            expiresAt: startedAt + MS_30D,
-                            expired: false,
-                            timeSource: 'local_pending_sync'
-                        }
-                    });
+                    if (!(current && current.active === true && current.plan)) {
+                        var startedAt = Date.now();
+                        persistBillingState({
+                            plan: PLAN_TRAVEL_1499_30D,
+                            active: true,
+                            source: 'stripe_success',
+                            travelPass: {
+                                enabled: true,
+                                startedAt: startedAt,
+                                expiresAt: startedAt + MS_30D,
+                                expired: false,
+                                timeSource: 'local_pending_sync'
+                            }
+                        });
+                        glbTraceExpiry('prime:write_travel', { startedAt: startedAt });
+                    } else {
+                        glbTraceExpiry('prime:skip_existing_state', {
+                            plan: current.plan,
+                            exp: current.travelPass ? Number(current.travelPass.expiresAt || 0) : 0
+                        });
+                    }
                 } else if (sid) {
-                    persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'stripe_success', updatedAt: Date.now() });
+                    if (!(current && current.active === true)) {
+                        persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'stripe_success', updatedAt: Date.now() });
+                        glbTraceExpiry('prime:write_core_sid', null);
+                    }
                 } else if (subq === '1' || subq === 'true') {
-                    persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'url_subscribed', updatedAt: Date.now() });
+                    if (!(current && current.active === true)) {
+                        persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'url_subscribed', updatedAt: Date.now() });
+                        glbTraceExpiry('prime:write_core_subq', null);
+                    }
                 }
             } catch (e) { /* ignore */ }
         })();
@@ -1001,7 +1151,20 @@
             try {
                 var u = new URL(window.location.href);
                 if ((u.searchParams.get('nori') || '') === 'admin') return;
+                var before = parseBillingState();
+                glbTraceExpiry('guard:before_expire_check', {
+                    plan: before && before.plan ? before.plan : null,
+                    active: !!(before && before.active === true),
+                    exp: before && before.travelPass ? Number(before.travelPass.expiresAt || 0) : 0,
+                    now: Date.now()
+                });
                 if (expireTravelPassIfNeeded()) {
+                    var after = parseBillingState();
+                    glbTraceExpiry('guard:expired_redirect', {
+                        plan: after && after.plan ? after.plan : null,
+                        active: !!(after && after.active === true),
+                        source: after && after.source ? after.source : null
+                    });
                     window.location.replace(new URL('index.next.html', window.location.href).href);
                     return;
                 }
@@ -1154,6 +1317,16 @@
             if (expDisp) {
                 expDisp.style.display = 'none';
                 expDisp.textContent = '';
+            }
+            var hero = document.getElementById('glb-travel-pass-hero');
+            if (hero) {
+                if (GLB_TRAVEL_ACTIVE) {
+                    hero.style.display = '';
+                    hero.textContent = 'Travel Pass ACTIVE / 海外で自然に通じる、30日間の旅行専用モード';
+                } else {
+                    hero.style.display = 'none';
+                    hero.textContent = '';
+                }
             }
         }
 
@@ -2638,19 +2811,42 @@
             }
         })();
 
-        /** PHASE_TRAVEL_UI_30DAY_PLAN_03 — 定義はこのオブジェクトのみ（証拠用） */
+        /** PHASE_TRAVEL_UI_30DAY_PLAN_03 — 定義はこのオブジェクトのみ（証拠用）。タイル順=UI優先順。 */
         var GLB_TRAVEL_SIX_PHRASES = [
             {
-                id: 'emergency',
-                label: 'Emergency',
-                emergency: true,
+                id: 'restaurant',
+                label: 'Restaurant',
                 actions: [
-                    { labelJa: '助けて', phraseEn: 'Help! I need help right now.' },
-                    { labelJa: '警察', phraseEn: 'Please call the police.' },
-                    { labelJa: '病院', phraseEn: 'I need a hospital or emergency medical help.' },
-                    { labelJa: '紛失/盗難', phraseEn: 'My passport was lost or stolen. Please help.' },
-                    { labelJa: '事故', phraseEn: 'There was an accident. Please send help.' },
-                    { labelJa: '家族/大使館連絡', phraseEn: 'I need to contact my family or embassy.' }
+                    { labelJa: '人数', phraseEn: 'A table for two, please.' },
+                    { labelJa: '注文', phraseEn: 'I would like to order this.' },
+                    { labelJa: 'アレルギー（安心）', phraseEn: 'I have a food allergy. No nuts, please.' },
+                    { labelJa: 'おすすめ確認', phraseEn: 'What do you recommend?' },
+                    { labelJa: '会計', phraseEn: 'The bill, please.' },
+                    { labelJa: '持ち帰り', phraseEn: 'Takeaway, please.' }
+                ]
+            },
+            {
+                id: 'taxi',
+                label: 'Taxi',
+                actions: [
+                    { labelJa: '行き先表示', phraseEn: 'Please take me to this address.' },
+                    { labelJa: '料金確認', phraseEn: 'About how much will the fare be?' },
+                    { labelJa: 'メーター確認', phraseEn: 'Please use the meter.' },
+                    { labelJa: '効率的なルート', phraseEn: 'Please take an efficient route.' },
+                    { labelJa: '支払い方法', phraseEn: 'Can I pay by card or cash?' },
+                    { labelJa: '降車依頼', phraseEn: 'Please stop here.' }
+                ]
+            },
+            {
+                id: 'hotel',
+                label: 'Hotel',
+                actions: [
+                    { labelJa: 'チェックイン', phraseEn: 'I have a reservation. I would like to check in.' },
+                    { labelJa: '予約確認', phraseEn: 'Please confirm my reservation under this name.' },
+                    { labelJa: 'お部屋の調整', phraseEn: 'Could you help adjust something in my room so it is comfortable?' },
+                    { labelJa: 'Wi-Fi', phraseEn: 'What is the Wi-Fi password?' },
+                    { labelJa: '延泊', phraseEn: 'I would like to extend my stay.' },
+                    { labelJa: 'チェックアウト', phraseEn: 'I would like to check out.' }
                 ]
             },
             {
@@ -2659,7 +2855,7 @@
                 actions: [
                     { labelJa: 'チェックイン', phraseEn: 'Where is the check-in counter for my flight?' },
                     { labelJa: '搭乗口確認', phraseEn: 'Which gate is my flight? Can you show me on the board?' },
-                    { labelJa: '荷物紛失', phraseEn: 'My luggage did not arrive. I need help finding it.' },
+                    { labelJa: '荷物の確認', phraseEn: 'My luggage did not arrive. I need help locating it.' },
                     { labelJa: '遅延/乗継', phraseEn: 'My flight is delayed. I need help with my connection.' },
                     { labelJa: 'Wi-Fi/SIM', phraseEn: 'Where can I buy a SIM card or connect to Wi-Fi?' },
                     { labelJa: 'トイレ/両替', phraseEn: 'Where is the restroom and currency exchange?' }
@@ -2672,45 +2868,22 @@
                     { labelJa: '入国審査', phraseEn: 'I am here for immigration inspection.' },
                     { labelJa: '滞在目的', phraseEn: 'The purpose of my visit is tourism.' },
                     { labelJa: '宿泊先説明', phraseEn: 'I will stay at this hotel address.' },
-                    { labelJa: '書類不足', phraseEn: 'I am missing a document. What should I do?' },
+                    { labelJa: '追加書類の確認', phraseEn: 'I may need one more document — what should I provide?' },
                     { labelJa: '税関', phraseEn: 'Do I need to declare anything at customs?' },
                     { labelJa: '指紋/写真案内', phraseEn: 'Where do I go for fingerprints and photos?' }
                 ]
             },
             {
-                id: 'taxi',
-                label: 'Taxi',
+                id: 'emergency',
+                label: 'Emergency',
+                emergency: true,
                 actions: [
-                    { labelJa: '行き先表示', phraseEn: 'Please take me to this address.' },
-                    { labelJa: '料金確認', phraseEn: 'About how much will the fare be?' },
-                    { labelJa: 'メーター確認', phraseEn: 'Please use the meter.' },
-                    { labelJa: '遠回り拒否', phraseEn: 'Please do not take a long route.' },
-                    { labelJa: '支払い方法', phraseEn: 'Can I pay by card or cash?' },
-                    { labelJa: '降車依頼', phraseEn: 'Please stop here.' }
-                ]
-            },
-            {
-                id: 'hotel',
-                label: 'Hotel',
-                actions: [
-                    { labelJa: 'チェックイン', phraseEn: 'I have a reservation. I would like to check in.' },
-                    { labelJa: '予約確認', phraseEn: 'Please confirm my reservation under this name.' },
-                    { labelJa: '部屋トラブル', phraseEn: 'There is a problem with my room.' },
-                    { labelJa: 'Wi-Fi', phraseEn: 'What is the Wi-Fi password?' },
-                    { labelJa: '延泊', phraseEn: 'I would like to extend my stay.' },
-                    { labelJa: 'チェックアウト', phraseEn: 'I would like to check out.' }
-                ]
-            },
-            {
-                id: 'restaurant',
-                label: 'Restaurant',
-                actions: [
-                    { labelJa: '人数', phraseEn: 'A table for two, please.' },
-                    { labelJa: '注文', phraseEn: 'I would like to order this.' },
-                    { labelJa: 'アレルギー', phraseEn: 'I have a food allergy. No nuts, please.' },
-                    { labelJa: 'おすすめ確認', phraseEn: 'What do you recommend?' },
-                    { labelJa: '会計', phraseEn: 'The bill, please.' },
-                    { labelJa: '持ち帰り', phraseEn: 'Takeaway, please.' }
+                    { labelJa: '助けて', phraseEn: 'Help! I need help right now.' },
+                    { labelJa: '警察', phraseEn: 'Please call the police.' },
+                    { labelJa: '病院', phraseEn: 'I need a hospital or emergency medical help.' },
+                    { labelJa: '紛失/盗難', phraseEn: 'My passport was lost or stolen. Please help.' },
+                    { labelJa: '事故', phraseEn: 'There was an accident. Please send help.' },
+                    { labelJa: '家族/大使館連絡', phraseEn: 'I need to contact my family or embassy.' }
                 ]
             }
         ];

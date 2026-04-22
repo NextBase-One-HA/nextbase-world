@@ -2,8 +2,22 @@
 <!--
   PROJECT_PUBLIC_ROOT（公開URL正本）:
   https://nextbase-one-ha.github.io/nextbase-world/
-  本ファイル: .../index.next.html（2.99 Core 有料UI）。未課金は index.html へ。
-  Stripe（Dashboard 絶対URL）: 2.99 success / cancel は index.html の DOCTYPE ブロックと同一正本を参照。
+
+  【ページ正本・CANONICAL_UNIFY_INDEX_NEXT】
+  Core 2.99 本体は本ファイル index.next.html のみ。index.coreflow.html は廃止（参照禁止）。
+  無料: .../index.html
+  Travel 14.99: .../travel.html
+  Premium LP: .../index.premium.html
+
+  Stripe Payment Link（Dashboard 絶対URL・index.html DOCTYPE と同一）:
+  - 2.99 success:  .../index.next.html?session_id={CHECKOUT_SESSION_ID}
+  - 2.99 cancel:    .../index.html
+  - 14.99 success:  .../travel.html?travel=1&session_id={CHECKOUT_SESSION_ID}
+  - 14.99 cancel:   .../index.premium.html
+
+  PORTAL_RETURN_URL 正本: .../index.next.html
+
+  PHASE_TRAVEL_MARKETING_01: Travel 誘導バナー（#glb-travel-pass-banner）→ index.premium.html。
 -->
 <html lang="en" class="notranslate" translate="no">
 <head>
@@ -223,6 +237,45 @@
         .pricing-box li { margin-bottom: 8px; }
         .pricing-box .ja { font-size: 11px; color: #777; display: block; margin-top: 4px; line-height: 1.45; }
         .pricing-box .note { font-size: 10px; color: #666; margin-top: 10px; }
+        /* PHASE_TRAVEL_MARKETING_01 — Travel Pass 誘導（恐怖訴求なし） */
+        .glb-travel-pass-banner {
+            display: none;
+            text-align: left;
+            margin: 0 0 14px;
+            padding: 14px 14px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 230, 100, 0.35);
+            background: radial-gradient(ellipse 100% 80% at 50% 0%, rgba(255, 210, 60, 0.08) 0%, #121212 52%);
+            box-shadow: 0 0 18px rgba(255, 210, 80, 0.08);
+        }
+        .glb-travel-pass-banner .glb-tpb-head {
+            margin: 0 0 8px;
+            font-size: 14px;
+            font-weight: 800;
+            color: #fff6cc;
+            letter-spacing: 0.02em;
+            line-height: 1.45;
+        }
+        .glb-travel-pass-banner .glb-tpb-sub {
+            margin: 0 0 12px;
+            font-size: 11px;
+            color: #b8b098;
+            line-height: 1.55;
+        }
+        .glb-travel-pass-banner .glb-tpb-sub-en {
+            display: block;
+            margin-top: 6px;
+            font-size: 10px;
+            color: #7a7868;
+            line-height: 1.45;
+        }
+        .glb-travel-pass-banner .btn.glb-tpb-cta {
+            margin: 0;
+            text-align: center;
+            border-radius: 999px;
+            padding: 14px 18px;
+            font-size: 14px;
+        }
         .maintenance-overlay {
             position: fixed;
             inset: 0;
@@ -411,6 +464,15 @@
     </div>
     <p id="travel-status" style="display:none; margin: 0 0 12px; color:#f5e6b8; font-size:12px; text-align:center;"></p>
 
+    <section id="glb-travel-pass-banner" class="glb-travel-pass-banner" aria-labelledby="glb-tpb-head" data-phase="TRAVEL_MARKETING_01">
+        <h2 id="glb-tpb-head" class="glb-tpb-head">Travel Pass 30日間、海外をもっと自然に楽しむ。</h2>
+        <p class="glb-tpb-sub">
+            空港・入国審査・タクシー・ホテル・レストラン・緊急時まで。旅行中に迷わない専用モード。
+            <span class="glb-tpb-sub-en">Airport, immigration, taxi, hotel, restaurant, and emergency-ready phrases — one calm travel layout.</span>
+        </p>
+        <a href="index.premium.html" class="btn glb-subscribe-btn glb-tpb-cta">14.99ドルでTravel Passを開く</a>
+    </section>
+
     <div class="glb-billboard">
         <div class="glb-billboard-tools">
             <button type="button" class="glb-flip-btn" id="glb-flip-btn">Flip</button>
@@ -528,7 +590,7 @@
         /** Translate /health: smile-friend-engine (us-central1) */
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
         var GLB_STRIPE_PORTAL_LOGIN_FALLBACK = 'https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00';
-        const APP_VERSION = '2026.04.21.10';
+        const APP_VERSION = '2026.04.22.canon.indexnext.1';
         const MAINTENANCE_DEFAULT = 'We are currently enhancing the system for a better experience. Please check back shortly.';
         const LS_CUSTOMER_ID = 'GLB_CUSTOMER_ID';
         let EXECUTION_ALLOWED = false;
@@ -858,14 +920,6 @@
             return last;
         }
 
-        function redirectToCoreflowStripQuery() {
-            try {
-                window.location.replace(new URL('index.coreflow.html', window.location.href).href);
-            } catch (e) {
-                /* ignore */
-            }
-        }
-
         async function handleTravelActivationFlow() {
             var url = new URL(window.location.href);
             var isTravelRedirect = url.searchParams.get('travel') === '1';
@@ -877,8 +931,8 @@
                 } catch (e) {
                     /* ignore */
                 }
-                if (GLB_CORE_SUBSCRIBED && url.searchParams.get('stay') !== '1') {
-                    redirectToCoreflowStripQuery();
+                if (GLB_CORE_SUBSCRIBED) {
+                    cleanupUrlParams();
                 }
                 return;
             }
@@ -905,7 +959,6 @@
                     showTravelStatus('Core Access Active');
                     clearTimeout(timeoutId);
                     cleanupUrlParams();
-                    redirectToCoreflowStripQuery();
                     return;
                 } else if (ent && ent.ok && ent.travel_active) {
                     localStorage.removeItem(LS_TRAVEL_PENDING);
@@ -919,7 +972,11 @@
             }
         }
 
-        handleTravelActivationFlow();
+        handleTravelActivationFlow().finally(function () {
+            try {
+                if (typeof refreshSubscriptionUi === 'function') refreshSubscriptionUi();
+            } catch (e0) { /* ignore */ }
+        });
         /** App UI + translation hub languages (English pivot). */
         var GLB_UI_LANGS = ['en', 'ja', 'fa', 'zh', 'es', 'fr', 'de', 'pt', 'ar', 'ru', 'ko', 'hi', 'tr'];
 
@@ -1317,6 +1374,11 @@
         function refreshSubscriptionUi() {
             var manageWrap = document.getElementById('manage-subscription-wrap');
             if (manageWrap) manageWrap.style.display = '';
+            var tpb = document.getElementById('glb-travel-pass-banner');
+            if (tpb) {
+                var showOffer = (GLB_CORE_SUBSCRIBED || isGlbUnlimited()) && !GLB_TRAVEL_ACTIVE;
+                tpb.style.display = showOffer ? 'block' : 'none';
+            }
         }
 
         async function openManageSubscription() {

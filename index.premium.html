@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <!--
   PROJECT_PUBLIC_ROOT: https://nextbase-one-ha.github.io/nextbase-world/
-  本ファイル: .../index.premium.html（Premium / 14.99 cancel 着地など）。
-  Stripe 正本は index.html DOCTYPE ブロックと同一。
+  本ファイル: .../index.premium.html（14.99 Travel Pass 専用LP・cancel 着地）。
+  Core 正本: index.next.html。index.coreflow.html 廃止。Stripe / PORTAL 注記は index.html / index.next.html DOCTYPE と同一正本。
+  PHASE_TRAVEL_MARKETING_01: ポジティブ訴求LP（#glb-travel-lp-hero）。30日買い切り・自動更新なし・Coreへ軟着陸を明記。
 -->
 <html lang="en" class="notranslate" translate="no">
 <head>
@@ -11,7 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-    <title>GLB-Noir</title>
+    <title>GLOBAL LANGUAGE BREAKER — Travel Pass</title>
     <style>
         :root {
             --gold: #ffe566;
@@ -198,6 +199,63 @@
             margin-left: auto;
             margin-right: auto;
         }
+        /* PHASE_TRAVEL_MARKETING_01 — 14.99 専用LP（恐怖訴求なし） */
+        .glb-travel-lp-hero {
+            text-align: left;
+            margin: 0 0 18px;
+            padding: 16px 14px 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 230, 100, 0.38);
+            background: radial-gradient(ellipse 110% 90% at 50% 0%, rgba(255, 215, 90, 0.09) 0%, #101010 55%);
+            box-shadow: 0 0 22px rgba(255, 200, 60, 0.1);
+        }
+        .glb-travel-lp-hero h2 {
+            margin: 0 0 10px;
+            font-size: clamp(1.05rem, 4vw, 1.25rem);
+            font-weight: 800;
+            color: #fff8dc;
+            letter-spacing: 0.03em;
+            line-height: 1.4;
+        }
+        .glb-travel-lp-lead {
+            margin: 0 0 12px;
+            font-size: 11px;
+            color: #a09878;
+            line-height: 1.5;
+        }
+        .glb-travel-lp-merits {
+            margin: 0 0 14px;
+            padding-left: 1.15em;
+            font-size: 12px;
+            color: #d5d0c0;
+            line-height: 1.55;
+        }
+        .glb-travel-lp-merits li { margin-bottom: 10px; }
+        .glb-travel-lp-merits strong { color: #ffe566; font-weight: 800; }
+        .glb-travel-lp-reassure {
+            margin: 0 0 14px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #2a2a2a;
+            background: #141414;
+            font-size: 11px;
+            color: #9a9588;
+            line-height: 1.5;
+        }
+        .glb-travel-lp-cta {
+            margin: 0;
+            border-radius: 999px;
+            padding: 16px 20px;
+            font-size: 15px;
+            text-align: center;
+        }
+        .glb-travel-lp-en {
+            display: block;
+            margin-top: 8px;
+            font-size: 10px;
+            color: #6a6658;
+            line-height: 1.45;
+        }
         .glb-travel-remaining {
             margin: 0 0 10px;
             font-size: 11px;
@@ -349,6 +407,19 @@
     <p id="travel-remaining-line" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
     <p id="travel-expiry-display" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
 
+    <section id="glb-travel-lp-hero" class="glb-travel-lp-hero" aria-labelledby="glb-travel-lp-h2" data-phase="TRAVEL_MARKETING_01">
+        <h2 id="glb-travel-lp-h2">14.99ドルで、海外旅行をもっと自然に。</h2>
+        <p class="glb-travel-lp-lead">いつもの翻訳（Core）に、旅先ですぐ役立つ専用レイアウトを足すための、30日間のパートナーです。</p>
+        <ul class="glb-travel-lp-merits">
+            <li><strong>[すぐ使える]</strong> 空港・入国審査・タクシー・ホテル・レストランを6つの入口から即操作できます。</li>
+            <li><strong>[安心して使える]</strong> 出発前ルールの確認、チップ・通貨・電圧・現地の基本を、迷わずチェックできます。</li>
+            <li><strong>[課金で損しない]</strong> 30日買い切り。自動更新なし。期間後は $2.99/月の Core に戻ります。</li>
+        </ul>
+        <p class="glb-travel-lp-reassure">買い切りの30日パスです（サブスクではありません）。期限後は通常の Core 利用に自然に戻ります。</p>
+        <a href="https://buy.stripe.com/14AcN7c7z0e46ZpfuDasg0v" class="btn glb-travel-lp-cta" id="glb-travel-lp-cta-btn">14.99ドルで30日間のTravel Passを始める</a>
+        <span class="glb-travel-lp-en">One-time 30-day pass · no auto-renewal · returns to your $2.99/mo Core after the window</span>
+    </section>
+
     <div class="glb-billboard">
         <div class="glb-billboard-tools">
             <button type="button" class="glb-flip-btn" id="glb-flip-btn">Flip</button>
@@ -430,7 +501,7 @@
             <a href="https://nextbase-one-ha.github.io/nextbase-world/index.html" class="btn glb-subscribe-btn" style="font-size:16px; padding:14px 18px; border-radius:999px;" id="t-btn-back-entry">Open Entry (subscribe LIFE)</a>
         </div>
         <div id="glb-life-subscribed-block" style="display:none;">
-            <p class="note" id="t-premium-travel-blurb" style="text-align:left; line-height:1.5; margin:0 0 14px;"></p>
+            <p class="note" id="t-premium-travel-blurb" style="display:none; text-align:left; line-height:1.5; margin:0 0 14px;" aria-hidden="true"></p>
             <div class="pricing-box" style="margin-bottom:12px; display:none;" aria-hidden="true">
                 <h3 id="t-travel-layer-h3" style="font-size:1rem; margin:0 0 8px; color:#f5e6b8; text-align:left;">Smile Friend travel</h3>
                 <p id="t-travel-layer-body" style="font-size:12px; color:#aaa; text-align:left; margin:0 0 12px; line-height:1.45;"></p>
@@ -469,7 +540,7 @@
         var GLB_PROJECT_PUBLIC_ROOT = 'https://nextbase-one-ha.github.io/nextbase-world/';
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
         var GLB_STRIPE_PORTAL_LOGIN_FALLBACK = 'https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00';
-        const APP_VERSION = '2026.04.21.premium.2';
+        const APP_VERSION = '2026.04.22.travel.mktg.1';
         var GLB_COREFLOW_CONFIG = {
             API_BASE: 'https://smile-friend-engine-125142687526.us-central1.run.app',
             STRIPE_CORE: 'https://buy.stripe.com/bJedRbefH5yogzZfuDasg09',
@@ -602,6 +673,16 @@
             }
         }
 
+        function glbTraceExpiry(step, payload) {
+            try {
+                var trace = window.__GLB_TIME_DRIFT_TRACE__ || [];
+                trace.push({ t: Date.now(), step: step, payload: payload || null });
+                if (trace.length > 80) trace = trace.slice(trace.length - 80);
+                window.__GLB_TIME_DRIFT_TRACE__ = trace;
+                sessionStorage.setItem('GLB_TIME_DRIFT_TRACE', JSON.stringify(trace));
+            } catch (e) { /* ignore */ }
+        }
+
         function glbIsPaidFlag() {
             return glbCorePaidActive();
         }
@@ -612,24 +693,48 @@
                 var sid = (u.searchParams.get('session_id') || '').trim();
                 var subq = u.searchParams.get('subscribed');
                 var isTravelRedirect = u.searchParams.get('travel') === '1';
+                var current = parseBillingState();
+                glbTraceExpiry('prime:start', {
+                    sid: !!sid,
+                    isTravelRedirect: isTravelRedirect,
+                    currentPlan: current && current.plan ? current.plan : null,
+                    currentExp: current && current.travelPass ? Number(current.travelPass.expiresAt || 0) : 0
+                });
+
+                // Critical: never re-prime travel pass if a billing state already exists.
+                // This avoids overriding manually expired states during drift verification.
                 if (sid && isTravelRedirect) {
-                    var startedAt = Date.now();
-                    persistBillingState({
-                        plan: PLAN_TRAVEL_1499_30D,
-                        active: true,
-                        source: 'stripe_success',
-                        travelPass: {
-                            enabled: true,
-                            startedAt: startedAt,
-                            expiresAt: startedAt + MS_30D,
-                            expired: false,
-                            timeSource: 'local_pending_sync'
-                        }
-                    });
+                    if (!(current && current.active === true && current.plan)) {
+                        var startedAt = Date.now();
+                        persistBillingState({
+                            plan: PLAN_TRAVEL_1499_30D,
+                            active: true,
+                            source: 'stripe_success',
+                            travelPass: {
+                                enabled: true,
+                                startedAt: startedAt,
+                                expiresAt: startedAt + MS_30D,
+                                expired: false,
+                                timeSource: 'local_pending_sync'
+                            }
+                        });
+                        glbTraceExpiry('prime:write_travel', { startedAt: startedAt });
+                    } else {
+                        glbTraceExpiry('prime:skip_existing_state', {
+                            plan: current.plan,
+                            exp: current.travelPass ? Number(current.travelPass.expiresAt || 0) : 0
+                        });
+                    }
                 } else if (sid) {
-                    persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'stripe_success', updatedAt: Date.now() });
+                    if (!(current && current.active === true)) {
+                        persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'stripe_success', updatedAt: Date.now() });
+                        glbTraceExpiry('prime:write_core_sid', null);
+                    }
                 } else if (subq === '1' || subq === 'true') {
-                    persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'url_subscribed', updatedAt: Date.now() });
+                    if (!(current && current.active === true)) {
+                        persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'url_subscribed', updatedAt: Date.now() });
+                        glbTraceExpiry('prime:write_core_subq', null);
+                    }
                 }
             } catch (e) { /* ignore */ }
         })();
@@ -649,7 +754,20 @@
             try {
                 var u = new URL(window.location.href);
                 if ((u.searchParams.get('nori') || '') === 'admin') return;
+                var before = parseBillingState();
+                glbTraceExpiry('guard:before_expire_check', {
+                    plan: before && before.plan ? before.plan : null,
+                    active: !!(before && before.active === true),
+                    exp: before && before.travelPass ? Number(before.travelPass.expiresAt || 0) : 0,
+                    now: Date.now()
+                });
                 if (expireTravelPassIfNeeded()) {
+                    var after = parseBillingState();
+                    glbTraceExpiry('guard:expired_redirect', {
+                        plan: after && after.plan ? after.plan : null,
+                        active: !!(after && after.active === true),
+                        source: after && after.source ? after.source : null
+                    });
                     window.location.replace(new URL('index.next.html', window.location.href).href);
                     return;
                 }
