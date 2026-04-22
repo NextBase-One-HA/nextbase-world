@@ -566,6 +566,32 @@
             line-height: 1.5;
         }
         .glb-travel-predep-guide li { margin-bottom: 6px; }
+.glb-travel-predep-country {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #262626;
+        }
+        .glb-travel-predep-country select {
+            width: 100%;
+            margin: 0 0 8px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #3a3a3a;
+            background: #151515;
+            color: #e9e4d3;
+            font-size: 12px;
+        }
+        .glb-travel-predep-country-card {
+            margin: 0;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #2d2d2d;
+            background: #121212;
+            font-size: 11px;
+            color: #cfc8b2;
+            line-height: 1.55;
+            white-space: pre-line;
+        }
         .glb-travel-cat-overlay {
             position: fixed;
             inset: 0;
@@ -712,6 +738,7 @@
         <p id="glb-travel-pass-hero" class="glb-travel-pass-hero" style="display:none;" role="status" aria-live="polite"></p>
         <p id="travel-status" style="display:none; margin: 0 0 10px; color:#f5e6b8; font-size:12px; text-align:center;"></p>
         <p id="core-access-active" style="display:none; margin: 0 0 10px; color:#f5e6b8; font-size:12px; text-align:center; font-weight:700;">Core Access Active</p>
+        <p style="margin:0 0 10px; font-size:11px; color:#a79f86; text-align:center;">30日買い切り・自動更新なし。終了後は Core（$2.99）表示に戻ります。</p>
         <p id="travel-remaining-line" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
         <p id="travel-expiry-display" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
 
@@ -727,6 +754,11 @@
             <p class="glb-predep-lead" style="margin-top:10px; font-size:10px; color:#6a6658;">
                 EN: tipping norms · cash vs card · plugs/voltage · travel documents — quick reads before you head out.
             </p>
+            <div class="glb-travel-predep-country" id="glb-travel-predep-country">
+                <label for="glb-predep-country-select" style="display:block; margin-bottom:6px; font-size:11px; color:#bfb89a;">主要6か国ガイド</label>
+                <select id="glb-predep-country-select" aria-label="Country pre-departure guide"></select>
+                <p id="glb-predep-country-card" class="glb-travel-predep-country-card"></p>
+            </div>
         </section>
     </section>
 
@@ -1339,14 +1371,14 @@
             el.textContent = T('travelDaysLeft').replace(/\{\{n\}\}/g, String(days)).replace(/\{\{date\}\}/g, dateStr);
             el.style.display = '';
             if (expDisp) {
-                expDisp.style.display = 'none';
-                expDisp.textContent = '';
+                expDisp.style.display = '';
+                expDisp.textContent = T('travelExpiresOn').replace(/\{\{date\}\}/g, dateStr);
             }
             var hero = document.getElementById('glb-travel-pass-hero');
             if (hero) {
                 if (GLB_TRAVEL_ACTIVE) {
                     hero.style.display = '';
-                    hero.textContent = 'Travel Pass ACTIVE / 海外で自然に通じる、30日間の旅行専用モード';
+                    hero.textContent = 'Travel Pass ACTIVE / 残り' + String(days) + '日・終了後はCoreへ戻ります';
                 } else {
                     hero.style.display = 'none';
                     hero.textContent = '';
@@ -1636,7 +1668,8 @@
                 travelMiniHint: 'Requires LIFE subscription.',
                 travelExtendLink: 'Extend +30 days',
                 travelExtendHint: 'Adds 30 days from your current expiry (stacking).',
-                travelDaysLeft: 'Through {{date}}',
+                travelDaysLeft: 'Remaining {{n}} days (through {{date}})',
+                travelExpiresOn: 'Valid until {{date}} · then returns to Core ($2.99).',
                 stripeHint: 'Secure checkout with Stripe.',
                 dictPlaceholder: 'Search 150k dictionary…',
                 dictResult: 'Results appear here',
@@ -1696,7 +1729,8 @@
                 travelMiniHint: 'LIFE 購読が必要です。',
                 travelExtendLink: '延長 +30日',
                 travelExtendHint: '現在の期限から30日追加（累積延長）。',
-                travelDaysLeft: '{{date}} まで',
+                travelDaysLeft: '残り {{n}}日（{{date}} まで）',
+                travelExpiresOn: '有効期限 {{date}} ・終了後は Core（$2.99）へ戻ります。',
                 stripeHint: 'Stripe で安全に決済',
                 dictPlaceholder: '15万語辞書を検索…',
                 dictResult: '結果がここに表示されます',
@@ -2835,6 +2869,42 @@
             }
         })();
 
+        /** PHASE_TRAVEL_MARKETING_01 — 出発前ガイド主要6か国データ（Evidence対象） */
+        var GLB_PREDEP_COUNTRY_DATA = {
+            us: { label: 'United States', tip: 'レストランは目安15–20%。', currency: 'USD / 米ドル', voltage: '120V / A,B', culture: '明るい挨拶と短い自己紹介が有効。', emergency: '911' },
+            kr: { label: 'South Korea', tip: '基本はチップ不要。高級店はサービス料確認。', currency: 'KRW / ウォン', voltage: '220V / C,F', culture: '受け渡しは両手だと丁寧。', emergency: '112(警察) / 119(救急)' },
+            th: { label: 'Thailand', tip: '少額チップは歓迎される。', currency: 'THB / バーツ', voltage: '220V / A,C,O', culture: '穏やかな態度と笑顔が有効。', emergency: '191(警察) / 1669(救急)' },
+            tw: { label: 'Taiwan', tip: 'チップ習慣は限定的。明細のサービス料を確認。', currency: 'TWD / 台湾ドル', voltage: '110V / A,B', culture: '軽い会釈と謝意が好印象。', emergency: '110(警察) / 119(救急)' },
+            fr: { label: 'France', tip: 'サービス料込みが多く端数調整で十分。', currency: 'EUR / ユーロ', voltage: '230V / C,E', culture: '最初にBonjourで挨拶すると円滑。', emergency: '112' },
+            uk: { label: 'United Kingdom', tip: 'サービス料込みなら追加不要なことが多い。', currency: 'GBP / ポンド', voltage: '230V / G', culture: '列に並ぶ文化を尊重。', emergency: '999 / 112' }
+        };
+
+        function renderPredepCountryGuide() {
+            var sel = document.getElementById('glb-predep-country-select');
+            var card = document.getElementById('glb-predep-country-card');
+            if (!sel || !card) return;
+            var keys = Object.keys(GLB_PREDEP_COUNTRY_DATA);
+            sel.innerHTML = '';
+            for (var i = 0; i < keys.length; i++) {
+                var k = keys[i];
+                var opt = document.createElement('option');
+                opt.value = k;
+                opt.textContent = GLB_PREDEP_COUNTRY_DATA[k].label;
+                sel.appendChild(opt);
+            }
+            function paint() {
+                var d = GLB_PREDEP_COUNTRY_DATA[sel.value] || GLB_PREDEP_COUNTRY_DATA.us;
+                card.textContent = 'Tip: ' + d.tip + '
+Currency: ' + d.currency + '
+Voltage: ' + d.voltage + '
+Culture: ' + d.culture + '
+Emergency: ' + d.emergency;
+            }
+            sel.addEventListener('change', paint);
+            if (!sel.value) sel.value = 'us';
+            paint();
+        }
+
         /** PHASE_TRAVEL_UI_30DAY_PLAN_03 — 定義はこのオブジェクトのみ（証拠用）。タイル順=UI優先順。 */
         var GLB_TRAVEL_SIX_PHRASES = [
             {
@@ -2914,6 +2984,7 @@
 
         (function initTravelSixUi() {
             var grid = document.getElementById('glb-travel-six-grid');
+            renderPredepCountryGuide();
             var overlay = document.getElementById('glb-travel-cat-overlay');
             var panel = document.getElementById('glb-travel-cat-panel');
             var titleEl = document.getElementById('glb-travel-cat-title');
