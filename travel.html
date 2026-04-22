@@ -1165,7 +1165,11 @@
                         active: !!(after && after.active === true),
                         source: after && after.source ? after.source : null
                     });
-                    window.location.replace(new URL('index.next.html', window.location.href).href);
+                    try { sessionStorage.setItem('GLB_FORCE_CORE_AFTER_TRAVEL_EXPIRE', '1'); } catch (e0) { /* ignore */ }
+                    var target = '/nextbase-world/index.next.html';
+                    console.log('REDIRECT_EXECUTE', target, 'reason=travel_expired');
+                    glbTraceExpiry('redirect_execute', { target: target, reason: 'travel_expired' });
+                    window.location.replace(target);
                     return;
                 }
                 if (!glbCorePaidActive()) {
@@ -1173,7 +1177,10 @@
                     return;
                 }
                 if (!isTravelPassActive()) {
-                    window.location.replace(new URL('index.next.html', window.location.href).href);
+                    var targetInactive = '/nextbase-world/index.next.html';
+                    console.log('REDIRECT_EXECUTE', targetInactive, 'reason=travel_inactive');
+                    glbTraceExpiry('redirect_execute', { target: targetInactive, reason: 'travel_inactive' });
+                    window.location.replace(targetInactive);
                     return;
                 }
             } catch (e) { /* ignore */ }
