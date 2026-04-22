@@ -26,7 +26,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     <title>GLOBAL LANGUAGE BREAKER</title>
-    <script src="offline-glb/glb_tomori_web.js"></script>
+    <script src="offline-glb/glb_tomori_web.js?v=20260422core1"></script>
     <style>
         :root {
             --gold: #ffe566;
@@ -163,6 +163,10 @@
         /* 相手がいるとき：Flip で 180°（向かい側から読める向き） */
         #glb-result-stage.is-flipped #translate-measure-result {
             transform: rotate(180deg);
+        }
+        #glb-result-stage.is-zoomed #translate-measure-result {
+            font-size: 54px !important;
+            line-height: 1.2;
         }
         .free-quota-line {
             font-size: 11px;
@@ -464,24 +468,19 @@
     </div>
     <p id="travel-status" style="display:none; margin: 0 0 12px; color:#f5e6b8; font-size:12px; text-align:center;"></p>
 
-    <section id="glb-travel-pass-banner" class="glb-travel-pass-banner" aria-labelledby="glb-tpb-head" data-phase="CORE_RELEASE_CLEANUP_01">
-        <h2 id="glb-tpb-head" class="glb-tpb-head">Travel Pass は準備中（Coming Soon）</h2>
-        <p class="glb-tpb-sub" style="margin-bottom:8px; font-size:11px; line-height:1.45;">
-            先行リリースは Core（$2.99）の翻訳体験に集中しています。Travel は準備が整い次第ご案内します。
-            <span class="glb-tpb-sub-en">Core translation is live first. Travel Pass is temporarily unavailable and will be announced soon.</span>
-        </p>
-        <span class="btn glb-subscribe-btn glb-tpb-cta" aria-disabled="true" style="opacity:.65; pointer-events:none;">Travel Pass Coming Soon</span>
-    </section>
 
-    <div class="glb-billboard">
-        <div class="glb-billboard-tools">
-            <button type="button" class="glb-flip-btn" id="glb-flip-btn">Flip</button>
-        </div>
-        <div id="glb-result-stage" class="glb-result-stage">
+
+    <div class="glb-billboard" style="margin-top:0;">
+        <div id="glb-result-stage" class="glb-result-stage" style="min-height:min(58dvh,480px);">
             <div class="glb-result-inner">
                 <div id="translate-measure-result" data-i18n-idle="idle" aria-live="polite">Idle</div>
                 <p id="glb-result-lang-caption" class="glb-result-lang-caption" aria-live="polite"></p>
             </div>
+        </div>
+        <div class="glb-billboard-tools" style="justify-content:center; gap:8px; margin-top:10px; margin-bottom:0; flex-wrap:wrap;">
+            <button type="button" class="glb-flip-btn" id="glb-flip-btn">Flip</button>
+            <button type="button" class="glb-flip-btn" id="glb-quick-speak">Speak</button>
+            <button type="button" class="glb-flip-btn" id="glb-zoom-btn">Zoom</button>
         </div>
     </div>
 
@@ -521,8 +520,8 @@
         </div>
         </details>
         <input type="text" id="tr-text" placeholder="Text to translate (e.g. hello)" autocomplete="off">
-        <div class="glb-tool-bar" id="glb-tool-bar" aria-label="Input tools">
-            <button type="button" class="glb-icon-btn" id="glb-clear-btn">Clear</button>
+        <div class="glb-tool-bar" id="glb-tool-bar" aria-label="Input tools" style="justify-content:flex-end; margin-top:4px; margin-bottom:6px;">
+            <button type="button" class="glb-icon-btn" id="glb-clear-btn" style="min-height:36px; padding:6px 10px; font-size:12px;">Clear</button>
         </div>
         <input type="hidden" id="tr-src" value="en">
         <input type="hidden" id="tr-tgt" value="en">
@@ -552,7 +551,7 @@
             </select>
         </div>
         <div class="tr-run-wrap">
-            <button type="button" id="tr-run" class="btn glb-main-btn">GLB</button>
+            <button type="button" id="tr-run" class="btn glb-main-btn">Translate</button>
             <p class="free-quota-line" id="t-free-quota" role="status"></p>
         </div>
     </div>
@@ -569,15 +568,24 @@
         <p id="manage-subscription-note" class="stripe-hint" style="margin-top:6px;">Open Stripe Customer Portal for plan management.</p>
     </div>
 
+    <section id="glb-travel-pass-banner" class="glb-travel-pass-banner" aria-labelledby="glb-tpb-head" data-phase="CORE_RELEASE_CLEANUP_01">
+        <h2 id="glb-tpb-head" class="glb-tpb-head">Travel Pass は準備中（Coming Soon）</h2>
+        <p class="glb-tpb-sub" style="margin-bottom:8px; font-size:11px; line-height:1.45;">
+            先行リリースは Core（$2.99）の翻訳体験に集中しています。Travel は準備が整い次第ご案内します。
+            <span class="glb-tpb-sub-en">Core translation is live first. Travel Pass is temporarily unavailable and will be announced soon.</span>
+        </p>
+        <span class="btn glb-subscribe-btn glb-tpb-cta" aria-disabled="true" style="opacity:.65; pointer-events:none;">Travel Pass Coming Soon</span>
+    </section>
+
     <footer class="footer legal-footer" id="glb-legal-footer" lang="en">
         <div class="legal-links">
-            <a href="https://nextbase-one-ha.github.io/nextbase-world/terms.html" id="link-terms">Terms of Service</a>
+            <a href="terms.html" id="link-terms">Terms of Service</a>
             <span class="legal-sep" aria-hidden="true">|</span>
-            <a href="https://nextbase-one-ha.github.io/nextbase-world/privacy.html" id="link-privacy">Privacy Policy</a>
+            <a href="privacy.html" id="link-privacy">Privacy Policy</a>
             <span class="legal-sep" aria-hidden="true">|</span>
-            <a href="https://nextbase-one-ha.github.io/nextbase-world/legal.html" id="link-legal">Legal</a>
+            <a href="legal.html" id="link-legal">Legal</a>
             <span class="legal-sep" aria-hidden="true">|</span>
-            <a href="https://nextbase-one-ha.github.io/nextbase-world/support.html" id="link-support">Support</a>
+            <a href="support.html" id="link-support">Support</a>
             <span class="legal-sep" aria-hidden="true">|</span>
             <a href="https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00" id="link-cancel-subscription">Cancel Subscription</a>
         </div>
@@ -586,7 +594,7 @@
     </div>
 
     <script>
-        var GLB_PROJECT_PUBLIC_ROOT = 'https://nextbase-one-ha.github.io/nextbase-world/';
+        var GLB_PROJECT_PUBLIC_ROOT = './';
         /** Translate /health: smile-friend-engine (us-central1) */
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
         var GLB_STRIPE_PORTAL_LOGIN_FALLBACK = 'https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00';
@@ -1821,9 +1829,27 @@
 
         (function glbResultFlip() {
             var btn = document.getElementById('glb-flip-btn');
+            var quickSpeakBtn = document.getElementById('glb-quick-speak');
+            var zoomBtn = document.getElementById('glb-zoom-btn');
             var stage = document.getElementById('glb-result-stage');
             if (!btn || !stage) return;
             btn.setAttribute('aria-pressed', 'false');
+            if (quickSpeakBtn) {
+                quickSpeakBtn.addEventListener('click', function () {
+                    var txEl = document.getElementById('translate-measure-result');
+                    var tx = txEl ? (txEl.textContent || '').trim() : '';
+                    var idleT = typeof T === 'function' ? T('idle') : 'Idle';
+                    var sendT = typeof T === 'function' ? T('sending') : 'Translating…';
+                    if (!tx || tx === idleT || tx === sendT) return;
+                    var tgt = (document.getElementById('tr-tgt') && document.getElementById('tr-tgt').value) ? document.getElementById('tr-tgt').value : 'en';
+                    try { glbSpeakText(tx, tgt); } catch (e0) { /* ignore */ }
+                });
+            }
+            if (zoomBtn && stage) {
+                zoomBtn.addEventListener('click', function () {
+                    stage.classList.toggle('is-zoomed');
+                });
+            }
             btn.addEventListener('click', function () {
                 var result = document.getElementById('translate-measure-result');
                 stage.classList.toggle('is-flipped');
