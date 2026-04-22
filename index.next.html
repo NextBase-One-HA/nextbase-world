@@ -151,7 +151,7 @@
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
         }
-        #glb-result-stage #translate-measure-result {
+        #glb-result-stage #glb-result-text {
             flex: 1 1 auto;
             min-height: 72px;
             width: 100%;
@@ -172,10 +172,10 @@
             transform: rotate(0deg);
         }
         /* 相手がいるとき：Flip で 180°（向かい側から読める向き） */
-        #glb-result-stage.is-flipped #translate-measure-result {
+        #glb-result-stage.is-flipped #glb-result-text {
             transform: rotate(180deg);
         }
-        #glb-result-stage.is-zoomed #translate-measure-result {
+        #glb-result-stage.is-zoomed #glb-result-text {
             font-size: 54px !important;
             line-height: 1.2;
         }
@@ -224,6 +224,19 @@
         .legal-links a:hover { color: var(--gold); }
         .legal-sep { color: #444; user-select: none; }
         .footer-copy { margin-top: 12px; font-size: 11px; color: #666; }
+        .glb-footer-brand {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #4a4a4a;
+            margin: 20px auto 10px;
+            padding: 0 12px;
+            line-height: 1.4;
+            max-width: min(560px, 100%);
+            box-sizing: border-box;
+            user-select: none;
+        }
         select.lang-select {
             width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--gold);
             background: #111; color: #fff; font-size: 14px; margin-bottom: 12px; outline: none; box-sizing: border-box;
@@ -435,13 +448,12 @@
         </div>
     </div>
     <div class="cockpit">
-    <h1 class="glb-sr-only" id="app-brand-title">GLOBAL LANGUAGE BREAKER</h1>
     <p id="travel-status" style="display:none; margin: 0 0 12px; color:#f5e6b8; font-size:12px; text-align:center;"></p>
 
     <div class="glb-billboard" style="margin-top:0;">
         <div id="glb-result-stage" class="glb-result-stage" style="min-height:min(58dvh,480px);">
             <div class="glb-result-inner">
-                <div id="translate-measure-result" data-i18n-idle="idle" aria-live="polite">Idle</div>
+                <div id="glb-result-text" data-i18n-idle="idle" aria-live="polite">Idle</div>
                 <p id="glb-result-lang-caption" class="glb-result-lang-caption" aria-live="polite"></p>
             </div>
         </div>
@@ -522,6 +534,8 @@
 
     <div id="gateway-pulse" style="display:none;" aria-hidden="true" data-i18n-placeholder="apiChecking"></div>
 
+    <p id="app-brand-title" class="glb-footer-brand" translate="no">GLOBAL LANGUAGE BREAKER</p>
+
     <footer class="footer legal-footer" id="glb-legal-footer" lang="en">
         <div class="legal-links">
             <a href="terms.html" id="link-terms">Terms of Service</a>
@@ -541,7 +555,27 @@
         /** Translate /health: smile-friend-engine (us-central1) */
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
         var GLB_STRIPE_PORTAL_LOGIN_FALLBACK = 'https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00';
-        const APP_VERSION = '2026.04.23.core.feeling.1';
+        const APP_VERSION = '2026.04.23.core.speak.1';
+        (function glbSpeechSynthIosUnlock() {
+            document.body.addEventListener('touchstart', function () {
+                try {
+                    if (!window.speechSynthesis) return;
+                    var u = new SpeechSynthesisUtterance('');
+                    window.speechSynthesis.speak(u);
+                    window.speechSynthesis.cancel();
+                } catch (e) { /* ignore */ }
+            }, { once: true, passive: true });
+        })();
+        function glbBcp47ForTargetLang(code) {
+            var c = String(code || 'en').trim().toLowerCase();
+            var map = {
+                en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', ko: 'ko-KR', es: 'es-ES', fr: 'fr-FR',
+                de: 'de-DE', pt: 'pt-BR', ar: 'ar-SA', ru: 'ru-RU', hi: 'hi-IN', tr: 'tr-TR', fa: 'fa-IR'
+            };
+            if (map[c]) return map[c];
+            if (c.indexOf('-') >= 2) return c;
+            return 'en-US';
+        }
         const MAINTENANCE_DEFAULT = 'We are currently enhancing the system for a better experience. Please check back shortly.';
         const LS_CUSTOMER_ID = 'GLB_CUSTOMER_ID';
         let EXECUTION_ALLOWED = false;
@@ -1556,7 +1590,7 @@
         }
 
         function glbFitResultTranslationFont() {
-            var el = document.getElementById('translate-measure-result');
+            var el = document.getElementById('glb-result-text');
             var inner = document.querySelector('#glb-result-stage .glb-result-inner');
             var cap = document.getElementById('glb-result-lang-caption');
             if (!el || !inner) return;
@@ -1596,7 +1630,7 @@
         function updateResultLangCaption() {
             var cap = document.getElementById('glb-result-lang-caption');
             if (!cap) return;
-            var el = document.getElementById('translate-measure-result');
+            var el = document.getElementById('glb-result-text');
             var lt = document.getElementById('lang-to');
             var code = (lt && lt.value) ? lt.value : '';
             if (!code || !el) {
@@ -1612,7 +1646,7 @@
         }
 
         function setResultText(line, color, busy) {
-            var el = document.getElementById('translate-measure-result');
+            var el = document.getElementById('glb-result-text');
             if (!el) return;
             el.textContent = line;
             if (color) el.style.color = color;
@@ -1709,7 +1743,7 @@
             var gp = document.getElementById('gateway-pulse');
             if (gp && !gp.dataset.healthDone && T('apiChecking')) gp.textContent = T('apiChecking');
 
-            var idleEl = document.getElementById('translate-measure-result');
+            var idleEl = document.getElementById('glb-result-text');
             if (idleEl && (!idleEl.dataset.busy || idleEl.dataset.busy === '0')) {
                 setResultText(T('idle'), '#eaeaea', '0');
             }
@@ -1742,7 +1776,7 @@
                 try {
                     grantExecution(token);
                 } catch (e) {
-                    var out = document.getElementById('translate-measure-result');
+                    var out = document.getElementById('glb-result-text');
                     if (out) out.textContent = renderHold(e);
                 }
             });
@@ -1808,13 +1842,21 @@
             btn.setAttribute('aria-pressed', 'false');
             if (quickSpeakBtn) {
                 quickSpeakBtn.addEventListener('click', function () {
-                    var txEl = document.getElementById('translate-measure-result');
-                    var tx = txEl ? (txEl.textContent || '').trim() : '';
+                    var resultEl = document.getElementById('glb-result-text');
+                    var text = resultEl ? (resultEl.innerText || resultEl.textContent || '').trim() : '';
                     var idleT = typeof T === 'function' ? T('idle') : 'Idle';
                     var sendT = typeof T === 'function' ? T('sending') : 'Translating…';
-                    if (!tx || tx === idleT || tx === sendT) return;
-                    var tgt = (document.getElementById('tr-tgt') && document.getElementById('tr-tgt').value) ? document.getElementById('tr-tgt').value : 'en';
-                    try { glbSpeakText(tx, tgt); } catch (e0) { /* ignore */ }
+                    if (!text || text === idleT || text === sendT) return;
+                    if (!window.speechSynthesis) return;
+                    try {
+                        window.speechSynthesis.cancel();
+                        var tgtEl = document.getElementById('tr-tgt');
+                        var tgtCode = (tgtEl && tgtEl.value) ? String(tgtEl.value).trim() : 'en';
+                        var utter = new SpeechSynthesisUtterance(text);
+                        utter.lang = glbBcp47ForTargetLang(tgtCode);
+                        utter.rate = 1.0;
+                        window.speechSynthesis.speak(utter);
+                    } catch (e0) { /* ignore */ }
                 });
             }
             if (zoomBtn && stage) {
@@ -1823,7 +1865,7 @@
                 });
             }
             btn.addEventListener('click', function () {
-                var result = document.getElementById('translate-measure-result');
+                var result = document.getElementById('glb-result-text');
                 stage.classList.toggle('is-flipped');
                 if (result) result.classList.toggle('flipped-mode', stage.classList.contains('is-flipped'));
                 btn.setAttribute('aria-pressed', stage.classList.contains('is-flipped') ? 'true' : 'false');
@@ -1972,7 +2014,7 @@
         }
 
         (function translateMeasure() {
-            var out = document.getElementById('translate-measure-result');
+            var out = document.getElementById('glb-result-text');
             var btn = document.getElementById('tr-run');
             if (!btn || !out) return;
 
