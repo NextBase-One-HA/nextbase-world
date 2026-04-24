@@ -760,7 +760,7 @@
 </head>
 <body>
     <script>window.__GLB_PAGE_LAYER = 'coreflow';</script>
-    <div id="maintenance-overlay" class="maintenance-overlay" aria-live="polite" aria-modal="true" role="dialog">
+    <div id="maintenance-overlay" class="maintenance-overlay" hidden aria-hidden="true" aria-live="polite" aria-modal="true" role="dialog" style="display:none;">
         <div class="maintenance-card">
             <h2>Maintenance</h2>
             <p id="maintenance-message">We are currently enhancing the system for a better experience. Please check back shortly.</p>
@@ -1172,10 +1172,30 @@
             }
         }
 
+        function glbSanitizeTracePayload(payload) {
+            if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload;
+            var out = {};
+            for (var k in payload) {
+                if (!Object.prototype.hasOwnProperty.call(payload, k)) continue;
+                if (k === 'href' && typeof payload[k] === 'string') {
+                    try {
+                        var u = new URL(payload[k], window.location.origin);
+                        u.searchParams.delete('session_id');
+                        out[k] = u.pathname + u.search + u.hash;
+                    } catch (eH) {
+                        out[k] = payload[k];
+                    }
+                } else {
+                    out[k] = payload[k];
+                }
+            }
+            return out;
+        }
+
         function glbTraceExpiry(step, payload) {
             try {
                 var trace = window.__GLB_TIME_DRIFT_TRACE__ || [];
-                trace.push({ t: Date.now(), step: step, payload: payload || null });
+                trace.push({ t: Date.now(), step: step, payload: glbSanitizeTracePayload(payload) || null });
                 if (trace.length > 80) trace = trace.slice(trace.length - 80);
                 window.__GLB_TIME_DRIFT_TRACE__ = trace;
                 sessionStorage.setItem('GLB_TIME_DRIFT_TRACE', JSON.stringify(trace));
@@ -1312,6 +1332,9 @@
             GLB_MAINTENANCE_ON = !!on;
             msg.textContent = message || MAINTENANCE_DEFAULT;
             btn.style.display = forceReload ? '' : 'none';
+            ov.hidden = !on;
+            ov.setAttribute('aria-hidden', on ? 'false' : 'true');
+            ov.style.display = on ? 'flex' : 'none';
             if (on) ov.classList.add('show');
             else ov.classList.remove('show');
         }
@@ -1355,6 +1378,10 @@
             if (reloadBtn) reloadBtn.addEventListener('click', function () { location.reload(); });
             fetchSystemStatus(true);
             setInterval(function () { fetchSystemStatus(false); }, 30000);
+            // Safari BFCache can restore a stale overlay state; force re-check on page restore.
+            window.addEventListener('pageshow', function () {
+                fetchSystemStatus(true);
+            });
         })();
 
         function cleanupUrlParams() {
