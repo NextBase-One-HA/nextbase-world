@@ -3,7 +3,8 @@
   PROJECT_PUBLIC_ROOT: https://nextbase-one-ha.github.io/nextbase-world/
   本ファイル: .../index.premium.html（14.99 Travel Pass 専用LP・cancel 着地）。
   Core 正本: index.next.html。index.coreflow.html 廃止。Stripe / PORTAL 注記は index.html / index.next.html DOCTYPE と同一正本。
-  PHASE_TRAVEL_MARKETING_01: ポジティブ訴求LP（#glb-travel-lp-hero）。30日買い切り・自動更新なし・Coreへ軟着陸を明記。
+  PHASE_TRAVEL_MARKETING_01: ポジティブ訴求LP（#glb-travel-lp-hero）。30日買い切り・自動更新なし・Core（$2.99/月）とは別商品であることを明記。
+  Stripe 14.99 success 正: .../travel.html?travel=1&session_id={CHECKOUT_SESSION_ID}（Dashboard 絶対URL）。
 -->
 <html lang="en" class="notranslate" translate="no">
 <head>
@@ -408,20 +409,17 @@
     <p id="travel-expiry-display" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
 
     <section id="glb-travel-lp-hero" class="glb-travel-lp-hero" aria-labelledby="glb-travel-lp-h2" data-phase="CORE_RELEASE_CLEANUP_01">
-        <h2 id="glb-travel-lp-h2">Travel Pass — Coming Soon</h2>
-        <p class="glb-travel-lp-lead">Built for smoother conversations on your next trip.</p>
+        <h2 id="glb-travel-lp-h2">Travel Pass — $14.99 (30 days)</h2>
+        <p class="glb-travel-lp-lead">A focused travel window on top of Core — smoother face-to-face conversations when you are on the move.</p>
         <ul class="glb-travel-lp-merits">
-            <li><strong>[Fast start]</strong> Ready in seconds for real one-to-one travel conversations.</li>
-            <li><strong>[Natural use]</strong> Designed to speak, show, and connect in the moment.</li>
-            <li><strong>[Clear value]</strong> Core is live now for $2.99/month, with Travel launching next.</li>
+            <li><strong>[30-day access]</strong> One-time purchase for 30 days of Travel mode — not a subscription.</li>
+            <li><strong>[Separate from Core]</strong> Core stays $2.99/month on its own plan; Travel Pass is an add-on window, not a replacement.</li>
+            <li><strong>[Fast start]</strong> After checkout you return to Travel with your session — pick languages and go.</li>
         </ul>
-        <p class="glb-travel-lp-reassure">A more natural way to speak, show, and connect while traveling.</p>
-        <span class="btn glb-travel-lp-cta" id="glb-travel-lp-cta-btn" aria-disabled="true" style="opacity:.78; pointer-events:none;">Launching soon</span>
-        <span class="glb-travel-lp-en">Core is live now for $2.99/month</span>
-        <div class="maintenance-card" role="status" aria-live="polite" style="margin-top:14px; border:1px solid rgba(245,230,184,.35); background:rgba(26,24,18,.72);">
-            <h2 style="margin:0 0 8px; font-size:16px;">Launching soon</h2>
-            <p style="margin:0; font-size:12px; color:#d6c999;">Travel Pass is the next experience after Core.</p>
-        </div>
+        <p class="glb-travel-lp-reassure">Billing questions? Use Purchase Help (footer) — this pass is a single 30-day access purchase, not a recurring plan.</p>
+        <a class="btn glb-travel-lp-cta" id="glb-travel-lp-cta-btn" href="https://buy.stripe.com/14AcN7c7z0e46ZpfuDasg0v">Get Travel Pass — $14.99</a>
+        <p class="glb-travel-lp-en" style="margin:10px 0 0; font-size:11px; color:#a09678;">One-time checkout · 30-day access · Not recurring</p>
+        <p class="glb-travel-lp-en" style="margin:6px 0 0; font-size:11px; color:#a09678;">Core continues separately at $2.99/month — keep both paths distinct at checkout.</p>
     </section>
 
     <div class="glb-billboard" style="display:none;" aria-hidden="true">
@@ -518,9 +516,9 @@
     </div>
     <div id="manage-subscription-wrap" style="display:none; max-width:min(600px, 100%); margin: 0 auto 20px;">
         <button type="button" class="btn" id="manage-subscription-btn" style="font-size:16px; padding:14px 18px; border-radius:999px;">
-            Manage Subscription
+            Manage Purchase
         </button>
-        <p id="manage-subscription-note" class="stripe-hint" style="margin-top:6px;">Open Stripe Customer Portal for plan management.</p>
+        <p id="manage-subscription-note" class="stripe-hint" style="margin-top:6px;">30-day access from purchase — one-time, not recurring. For receipts or billing help, use Purchase Help (footer) or Manage Purchase (Stripe Customer Billing).</p>
     </div>
 
     <footer class="footer legal-footer" id="glb-legal-footer" lang="en">
@@ -533,7 +531,7 @@
             <span class="legal-sep" aria-hidden="true">|</span>
             <a href="support.html" id="link-support">Support</a>
             <span class="legal-sep" aria-hidden="true">|</span>
-            <a href="https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00" id="link-cancel-subscription">Cancel Subscription</a>
+            <a href="support.html" id="link-purchase-help">Purchase Help</a>
         </div>
         <p class="footer-copy" id="footer-copyright">&copy; 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending</p>
     </footer>
@@ -1234,9 +1232,9 @@
                 linkSupport: 'Support',
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: '',
-                travelMiniLink: 'Coming Soon',
-                travelMiniHint: 'Travel Pass is launching soon.',
-                travelExtendLink: 'Coming Soon',
+                travelMiniLink: '$14.99',
+                travelMiniHint: 'Requires Core ($2.99/mo). Travel Pass is a separate 30-day add-on (not recurring).',
+                travelExtendLink: 'Extend +30 days',
                 travelExtendHint: 'Adds 30 days from your current expiry (stacking).',
                 travelDaysLeft: 'Through {{date}}',
                 stripeHint: 'Secure checkout with Stripe.',
@@ -1285,9 +1283,9 @@
                 linkSupport: 'サポート',
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: '',
-                travelMiniLink: 'Coming Soon',
-                travelMiniHint: 'Travel Pass はまもなく開始です。',
-                travelExtendLink: 'Coming Soon',
+                travelMiniLink: '$14.99',
+                travelMiniHint: 'Core（$2.99/月）が必要です。Travel Pass は別の30日買い切り（自動更新なし）。',
+                travelExtendLink: '延長 +30日',
                 travelExtendHint: '現在の期限から30日追加（累積延長）。',
                 travelDaysLeft: '{{date}} まで',
                 stripeHint: 'Stripe で安全に決済',
@@ -1733,13 +1731,11 @@
                 openManageSubscription();
             });
         })();
-        (function bindCancelSubscriptionLockDrop() {
-            var cancel = document.getElementById('link-cancel-subscription');
-            if (!cancel) return;
-            cancel.addEventListener('click', function () {
-                try {
-                    clearBillingStateStorage();
-                } catch (e) { /* ignore */ }
+        (function bindPurchaseHelpLink() {
+            var help = document.getElementById('link-purchase-help');
+            if (!help) return;
+            help.addEventListener('click', function () {
+                try { glbTrackOpsEvent('purchase_help_click', { source: 'premium_footer' }); } catch (e) { /* ignore */ }
             });
         })();
 

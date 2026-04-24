@@ -931,9 +931,9 @@
     </div>
     <div id="manage-subscription-wrap" style="display:none; max-width:min(600px, 100%); margin: 0 auto 20px;">
         <button type="button" class="btn" id="manage-subscription-btn" style="font-size:16px; padding:14px 18px; border-radius:999px;">
-            Manage Subscription
+            Manage Purchase
         </button>
-        <p id="manage-subscription-note" class="stripe-hint" style="margin-top:6px;">Open Stripe Customer Portal for plan management.</p>
+        <p id="manage-subscription-note" class="stripe-hint" style="margin-top:6px;">30-day access from purchase — one-time, not recurring. For receipts or billing help, use Purchase Help (footer) or Manage Purchase (Stripe Customer Billing).</p>
     </div>
 
     <section class="glb-travel-departure-band" id="glb-travel-departure-band" aria-label="Travel Pass status and pre-departure guide">
@@ -971,7 +971,7 @@
             <span class="legal-sep" aria-hidden="true">|</span>
             <a href="https://nextbase-one-ha.github.io/nextbase-world/support.html" id="link-support">Support</a>
             <span class="legal-sep" aria-hidden="true">|</span>
-            <a href="https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00" id="link-cancel-subscription">Cancel Subscription</a>
+            <a href="https://nextbase-one-ha.github.io/nextbase-world/support.html" id="link-purchase-help">Purchase Help</a>
         </div>
         <p class="footer-copy" id="footer-copyright">&copy; 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending</p>
     </footer>
@@ -1748,7 +1748,7 @@
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: '',
                 travelMiniLink: '$14.99',
-                travelMiniHint: 'Requires LIFE subscription.',
+                travelMiniHint: 'Requires Core ($2.99/mo). Travel Pass is a separate 30-day add-on (not recurring).',
                 travelExtendLink: 'Extend +30 days',
                 travelExtendHint: 'Adds 30 days from your current expiry (stacking).',
                 travelDaysLeft: 'Remaining {{n}} days (through {{date}})',
@@ -1809,7 +1809,7 @@
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: '',
                 travelMiniLink: '$14.99',
-                travelMiniHint: 'LIFE 購読が必要です。',
+                travelMiniHint: 'Core（$2.99/月）が必要です。Travel Pass は別の30日買い切り（自動更新なし）。',
                 travelExtendLink: '延長 +30日',
                 travelExtendHint: '現在の期限から30日追加（累積延長）。',
                 travelDaysLeft: '残り {{n}}日（{{date}} まで）',
@@ -2385,13 +2385,11 @@
             });
         })();
 
-        (function bindCancelSubscriptionLockDrop() {
-            var cancel = document.getElementById('link-cancel-subscription');
-            if (!cancel) return;
-            cancel.addEventListener('click', function () {
-                try {
-                    clearBillingStateStorage();
-                } catch (e) { /* ignore */ }
+        (function bindPurchaseHelpLink() {
+            var help = document.getElementById('link-purchase-help');
+            if (!help) return;
+            help.addEventListener('click', function () {
+                try { glbTrackOpsEvent('purchase_help_click', { source: 'travel_footer' }); } catch (e) { /* ignore */ }
             });
         })();
 
