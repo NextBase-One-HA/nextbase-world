@@ -1,11 +1,41 @@
 # GLB_DYNAMIC_CANON
 
 ## STATE
-GLB_REVENUE_FIRST / PROTECTED_ARCHITECTURE / FEATURE_REDUCTION
+GLB_RELEASE_CANDIDATE / PROTECTED_ARCHITECTURE / FEATURE_REDUCTION
 
 ## GOAL
-GLBを公開可能な収益プロダクトとして仕上げる。
-内部ロジック（無料枠・辞書・API削減）はブラックボックス化し、公開UIは初見5秒で理解できる状態まで削る。
+GLBを公開可能な収益プロダクトとしてリリースする。
+内部ロジック（無料枠・辞書・API削減）はブラックボックス化し、公開UIは初見5秒で理解できる状態を維持する。
+
+## RELEASE_DECISION
+Soft Launch は GO。
+フル拡散は、実機で翻訳・Core導線・Travel導線・Stripe着地を確認後に進める。
+
+勝算:
+- UIと価格導線は成立している
+- Free / Core / Travel の階段が自然
+- 旅行時だけ $14.99 という設計に差別化がある
+- 内部コスト構造を外に出さないため守りもある
+
+リスク:
+- 翻訳1回目の体感速度
+- Stripe成功後の着地
+- iPhone実機の音声/TTS
+- travel.html のボタン迷い
+
+## PUBLIC_RELEASE_RULE
+公開前は足さない。
+迷わせるものは削る。
+文言は短く、価値を先に出す。
+
+最終優先:
+1. Maintenance が出ない
+2. index.html で無料1日10回翻訳が伝わる
+3. index.next.html で翻訳が動く
+4. Core $2.99 導線が見える
+5. index.premium.html で Travel Pass $14.99 / 30日 / 自動更新なし が伝わる
+6. travel.html で Speak / Show / Essentials が迷わず使える
+7. Stripe success URL が正しい
 
 ## DISCLOSURE_POLICY
 
@@ -14,7 +44,7 @@ GLBを公開可能な収益プロダクトとして仕上げる。
 - UI（Speak / Show / Travel体験）
 - 価格（Free / $2.99 / $14.99）
 - 機能説明（音声・翻訳・旅行モード）
-- 「無料で1日10回試せる」
+- 「無料で1日10回翻訳」
 - 「オフラインでも一部使える」などの体験表現
 
 ### 絶対に出さないもの（非公開）
@@ -27,14 +57,14 @@ GLBを公開可能な収益プロダクトとして仕上げる。
 - 課金状態判定の仕組み
 - localStorageキー設計
 
-→ ユーザーには体験と条件だけ見せる
-→ 内部実装はDev以外には説明しない
+ユーザーには体験と条件だけ見せる。
+内部実装はDev以外には説明しない。
 
 ## FREE_TRIAL_RULE
-
 公開仕様:
 - 無料枠は1日10回翻訳
-- 表現は「無料で1日10回試せます」に統一
+- 表現は「無料で1日10回翻訳」に統一
+- 英語は "Try Free — 10 translations/day" を推奨
 
 内部仕様:
 - 日次回数判定は内部処理
@@ -47,7 +77,6 @@ GLBを公開可能な収益プロダクトとして仕上げる。
 - API削減と無料枠の関係説明
 
 ## FEATURE_REDUCTION_RULE
-
 公開前は機能を増やさない。
 出すために削る。
 初見ユーザーが5秒で理解できない機能は後回し。
@@ -85,7 +114,6 @@ travel.html:
 - 過剰アニメーション
 
 ## API_REDUCTION_PROTECTION
-
 公開表現:
 - "高速翻訳"
 - "一部オフライン対応"
@@ -100,7 +128,6 @@ travel.html:
 - 速度は"速い"で統一
 
 ## ON_DEVICE_ABSTRACTION
-
 公開:
 - "オフラインでも一部使える"
 
@@ -110,7 +137,6 @@ travel.html:
 - phrase優先処理
 
 ## SMILE_FRIEND_RULE
-
 - 出口は常にFriend
 - 内部処理は完全遮断
 
@@ -121,16 +147,12 @@ OK:
 - ユーザーに伝わる表現のみ
 
 ## FINAL_RULE
-
-GLBは
-"考えなくていい体験"
-として提供する。
-
+GLBは "考えなくていい体験" として提供する。
 公開するのは価値、条件、価格、使い方。
 隠すのは内部ロジック、原価構造、API削減、辞書、キャッシュ、判定処理。
 
-公開前は足さない。
-迷わせるものは削る。
+もう作り足さない。
+磨く。削る。出す。
 
 ## UPDATE_RULE
 このファイルは上書き更新のみ。
