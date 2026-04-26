@@ -1,11 +1,12 @@
 # GLB_DYNAMIC_CANON
 
 ## STATE
-GLB_RELEASE_CANDIDATE / POSITIVE_TRAVEL_SUPPORT / FEATURE_REDUCTION
+GLB_RELEASE_CANDIDATE / POSITIVE_TRAVEL_SUPPORT / FEATURE_REDUCTION / AUTO_FIX_ENABLED
 
 ## GOAL
 GLBを公開可能な収益プロダクトとしてリリースする。
 内部ロジックは隠し、公開UIは初見5秒で理解できる状態を維持する。
+ユーザーが困っている不具合は、不可逆でない限り確認待ちで止めずに即修正する。
 
 ## RELEASE_DECISION
 Soft Launch は GO。
@@ -16,6 +17,38 @@ Soft Launch は GO。
 - Travel Pass $14.99 は旅行時だけ買う設計で差別化がある
 - UIと価格導線は成立している
 - 内部コスト構造を外に出さない
+
+## AUTO_FIX_RULE
+目的:
+- ユーザーが困っている不具合は、不可逆でない限り確認なしで即修正する。
+- 修正後の報告は必須。
+
+即修正してよい:
+- 表示崩れ
+- ボタン無反応
+- Maintenance誤表示
+- 文言ミス
+- リンク切れ
+- CSS不具合
+- 軽微なHTML/JS修正
+- 禁止語混入の削除
+- 既存仕様への復帰
+
+確認が必要:
+- Stripe設定変更
+- 価格変更
+- 課金ロジック変更
+- 複数ファイル大規模置換
+- データ削除
+- 正本変更
+- 公開導線の大幅変更
+
+必須報告:
+1. 変更ファイル一覧
+2. 修正内容
+3. 禁止対象に触れていないか
+4. 実画面または確認方法
+5. 判定 GO / HOLD / STOP
 
 ## AI_TEAM_WORKFLOW
 - Claude = UI原案 / 文案 / 初見レビュー
