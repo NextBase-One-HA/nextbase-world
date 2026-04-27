@@ -1,1244 +1,1200 @@
 <!DOCTYPE html>
-<!--
-  PROJECT_PUBLIC_ROOT（公開URL正本・出力前は必ず照合）:
-  https://nextbase-one-ha.github.io/nextbase-world/
-  リポジトリ名 glb-noir とデプロイ先 nextbase-world の混線防止用。Stripe / 外部文書はこの絶対URLで指定すること。
 
-  ページ正本（Core 本体は index.next.html。index.coreflow.html 廃止）:
-  - 無料10回/日: index.html（$2.99 の Stripe は置かず Core ページへリンク）
-  - Core + 課金: index.next.html（Stripe Payment Link はここ）
-  - Travel: travel.html
-  - Premium: index.premium.html
-
-  Stripe Payment Link（Dashboard 正本・絶対URL）:
-  - 2.99 success:  index.next.html?session_id={CHECKOUT_SESSION_ID}
-  - 2.99 cancel:   index.html
-  - 14.99 success: travel.html?travel=1&session_id={CHECKOUT_SESSION_ID}
-  - 14.99 purchase/help 正本: index.premium.html
-
-  PORTAL_RETURN_URL 正本: index.next.html
-  コード内の location.replace は相対パス可（同一オリジン）。Dashboard 設定のみ絶対URL必須。
--->
-
-<html lang="en" class="notranslate" translate="no">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
-<title>GLOBAL LANGUAGE BREAKER</title>
+<title>GLB — Global Language Breaker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
 :root {
-  --black: #060606;
-  --black2: #0e0e0e;
-  --black3: #161616;
-  --gold: #ffe566;
-  --gold2: #e8b820;
-  --gold-glow: rgba(255,229,102,0.18);
-  --gold-glow-soft: rgba(255,220,80,0.08);
-  --white: #f5f2ed;
-  --muted: #666;
-  --border: #1e1e1e;
+  --bg: #04040a;
+  --bg2: #090912;
+  --bg3: #0f0f1a;
+  --gold: #f0c93a;
+  --gold2: #c9960a;
+  --gold-glow: rgba(240,201,58,0.15);
+  --gold-dim: rgba(240,201,58,0.06);
+  --white: #f0ede8;
+  --muted: #5a5870;
+  --border: rgba(255,255,255,0.07);
+  --border-gold: rgba(240,201,58,0.25);
+  --radius: 16px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--white);font-family:'Space Grotesk',sans-serif;font-weight:300;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.4;}
+#lang-gate{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;transition:opacity .5s ease,transform .5s ease;}
+#lang-gate.exit{opacity:0;transform:translateY(-20px);pointer-events:none;}
+.gate-mark{font-family:'Instrument Serif',serif;font-size:clamp(40px,12vw,80px);line-height:1;letter-spacing:-0.02em;text-align:center;margin-bottom:8px;background:linear-gradient(135deg,var(--white) 0%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.gate-sub{font-size:12px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-bottom:48px;}
+.gate-q{font-size:clamp(18px,4vw,24px);font-weight:500;color:var(--white);margin-bottom:32px;text-align:center;}
+.lang-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;width:100%;max-width:420px;}
+.lang-opt{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 8px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;color:var(--white);cursor:pointer;text-align:center;transition:all .2s ease;-webkit-tap-highlight-color:transparent;}
+.lang-opt:hover,.lang-opt.selected{border-color:var(--gold);background:var(--gold-dim);color:var(--gold);}
+.gate-more{margin-top:16px;font-size:12px;color:var(--muted);cursor:pointer;letter-spacing:.05em;border:none;background:none;text-decoration:underline;text-underline-offset:3px;}
+.gate-cta{margin-top:32px;padding:16px 48px;background:linear-gradient(180deg,#fff5a0 0%,var(--gold) 50%,var(--gold2) 100%);color:#07060a;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;letter-spacing:.04em;border:none;border-radius:999px;cursor:pointer;box-shadow:0 0 40px rgba(240,201,58,.3);transition:filter .2s,transform .15s;display:none;}
+.gate-cta.visible{display:inline-block;}
+.gate-cta:active{filter:brightness(1.06);transform:scale(.98);}
+#app{position:relative;z-index:1;opacity:0;transition:opacity .6s ease .2s;}
+#app.visible{opacity:1;}
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:rgba(4,4,10,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.nav-logo{font-family:'Instrument Serif',serif;font-size:20px;letter-spacing:.02em;color:var(--gold);}
+.nav-lang-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:999px;font-size:12px;font-weight:500;color:var(--white);cursor:pointer;transition:border-color .2s;}
+.nav-lang-btn:hover{border-color:var(--border-gold);}
+.nav-flag{font-size:16px;}
+.hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;position:relative;overflow:hidden;}
+.hero-glow{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(240,201,58,.08) 0%,transparent 65%);top:50%;left:50%;transform:translate(-50%,-55%);pointer-events:none;}
+.hero-eyebrow{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:24px;opacity:0;animation:rise .8s .3s ease forwards;}
+.hero-title{font-family:'Instrument Serif',serif;font-size:clamp(42px,11vw,88px);font-weight:400;line-height:1.0;letter-spacing:-0.02em;margin-bottom:24px;opacity:0;animation:rise .8s .45s ease forwards;}
+.hero-title em{font-style:italic;color:var(--gold);}
+.hero-body{font-size:clamp(15px,3vw,18px);color:var(--muted);line-height:1.8;max-width:440px;margin:0 auto 40px;opacity:0;animation:rise .8s .6s ease forwards;}
+.hero-ctas{display:flex;flex-direction:column;align-items:center;gap:14px;opacity:0;animation:rise .8s .75s ease forwards;}
+.btn-primary{padding:18px 52px;background:linear-gradient(180deg,#fff5a0 0%,var(--gold) 50%,var(--gold2) 100%);color:#07060a;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;letter-spacing:.04em;border-radius:999px;text-decoration:none;border:none;cursor:pointer;box-shadow:0 0 40px rgba(240,201,58,.28),0 0 80px rgba(240,201,58,.1);transition:filter .2s,transform .15s,box-shadow .2s;display:inline-block;}
+.btn-primary:hover{filter:brightness(1.07);transform:translateY(-2px);box-shadow:0 0 50px rgba(240,201,58,.4);}
+.btn-ghost{padding:15px 32px;background:transparent;color:var(--muted);font-size:14px;letter-spacing:.04em;text-decoration:none;border:1px solid var(--border);border-radius:999px;cursor:pointer;transition:border-color .2s,color .2s;display:inline-block;}
+.btn-ghost:hover{border-color:var(--border-gold);color:var(--gold);}
+.hero-hint{font-size:12px;color:#333;letter-spacing:.05em;}
+.scroll-hint{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;animation:rise .8s 1.2s ease forwards;}
+.scroll-dot{width:4px;height:24px;border:1px solid var(--border);border-radius:999px;overflow:hidden;position:relative;}
+.scroll-dot::after{content:'';position:absolute;top:-100%;left:0;right:0;height:50%;background:var(--gold);border-radius:999px;animation:scrolldown 1.8s ease infinite;}
+@keyframes scrolldown{0%{top:-50%;}100%{top:120%;}}
+.section{padding:96px 24px;max-width:680px;margin:0 auto;}
+.section-label{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:20px;}
+.section-title{font-family:'Instrument Serif',serif;font-size:clamp(32px,7vw,52px);font-weight:400;line-height:1.1;letter-spacing:-0.02em;margin-bottom:56px;}
+.steps{display:flex;flex-direction:column;}
+.step{display:grid;grid-template-columns:60px 1fr;gap:24px;padding:36px 0;border-bottom:1px solid var(--border);opacity:0;transform:translateX(-16px);transition:opacity .6s ease,transform .6s ease;}
+.step:first-child{padding-top:0;}
+.step:last-child{border-bottom:none;}
+.step.visible{opacity:1;transform:translateX(0);}
+.step-n{font-family:'Instrument Serif',serif;font-size:48px;color:var(--gold);line-height:1;font-style:italic;text-shadow:0 0 30px rgba(240,201,58,.3);}
+.step-body h3{font-size:18px;font-weight:600;color:var(--white);margin-bottom:8px;}
+.step-body p{font-size:14px;color:var(--muted);line-height:1.75;}
+.pricing-wrap{padding:96px 24px;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.pricing-inner{max-width:680px;margin:0 auto;}
+.plans{margin-top:48px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:540px){.plans{grid-template-columns:1fr;}}
+.plan{border:1px solid var(--border);border-radius:var(--radius);padding:36px 28px;background:var(--bg3);position:relative;transition:border-color .25s;}
+.plan:hover{border-color:var(--border-gold);}
+.plan.featured{border-color:var(--border-gold);background:rgba(240,201,58,.03);}
+.plan-tag{position:absolute;top:-12px;left:20px;background:var(--gold);color:#07060a;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:3px 12px;border-radius:999px;}
+.plan-name{font-family:'Instrument Serif',serif;font-size:24px;color:var(--white);margin-bottom:20px;}
+.plan-price{font-family:'Space Grotesk',sans-serif;font-size:52px;font-weight:700;color:var(--gold);line-height:1;margin-bottom:4px;letter-spacing:-0.02em;}
+.plan-period{font-size:12px;color:var(--muted);margin-bottom:28px;letter-spacing:.04em;}
+.plan-features{list-style:none;margin-bottom:32px;}
+.plan-features li{font-size:13px;color:#7a7890;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:10px;align-items:flex-start;line-height:1.5;}
+.plan-features li::before{content:'--';color:var(--gold);font-size:10px;margin-top:3px;flex-shrink:0;}
+.plan-note{font-size:11px;color:#333;line-height:1.65;margin-top:12px;}
+.journey{padding:80px 24px;max-width:680px;margin:0 auto;}
+.journey-flow{margin-top:40px;display:flex;flex-direction:column;gap:0;}
+.journey-step{display:flex;gap:20px;align-items:flex-start;padding:24px 0;border-left:1px solid var(--border);padding-left:28px;margin-left:8px;position:relative;}
+.journey-dot{position:absolute;left:-5px;top:28px;width:9px;height:9px;border-radius:50%;background:var(--bg);border:1px solid var(--gold);}
+.journey-step.active .journey-dot{background:var(--gold);box-shadow:0 0 12px rgba(240,201,58,.5);}
+.journey-label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.journey-title{font-size:16px;font-weight:600;color:var(--white);margin-bottom:4px;}
+.journey-desc{font-size:13px;color:var(--muted);line-height:1.65;}
+.journey-price{font-size:13px;font-weight:700;color:var(--gold);margin-top:4px;}
+.tool-section{padding:96px 24px;max-width:680px;margin:0 auto;}
+.tool-box{margin-top:40px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:32px 24px;}
+.tool-lang-row{display:flex;gap:10px;align-items:center;margin-bottom:16px;}
+.tool-sel{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;padding:11px 14px;outline:none;cursor:pointer;}
+.tool-sel:focus{border-color:var(--border-gold);}
+.tool-swap{background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--gold);font-size:16px;padding:10px 14px;cursor:pointer;flex-shrink:0;}
+.tool-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:15px;padding:14px 16px;outline:none;margin-bottom:14px;}
+.tool-input:focus{border-color:var(--border-gold);}
+.tool-input::placeholder{color:#2a2a3a;}
+.tool-result{min-height:72px;background:var(--bg);border:1px solid var(--border-gold);border-radius:10px;padding:16px;font-size:clamp(20px,5vw,28px);font-weight:600;color:var(--white);line-height:1.4;margin-bottom:16px;word-break:break-word;display:flex;align-items:center;justify-content:center;text-align:center;}
+.tool-result.idle{color:#222230;font-size:13px;font-weight:400;}
+.tool-quota{font-size:11px;color:#333;text-align:center;margin-top:10px;letter-spacing:.04em;}
+.footer-cta{padding:120px 24px;text-align:center;}
+.footer-cta-title{font-family:'Instrument Serif',serif;font-size:clamp(36px,9vw,72px);font-weight:400;line-height:1.05;letter-spacing:-0.02em;margin-bottom:40px;}
+.footer-cta-title em{font-style:italic;color:var(--gold);}
+footer{padding:32px 24px;border-top:1px solid var(--border);text-align:center;font-size:11px;color:var(--muted);letter-spacing:.04em;}
+footer a{color:#444;text-decoration:none;margin:0 10px;}
+footer a:hover{color:var(--gold);}
+.lang-modal-bg{position:fixed;inset:0;z-index:999;background:rgba(4,4,10,.9);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .3s ease;}
+.lang-modal-bg.open{opacity:1;pointer-events:all;}
+.lang-modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:32px 24px;width:100%;max-width:420px;}
+.lang-modal-title{font-size:16px;font-weight:600;margin-bottom:20px;color:var(--white);}
+@keyframes rise{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── INTRO SCREEN ── */
+#intro-screen {
+position:fixed;inset:0;z-index:9998;
+background:var(–bg);
+display:flex;flex-direction:column;
+align-items:center;justify-content:center;
+padding:40px 28px;
+overflow-y:auto;
+transition:opacity .5s ease,transform .5s ease;
+}
+#intro-screen.exit{opacity:0;transform:translateY(-20px);pointer-events:none;}
+
+.intro-logo{
+font-family:‘Instrument Serif’,serif;
+font-size:36px;color:var(–gold);
+letter-spacing:.02em;margin-bottom:4px;
+}
+.intro-tagline{
+font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+color:var(–muted);margin-bottom:36px;
+}
+.intro-body{
+width:100%;max-width:400px;
+font-size:14px;line-height:1.85;
+color:var(–muted);
+text-align:left;
+}
+.intro-body p{margin-bottom:16px;}
+.intro-body strong{color:var(–white);font-weight:600;}
+.intro-body .intro-price-row{
+display:flex;flex-direction:column;gap:10px;
+margin:20px 0;
+}
+.intro-plan{
+background:var(–bg3);
+border:1px solid var(–border);
+border-radius:12px;
+padding:16px 18px;
+}
+.intro-plan.featured{
+border-color:var(–border-gold);
+background:rgba(240,201,58,.04);
+}
+.intro-plan-price{
+font-family:‘Instrument Serif’,serif;
+font-size:26px;color:var(–gold);
+line-height:1;margin-bottom:4px;
+}
+.intro-plan-name{
+font-size:12px;font-weight:700;
+color:var(–white);margin-bottom:6px;
+letter-spacing:.04em;
+}
+.intro-plan-desc{
+font-size:12px;color:var(–muted);
+line-height:1.6;
+}
+.intro-future{
+margin-top:20px;padding:14px 16px;
+background:var(–bg2);border:1px solid var(–border);
+border-radius:10px;
+font-size:11px;color:var(–muted);line-height:1.7;
+}
+.intro-future-title{
+font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+color:var(–muted);margin-bottom:8px;
+}
+.intro-future li{margin-left:12px;margin-bottom:4px;}
+.intro-ctas{
+margin-top:28px;width:100%;max-width:400px;
+display:flex;flex-direction:column;gap:10px;
+}
+.intro-note{
+font-size:10px;color:#333;text-align:center;
+letter-spacing:.04em;margin-top:6px;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-
-body {
-  background: var(--black);
-  color: var(--white);
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 300;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+/* ── STRIPE CONFIRM MODAL ── */
+.stripe-modal-bg {
+position:fixed;inset:0;z-index:10000;
+background:rgba(4,4,10,.92);
+backdrop-filter:blur(16px);
+display:flex;align-items:center;justify-content:center;
+padding:24px;
+opacity:0;pointer-events:none;
+transition:opacity .25s ease;
 }
-
-/* ── HERO ── */
-.hero {
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 60px 24px 48px;
-  position: relative;
-  overflow: hidden;
+.stripe-modal-bg.open{opacity:1;pointer-events:all;}
+.stripe-modal {
+background:#0f0f1a;
+border:1px solid rgba(240,201,58,.3);
+border-radius:18px;
+padding:28px 24px;
+width:100%;max-width:360px;
+text-align:center;
 }
-
-.hero::before {
-  content: '';
-  position: absolute;
-  width: 500px; height: 500px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,220,80,0.06) 0%, transparent 65%);
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
+.stripe-modal-logo{
+font-family:‘Instrument Serif’,serif;
+font-size:28px;color:var(–gold);
+margin-bottom:4px;
 }
-
-.hero-eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 28px;
-  opacity: 0;
-  animation: up 0.7s 0.1s ease forwards;
+.stripe-modal-title{
+font-size:15px;font-weight:700;
+color:var(–white);margin-bottom:8px;
 }
-
-.hero-title {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(36px, 10vw, 80px);
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-  color: var(--white);
-  margin-bottom: 24px;
-  opacity: 0;
-  animation: up 0.7s 0.2s ease forwards;
+.stripe-modal-price{
+font-family:‘Instrument Serif’,serif;
+font-size:40px;color:var(–gold);
+line-height:1;margin-bottom:4px;
 }
-
-.hero-title em {
-  font-style: normal;
-  color: var(--gold);
+.stripe-modal-period{
+font-size:11px;color:var(–muted);
+letter-spacing:.06em;margin-bottom:20px;
 }
-
-.hero-body {
-  font-size: clamp(15px, 3vw, 18px);
-  color: var(--muted);
-  line-height: 1.75;
-  max-width: 440px;
-  margin: 0 auto 40px;
-  opacity: 0;
-  animation: up 0.7s 0.3s ease forwards;
+.stripe-modal-note{
+font-size:11px;color:var(–muted);
+line-height:1.6;margin-bottom:20px;
 }
-
-.hero-cta-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  opacity: 0;
-  animation: up 0.7s 0.45s ease forwards;
+.stripe-modal-btns{
+display:flex;flex-direction:column;gap:10px;
 }
-
-.btn-gold {
-  display: inline-block;
-  padding: 18px 48px;
-  background: linear-gradient(180deg, #fff8b0 0%, var(--gold) 50%, var(--gold2) 100%);
-  color: #08080a;
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.05em;
-  border-radius: 999px;
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 0 32px rgba(255,220,80,0.3), 0 0 64px rgba(255,200,60,0.12);
-  transition: filter 0.2s, transform 0.15s, box-shadow 0.2s;
+.stripe-confirm-btn{
+padding:15px;
+background:linear-gradient(180deg,#fff5a0 0%,var(–gold) 50%,#c9960a 100%);
+color:#07060a;font-size:14px;font-weight:800;
+border-radius:999px;border:none;cursor:pointer;
+box-shadow:0 0 24px rgba(240,201,58,.28);
+text-decoration:none;display:block;
+transition:filter .2s;
 }
-
-.btn-gold:hover {
-  filter: brightness(1.08);
-  transform: translateY(-2px);
-  box-shadow: 0 0 40px rgba(255,220,80,0.4);
+.stripe-confirm-btn:hover{filter:brightness(1.06);}
+.stripe-cancel-btn{
+padding:12px;background:none;
+border:1px solid var(–border);border-radius:999px;
+color:var(–muted);font-size:13px;cursor:pointer;
+transition:border-color .2s,color .2s;
 }
-
-.btn-ghost {
-  display: inline-block;
-  padding: 16px 32px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 14px;
-  letter-spacing: 0.05em;
-  text-decoration: none;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  transition: border-color 0.2s, color 0.2s;
-}
-
-.btn-ghost:hover {
-  border-color: rgba(255,220,80,0.3);
-  color: var(--gold);
-}
-
-.hero-note {
-  font-size: 12px;
-  color: #444;
-  letter-spacing: 0.04em;
-}
-
-/* ── LANGUAGE SELECTOR ── */
-.lang-strip {
-  padding: 0 24px 56px;
-  text-align: center;
-}
-
-.lang-strip-label {
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #444;
-  margin-bottom: 16px;
-}
-
-.lang-select-wrap {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 12px 20px;
-  background: var(--black2);
-}
-
-.lang-select-wrap select {
-  background: transparent;
-  border: none;
-  color: var(--white);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  outline: none;
-  cursor: pointer;
-  appearance: none;
-  padding-right: 20px;
-}
-
-.lang-arrow {
-  color: var(--gold);
-  font-size: 18px;
-  pointer-events: none;
-  margin-left: -16px;
-}
-
-/* ── SECTION ── */
-.section {
-  padding: 72px 24px;
-  max-width: 640px;
-  margin: 0 auto;
-}
-
-.section-label {
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 20px;
-}
-
-.section-title {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(28px, 6vw, 44px);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin-bottom: 16px;
-}
-
-/* ── HOW IT WORKS ── */
-.steps {
-  margin-top: 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.step {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  padding: 28px 0;
-  border-bottom: 1px solid var(--border);
-  opacity: 0;
-  transform: translateX(-16px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
-}
-
-.step:first-child { padding-top: 0; }
-.step:last-child { border-bottom: none; }
-.step.visible { opacity: 1; transform: translateX(0); }
-
-.step-num {
-  font-family: 'Syne', sans-serif;
-  font-size: 40px;
-  font-weight: 800;
-  color: var(--gold);
-  line-height: 1;
-  min-width: 44px;
-  text-shadow: 0 0 20px rgba(255,220,80,0.3);
-}
-
-.step-body h3 {
-  font-size: 17px;
-  font-weight: 500;
-  color: var(--white);
-  margin-bottom: 6px;
-}
-
-.step-body p {
-  font-size: 14px;
-  color: var(--muted);
-  line-height: 1.65;
-}
-
-/* ── PRICING ── */
-.pricing-section {
-  padding: 72px 24px;
-  background: var(--black2);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-
-.pricing-inner {
-  max-width: 640px;
-  margin: 0 auto;
-}
-
-.plans {
-  margin-top: 48px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-@media (max-width: 520px) {
-  .plans { grid-template-columns: 1fr; }
-}
-
-.plan {
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 32px 24px;
-  background: var(--black3);
-  position: relative;
-  transition: border-color 0.2s;
-}
-
-.plan:hover { border-color: rgba(255,220,80,0.2); }
-
-.plan.featured {
-  border-color: rgba(255,220,80,0.35);
-  background: #0f0e00;
-}
-
-.plan-badge {
-  position: absolute;
-  top: -11px;
-  left: 20px;
-  background: var(--gold);
-  color: #08080a;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 3px 12px;
-  border-radius: 999px;
-}
-
-.plan-name {
-  font-family: 'Syne', sans-serif;
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--white);
-  margin-bottom: 16px;
-}
-
-.plan-price {
-  font-family: 'Syne', sans-serif;
-  font-size: 44px;
-  font-weight: 800;
-  color: var(--gold);
-  line-height: 1;
-  margin-bottom: 4px;
-  text-shadow: 0 0 24px rgba(255,220,80,0.2);
-}
-
-.plan-period {
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 24px;
-  letter-spacing: 0.04em;
-}
-
-.plan-features {
-  list-style: none;
-  margin-bottom: 28px;
-}
-
-.plan-features li {
-  font-size: 13px;
-  color: #888;
-  padding: 7px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  line-height: 1.5;
-}
-
-.plan-features li::before {
-  content: '—';
-  color: var(--gold);
-  font-size: 11px;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-
-.plan-note {
-  font-size: 11px;
-  color: #444;
-  line-height: 1.6;
-  margin-top: 10px;
-}
-
-/* ── TOOL SECTION ── */
-.tool-section {
-  padding: 72px 24px;
-  max-width: 640px;
-  margin: 0 auto;
-}
-
-.tool-box {
-  background: var(--black2);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 32px 24px;
-}
-
-.tool-lang-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.tool-lang-select {
-  flex: 1;
-  background: var(--black3);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--white);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  padding: 11px 14px;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.tool-lang-select:focus { border-color: rgba(255,220,80,0.4); }
-
-.tool-swap {
-  background: var(--black3);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--gold);
-  font-size: 18px;
-  padding: 10px 14px;
-  cursor: pointer;
-  transition: border-color 0.2s;
-  flex-shrink: 0;
-}
-
-.tool-swap:hover { border-color: rgba(255,220,80,0.3); }
-
-.tool-input {
-  width: 100%;
-  background: var(--black3);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--white);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  padding: 14px 16px;
-  outline: none;
-  margin-bottom: 14px;
-  transition: border-color 0.2s;
-}
-
-.tool-input:focus { border-color: rgba(255,220,80,0.4); }
-.tool-input::placeholder { color: #444; }
-
-.tool-result {
-  min-height: 80px;
-  background: var(--black);
-  border: 1px solid rgba(255,220,80,0.15);
-  border-radius: 10px;
-  padding: 16px;
-  font-size: clamp(18px, 5vw, 26px);
-  font-weight: 500;
-  color: var(--white);
-  line-height: 1.4;
-  margin-bottom: 16px;
-  word-break: break-word;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.tool-result.idle { color: #333; font-size: 14px; }
-
-.tool-quota {
-  font-size: 12px;
-  color: #444;
-  text-align: center;
-  margin-top: 10px;
-}
-
-/* ── FOOTER CTA ── */
-.footer-cta {
-  padding: 96px 24px;
-  text-align: center;
-  background: var(--black);
-}
-
-.footer-cta h2 {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(32px, 8vw, 64px);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin-bottom: 36px;
-}
-
-.footer-cta h2 em {
-  font-style: normal;
-  color: var(--gold);
-}
-
-/* ── FOOTER ── */
-footer {
-  padding: 32px 24px;
-  border-top: 1px solid var(--border);
-  text-align: center;
-  font-size: 12px;
-  color: #3a3a3a;
-}
-
-footer a {
-  color: #444;
-  text-decoration: none;
-  margin: 0 10px;
-  transition: color 0.2s;
-}
-
-footer a:hover { color: var(--gold); }
-
-@keyframes up {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ── maintenance (from index.html 正本) ── */
-.maintenance-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: rgba(8, 8, 8, 0.96);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  box-sizing: border-box;
-}
-.maintenance-overlay.show { display: flex; }
-.maintenance-card {
-  width: min(520px, 100%);
-  border: 1px solid #2a2a2a;
-  border-radius: 14px;
-  background: #121212;
-  box-shadow: 0 0 28px rgba(255, 220, 100, 0.08);
-  padding: 18px 16px;
-  text-align: left;
-}
-.maintenance-card h2 {
-  margin: 0 0 10px;
-  color: #fff8c8;
-  font-size: 18px;
-  letter-spacing: 0.03em;
-}
-.maintenance-card p {
-  margin: 0;
-  color: #d0d0d0;
-  line-height: 1.6;
-  font-size: 14px;
-}
-.maintenance-reload {
-  margin-top: 12px;
-  display: inline-block;
-  border: 1px solid #ffe566;
-  color: #fff8c8;
-  background: #1a1a1a;
-  border-radius: 999px;
-  padding: 10px 14px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
+.stripe-cancel-btn:hover{border-color:var(–border-gold);color:var(–white);}
 
 </style>
 </head>
 <body>
 
-    <div id="maintenance-overlay" class="maintenance-overlay" style="display:none;" aria-hidden="true" hidden aria-live="polite" aria-modal="true" role="dialog">
-        <div class="maintenance-card">
-            <h2>Maintenance</h2>
-            <p id="maintenance-message">We are currently enhancing the system for a better experience. Please check back shortly.</p>
-            <button type="button" id="maintenance-reload" class="maintenance-reload" style="display:none;">Reload</button>
-        </div>
-    </div>
-    <p id="travel-status" style="display:none;margin:0;padding:0;height:0;overflow:hidden;" aria-hidden="true"></p>
-    <p id="core-access-active" style="display:none;margin:0;padding:0;height:0;overflow:hidden;" aria-hidden="true"></p>
+<div id="lang-gate">
+  <div class="gate-mark">GLB</div>
+  <p class="gate-sub">Global Language Breaker</p>
+  <p class="gate-q" id="gate-q">Choose your language</p>
+  <div class="lang-grid" id="lang-grid"></div>
+  <button class="gate-more" id="gate-more" style="display:none;" onclick="showMoreLangs()"></button>
+  <button class="gate-cta" id="gate-cta" onclick="enterApp()"></button>
+</div>
 
-<!-- HERO -->
-<section class="hero">
-  <p class="hero-eyebrow">Global Language Breaker</p>
-  <h1 class="hero-title">Break the<br><em>language barrier.</em><br>Anywhere.</h1>
-  <p class="hero-body">
-    Speak or type — instant translation in 13 languages.<br>
-    For travel, work, or any moment words fail you.
-  </p>
-  <div class="hero-cta-group">
-    <a href="#tool" class="btn-gold">Try Free — 10 translations/day</a>
-    <a href="#pricing" class="btn-ghost">See plans ↓</a>
-    <p class="hero-note">No credit card · Works instantly</p>
-  </div>
-</section>
-
-<!-- LANGUAGE SELECTOR -->
-<div class="lang-strip">
-  <p class="lang-strip-label">Your language</p>
-  <div class="lang-select-wrap">
-    <select id="ui-lang-hero">
-      <option value="en" selected>English</option>
-      <option value="ja">日本語</option>
-      <option value="zh">中文</option>
-      <option value="ko">한국어</option>
-      <option value="es">Español</option>
-      <option value="fr">Français</option>
-      <option value="de">Deutsch</option>
-      <option value="it">Italiano</option>
-      <option value="ru">Русский</option>
-      <option value="th">ไทย</option>
-      <option value="vi">Tiếng Việt</option>
-      <option value="hi">हिन्दी</option>
-      <option value="pt">Português</option>
-    </select>
-    <span class="lang-arrow">▾</span>
+<div class="lang-modal-bg" id="lang-modal-bg" onclick="closeLangModal(event)">
+  <div class="lang-modal">
+    <p class="lang-modal-title" id="modal-title">Change language</p>
+    <div class="lang-grid" id="modal-grid"></div>
   </div>
 </div>
 
-<!-- HOW IT WORKS -->
-<section class="section">
-  <p class="section-label">How it works</p>
-  <h2 class="section-title">3 steps.<br>That's it.</h2>
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">01</div>
-      <div class="step-body">
-        <h3>Pick your languages</h3>
-        <p>Choose from 13 languages. Set it once before you go.</p>
+<div id="app">
+  <nav>
+    <span class="nav-logo">GLB</span>
+    <button class="nav-lang-btn" onclick="openLangModal()">
+      <span class="nav-flag" id="nav-flag">🌐</span>
+      <span id="nav-lang-label">EN</span>
+    </button>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <p class="hero-eyebrow" id="h-eyebrow">Global Language Breaker</p>
+    <h1 class="hero-title" id="h-title">Break the<br><em>language barrier.</em><br>Anywhere.</h1>
+    <p class="hero-body" id="h-body">Speak or type — instant translation in 13 languages. For travel, work, or any moment words fail you.</p>
+    <div class="hero-ctas">
+      <a href="https://nextbase-one-ha.github.io/nextbase-world/index.next.html" class="btn-primary" id="h-cta1">Try Free — 5 translations/day</a>
+      <a href="javascript:void(0)" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})" class="btn-ghost" id="h-cta2">See plans</a>
+      <p class="hero-hint" id="h-hint">No credit card · Works instantly</p>
+    </div>
+    <div class="scroll-hint"><div class="scroll-dot"></div></div>
+  </section>
+
+  <section class="section">
+    <p class="section-label" id="s1-label">How it works</p>
+    <h2 class="section-title" id="s1-title">3 steps.<br>That's it.</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div class="step-body">
+          <h3 id="step1-h">Pick your language</h3>
+          <p id="step1-p">Set your language once. GLB remembers it every time.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div class="step-body">
+          <h3 id="step2-h">Speak or type</h3>
+          <p id="step2-p">Use the mic or keyboard. Translation appears instantly on screen.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div class="step-body">
+          <h3 id="step3-h">Show the screen</h3>
+          <p id="step3-p">Hand your phone to the other person. One screen does it all.</p>
+        </div>
       </div>
     </div>
-    <div class="step">
-      <div class="step-num">02</div>
-      <div class="step-body">
-        <h3>Speak or type</h3>
-        <p>Use the mic or keyboard. Translation appears instantly on screen.</p>
+  </section>
+
+  <section class="pricing-wrap" id="pricing">
+    <div class="pricing-inner">
+      <p class="section-label" id="s2-label">Simple pricing</p>
+      <h2 class="section-title" id="s2-title">Pay for what<br>you actually use.</h2>
+      <div class="plans">
+        <div class="plan">
+          <p class="plan-name">GLB</p>
+          <p class="plan-price">$2.99</p>
+          <p class="plan-period" id="core-period">/ month · cancel anytime</p>
+          <ul class="plan-features">
+            <li id="cf1">Unlimited translation</li>
+            <li id="cf2">13 languages</li>
+            <li id="cf3">Listen &amp; read-aloud</li>
+            <li id="cf4">One screen, no switching</li>
+          </ul>
+          <a href="javascript:void(0)" class="btn-primary" style="width:100%;text-align:center;display:block;padding:15px;" id="core-btn" onclick="openStripeConfirm(event)">Start Core</a>
+          <p class="plan-note" id="core-note">Try free — 5 translations/day, no card needed.</p>
+        </div>
+        <div class="plan featured">
+          <div class="plan-tag" id="travel-tag">Travel</div>
+          <p class="plan-name">Travel Pass</p>
+          <p class="plan-price">$14.99</p>
+          <p class="plan-period" id="travel-period">30 days · one-time · no auto-renew</p>
+          <ul class="plan-features">
+            <li id="tf1">Everything in Core</li>
+            <li id="tf2">Face-to-face travel UI</li>
+            <li id="tf3">Large display mode</li>
+            <li id="tf4">Returns to Core after 30 days</li>
+          </ul>
+          <a href="https://nextbase-one-ha.github.io/nextbase-world/index.premium.html" class="btn-ghost" style="width:100%;text-align:center;display:block;padding:15px;" id="travel-btn">旅行モードの説明を見る →</a>
+          <p class="plan-note" id="travel-note">Buy only when you travel. No forgotten charges.</p>
+        </div>
       </div>
     </div>
-    <div class="step">
-      <div class="step-num">03</div>
-      <div class="step-body">
-        <h3>Show the screen</h3>
-        <p>Hand your phone to the other person. No app switching. One screen does it all.</p>
+  </section>
+
+  <section class="journey">
+    <p class="section-label" id="s3-label">Your journey</p>
+    <h2 class="section-title" id="s3-title">Start free.<br>Upgrade when you need.</h2>
+    <div class="journey-flow">
+      <div class="journey-step">
+        <div class="journey-dot"></div>
+        <div>
+          <p class="journey-label" id="j1-l">Start</p>
+          <p class="journey-title" id="j1-t">Free — 5 translations/day</p>
+          <p class="journey-desc" id="j1-d">Try the translation tool right now. No card, no signup. No forgotten charges.</p>
+        </div>
+      </div>
+      <div class="journey-step active">
+        <div class="journey-dot"></div>
+        <div>
+          <p class="journey-label" id="j2-l">Everyday use</p>
+          <p class="journey-title" id="j2-t">Core — unlimited</p>
+          <p class="journey-desc" id="j2-d">Unlimited translation, 13 languages, voice. Cancel anytime.</p>
+          <p class="journey-price">$2.99 / month</p>
+        </div>
+      </div>
+      <div class="journey-step">
+        <div class="journey-dot"></div>
+        <div>
+          <p class="journey-label" id="j3-l">Travel time</p>
+          <p class="journey-title" id="j3-t">Travel Pass — 30 days</p>
+          <p class="journey-desc" id="j3-d">Add face-to-face travel mode. One-time purchase.</p>
+          <p class="journey-price">$14.99 / 30 days</p>
+        </div>
+      </div>
+      <div class="journey-step">
+        <div class="journey-dot"></div>
+        <div>
+          <p class="journey-label" id="j4-l">Trip ends</p>
+          <p class="journey-title" id="j4-t">Automatically back to Core</p>
+          <p class="journey-desc" id="j4-d">After 30 days, back to Core. No hidden charges.</p>
+          <p class="journey-price">$2.99 / month</p>
+        </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- PRICING -->
-<section class="pricing-section" id="pricing">
-  <div class="pricing-inner">
-    <p class="section-label">Simple pricing</p>
-    <h2 class="section-title">Pay for what<br>you actually use.</h2>
-    <div class="plans">
+  <section class="footer-cta">
+    <h2 class="footer-cta-title" id="fc-title">Start speaking<br><em>every language.</em></h2>
+    <a href="https://nextbase-one-ha.github.io/nextbase-world/index.next.html" class="btn-primary" id="fc-btn">Try GLB Free</a>
+  </section>
 
-      <div class="plan">
-        <p class="plan-name">Core</p>
-        <p class="plan-price">$2.99</p>
-        <p class="plan-period">/ month · cancel anytime</p>
-        <ul class="plan-features">
-          <li>Unlimited text translation</li>
-          <li>13 languages</li>
-          <li>Listen & read-aloud</li>
-          <li>One screen, no switching</li>
-        </ul>
-        <a href="https://nextbase-one-ha.github.io/nextbase-world/index.next.html#glb-core-subscribe-block" class="btn-gold" style="width:100%;text-align:center;display:block;padding:15px;">
-          Start Core
-        </a>
-        <p class="plan-note">Try Free first — 10 translations/day, no card needed.</p>
-      </div>
-
-      <div class="plan featured">
-        <div class="plan-badge">Travel</div>
-        <p class="plan-name">Travel Pass</p>
-        <p class="plan-price">$14.99</p>
-        <p class="plan-period">30 days · one-time · no auto-renew</p>
-        <ul class="plan-features">
-          <li>Everything in Core</li>
-          <li>Travel mode — face-to-face UI</li>
-          <li>Large display for showing others</li>
-          <li>Auto-returns to Core after 30 days</li>
-        </ul>
-        <a href="https://nextbase-one-ha.github.io/nextbase-world/index.premium.html" class="btn-gold" style="width:100%;text-align:center;display:block;padding:15px;">
-          Get Travel Pass
-        </a>
-        <p class="plan-note">Buy only when you travel. No forgotten charges.</p>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- LIVE TOOL -->
-<section class="tool-section" id="tool">
-  <p class="section-label">Try it now</p>
-  <h2 class="section-title" style="margin-bottom:32px;">Free. Right here.</h2>
-  <div class="tool-box">
-    <div class="tool-lang-row">
-      <select id="t-from" class="tool-lang-select"></select>
-      <button class="tool-swap" id="t-swap">⇄</button>
-      <select id="t-to" class="tool-lang-select"></select>
-    </div>
-    <input type="text" id="t-input" class="tool-input" placeholder="Type something to translate…" autocomplete="off">
-    <div class="tool-result idle" id="t-result">Translation appears here</div>
-    <button class="btn-gold" id="t-btn" style="width:100%;text-align:center;">Translate</button>
-    <p class="tool-quota" id="t-quota">10 free runs per day</p>
-  </div>
-</section>
-
-<!-- FOOTER CTA -->
-<section class="footer-cta">
-  <h2>Start speaking<br><em>every language.</em></h2>
-  <a href="https://nextbase-one-ha.github.io/nextbase-world/index.next.html#glb-core-subscribe-block" class="btn-gold">
-    Try GLB Free
-  </a>
-</section>
-
-<footer>
-  <p style="margin-bottom:12px;">
-    <a href="https://nextbase-one-ha.github.io/nextbase-world/terms.html">Terms</a>
-    <a href="https://nextbase-one-ha.github.io/nextbase-world/privacy.html">Privacy</a>
-    <a href="https://nextbase-one-ha.github.io/nextbase-world/legal.html">Legal</a>
-    <a href="https://nextbase-one-ha.github.io/nextbase-world/support.html">Support</a>
-  </p>
-  <p>© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending</p>
-</footer>
+  <footer>
+    <p style="margin-bottom:12px;">
+      <a href="https://nextbase-one-ha.github.io/nextbase-world/terms.html">Terms</a>
+      <a href="https://nextbase-one-ha.github.io/nextbase-world/privacy.html">Privacy</a>
+      <a href="https://nextbase-one-ha.github.io/nextbase-world/legal.html">Legal</a>
+      <a href="https://nextbase-one-ha.github.io/nextbase-world/support.html">Support</a>
+    </p>
+    <p>© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending</p>
+  </footer>
+</div>
 
 <script>
-/** 公開URL正本（Dashboard・文書・Gate1 照合）。相対 redirect は同一デプロイ内で有効。 */
-var GLB_PROJECT_PUBLIC_ROOT = './';
-/** Translate /health: smile-friend-engine (us-central1) */
-const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
-const NEXTBASE_APP = NEXTBASE_APP_ORIGIN;
-var GLB_STRIPE_PORTAL_LOGIN_FALLBACK = 'https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00';
-const APP_VERSION = '2026.04.24.index.free-entry.1';
-const MAINTENANCE_DEFAULT = 'We are currently enhancing the system for a better experience. Please check back shortly.';
-const LS_CUSTOMER_ID = 'GLB_CUSTOMER_ID';
-const LS_TRAVEL_PENDING = 'glb_travel_pending';
-const LS_BILLING_STATE = 'glb_billing_state_v1';
-const PLAN_CORE_299 = 'core_2_99';
-const PLAN_TRAVEL_1499_30D = 'travel_14_99_30d';
-const LS_PENDING_SESSION_ID = 'GLB_PENDING_SESSION_ID';
-const LS_GLB_QUOTA = 'glb_translate_quota_v1';
-var GLB_CORE_SUBSCRIBED = false;
-var GLB_TRAVEL_ACTIVE = false;
-var GLB_TRAVEL_EXPIRES_AT = null;
-var GLB_SYSTEM_STATUS_CACHE = null;
-var GLB_SYSTEM_STATUS_AT = 0;
-var GLB_SYSTEM_STATUS_TTL = 30000;
-var GLB_MAINTENANCE_ON = false;
-
-(function glbFunnelInit() {
-    var EP = '';
-    try {
-        EP = (window.__GLB_METRICS_ENDPOINT__ && String(window.__GLB_METRICS_ENDPOINT__).trim()) || '';
-    } catch (e0) { EP = ''; }
-    var LS_AGG = 'glb_funnel_metrics_v1';
-    function bump(key) {
-        try {
-            var o = JSON.parse(localStorage.getItem(LS_AGG) || '{}') || {};
-            o[key] = (Number(o[key]) || 0) + 1;
-            localStorage.setItem(LS_AGG, JSON.stringify(o));
-        } catch (e1) { /* ignore */ }
-    }
-    window.GLBFunnel = {
-        track: function (event, detail) {
-            var payload = {
-                t: Date.now(),
-                v: typeof APP_VERSION !== 'undefined' ? APP_VERSION : '',
-                path: (function () { try { return location.pathname; } catch (e) { return ''; } })(),
-                event: event,
-                detail: detail || {}
-            };
-            try { console.log('[GLB funnel]', JSON.stringify(payload)); } catch (e2) { /* ignore */ }
-            if (event === 'index_reach') bump('index_reach');
-            if (event === 'translate_click') bump('translate_click');
-            if (event === 'stripe_click') bump('stripe_click');
-            if (event === 'checkout_success') bump('checkout_success');
-            if (event === 'core_page_click') bump('core_page_click');
-            if (EP) {
-                try {
-                    fetch(EP, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), keepalive: true }).catch(function () {});
-                } catch (e3) { /* ignore */ }
-            }
-        },
-        summary: function () {
-            try { return JSON.parse(localStorage.getItem(LS_AGG) || '{}'); } catch (e4) { return {}; }
-        }
-    };
-    window.GLBFunnel.track('index_reach', { page: 'index.html' });
-})();
-
-function parseBillingState() {
-    try {
-        var raw = localStorage.getItem(LS_BILLING_STATE);
-        if (!raw) return null;
-        var o = JSON.parse(raw);
-        if (!o || typeof o !== 'object') return null;
-        return o;
-    } catch (e) { return null; }
-}
-
-function persistBillingState(patch) {
-    try {
-        var cur = parseBillingState() || {};
-        var next = {};
-        var k;
-        for (k in cur) { if (Object.prototype.hasOwnProperty.call(cur, k)) next[k] = cur[k]; }
-        for (k in patch) { if (Object.prototype.hasOwnProperty.call(patch, k)) next[k] = patch[k]; }
-        next.updatedAt = Date.now();
-        if (next.active === false) next.plan = null;
-        localStorage.setItem(LS_BILLING_STATE, JSON.stringify(next));
-    } catch (e) { /* ignore */ }
-}
-
-function clearBillingStateStorage() {
-    try {
-        localStorage.removeItem(LS_BILLING_STATE);
-        localStorage.removeItem('glb_subscribed');
-        localStorage.removeItem('glb_paid_lock_v1');
-    } catch (e) { /* ignore */ }
-}
-
-(function migrateLegacyBillingToState() {
-    try {
-        var cur = parseBillingState();
-        var hasState = !!(cur && typeof cur.active === 'boolean');
-        var legV = '';
-        var legLock = false;
-        try {
-            legV = localStorage.getItem('glb_subscribed') || '';
-            legLock = localStorage.getItem('glb_paid_lock_v1') === '1';
-        } catch (e0) { /* ignore */ }
-        var legacyPaid = legV === '1' || legV === 'true' || legLock;
-        if (!hasState && legacyPaid) {
-            persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'migration_legacy', updatedAt: Date.now() });
-        }
-        if (parseBillingState()) {
-            localStorage.removeItem('glb_subscribed');
-            localStorage.removeItem('glb_paid_lock_v1');
-        }
-    } catch (e) { /* ignore */ }
-})();
-
-function glbBillingPaidActive() {
-    var s = parseBillingState();
-    if (!s || s.active !== true) return false;
-    return s.plan === PLAN_CORE_299 || s.plan === PLAN_TRAVEL_1499_30D;
-}
-
-function glbIsPaidFlag() { return glbBillingPaidActive(); }
-
-(function primeBillingFromUrl() {
-    try {
-        var u = new URL(window.location.href);
-        var sid = (u.searchParams.get('session_id') || '').trim();
-        var subq = u.searchParams.get('subscribed');
-        if (sid) {
-            persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'stripe_success', updatedAt: Date.now() });
-        } else if (subq === '1' || subq === 'true') {
-            persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'url_subscribed', updatedAt: Date.now() });
-        }
-    } catch (e) { /* ignore */ }
-})();
-
-(function prehideLimitedUiWhenPaid() {
-    try {
-        if (!glbBillingPaidActive()) return;
-        var st = document.createElement('style');
-        st.id = 'glb-paid-mode-style';
-        st.textContent = '#t-quota{display:none !important;}';
-        document.head.appendChild(st);
-    } catch (e) { /* ignore */ }
-})();
-
-/** 課金済みは無料LPへ留めない。?nori=admin のみ無料 index を許可。 */
-(function guardPaidUsersRedirectToNext() {
-    try {
-        var u = new URL(window.location.href);
-        if ((u.searchParams.get('nori') || '') === 'admin') return;
-        if (!glbBillingPaidActive()) return;
-        window.location.replace(new URL('index.next.html', window.location.href).href);
-    } catch (e) { /* ignore */ }
-})();
-
-function compareVersion(a, b) {
-    var aa = String(a || '').split('.');
-    var bb = String(b || '').split('.');
-    var n = Math.max(aa.length, bb.length);
-    for (var i = 0; i < n; i++) {
-        var x = parseInt(aa[i] || '0', 10);
-        var y = parseInt(bb[i] || '0', 10);
-        if (x > y) return 1;
-        if (x < y) return -1;
-    }
-    return 0;
-}
-
-function setMaintenanceOverlay(on, message, forceReload) {
-    var ov = document.getElementById('maintenance-overlay');
-    var msg = document.getElementById('maintenance-message');
-    var btn = document.getElementById('maintenance-reload');
-    if (!ov || !msg || !btn) return;
-    GLB_MAINTENANCE_ON = !!on;
-    msg.textContent = message || MAINTENANCE_DEFAULT;
-    btn.style.display = forceReload ? '' : 'none';
-    ov.hidden = !on;
-    ov.setAttribute('aria-hidden', on ? 'false' : 'true');
-    ov.style.display = on ? 'flex' : 'none';
-    if (on) ov.classList.add('show');
-    else ov.classList.remove('show');
-}
-
-function applySystemStatus(status) {
-    if (!status) return;
-    var forceReload = status.min_app_version && compareVersion(status.min_app_version, APP_VERSION) > 0;
-    if (forceReload) {
-        setMaintenanceOverlay(true, 'A new version is available. Please reload the page.', true);
-        return;
-    }
-    if (status.maintenance_mode) {
-        setMaintenanceOverlay(true, status.maintenance_message || MAINTENANCE_DEFAULT, false);
-        return;
-    }
-    setMaintenanceOverlay(false, '', false);
-}
-
-function fetchSystemStatus(force) {
-    var now = Date.now();
-    if (!force && GLB_SYSTEM_STATUS_CACHE && (now - GLB_SYSTEM_STATUS_AT < GLB_SYSTEM_STATUS_TTL)) {
-        applySystemStatus(GLB_SYSTEM_STATUS_CACHE);
-        return Promise.resolve(GLB_SYSTEM_STATUS_CACHE);
-    }
-    return fetch(NEXTBASE_APP_ORIGIN + '/system-status', { method: 'GET', cache: 'no-store' })
-        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-        .then(function (j) {
-            GLB_SYSTEM_STATUS_CACHE = j;
-            GLB_SYSTEM_STATUS_AT = Date.now();
-            applySystemStatus(j);
-            return j;
-        })
-        .catch(function () {
-            try { setMaintenanceOverlay(false, '', false); } catch (e0) { /* ignore */ }
-            return GLB_SYSTEM_STATUS_CACHE;
-        });
-}
-
-(function initSystemStatusWatcher() {
-    var reloadBtn = document.getElementById('maintenance-reload');
-    if (reloadBtn) reloadBtn.addEventListener('click', function () { location.reload(); });
-    fetchSystemStatus(true);
-    setInterval(function () { fetchSystemStatus(false); }, 30000);
-})();
-
-function cleanupUrlParams() {
-    try {
-        var url = new URL(window.location.href);
-        url.searchParams.delete('travel');
-        url.searchParams.delete('session_id');
-        url.searchParams.delete('subscribed');
-        history.replaceState({}, '', url.pathname + url.search + url.hash);
-    } catch (e) { /* ignore */ }
-}
-
-function showTravelStatus(message) {
-    var el = document.getElementById('travel-status');
-    if (!el) return;
-    if (!message) {
-        el.style.display = 'none';
-        el.textContent = '';
-        return;
-    }
-    el.textContent = message;
-    el.style.display = '';
-}
-
-function updateEntitlementState(data) {
-    var localSub = false;
-    try { localSub = glbBillingPaidActive(); } catch (e) { /* ignore */ }
-    GLB_CORE_SUBSCRIBED = !!(data && data.ok && data.core_subscribed === true) || localSub;
-    GLB_TRAVEL_ACTIVE = !!(data && data.ok && data.travel_active === true);
-    GLB_TRAVEL_EXPIRES_AT = (data && data.ok && data.travel_pass_expires_at) ? String(data.travel_pass_expires_at) : null;
-    var badge = document.getElementById('core-access-active');
-    if (badge) {
-        if (GLB_CORE_SUBSCRIBED || glbBillingPaidActive()) {
-            badge.textContent = '2.99 Unlimited Active';
-            badge.style.display = '';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-    if (typeof updateQuotaDisplay === 'function') updateQuotaDisplay();
-}
-
-async function syncEntitlements() {
-    var url = new URL(window.location.href);
-    var sessionId = (url.searchParams.get('session_id') || '').trim();
-    var customerId = (localStorage.getItem(LS_CUSTOMER_ID) || '').trim();
-    var pendingSessionId = (localStorage.getItem(LS_PENDING_SESSION_ID) || '').trim();
-    var apiUrl = '';
-    if (sessionId) {
-        try { localStorage.setItem(LS_PENDING_SESSION_ID, sessionId); } catch (e) { /* ignore */ }
-    }
-    if (customerId) {
-        apiUrl = NEXTBASE_APP_ORIGIN + '/entitlements?customer_id=' + encodeURIComponent(customerId);
-    } else if (sessionId) {
-        apiUrl = NEXTBASE_APP_ORIGIN + '/entitlements?session_id=' + encodeURIComponent(sessionId);
-    } else if (pendingSessionId) {
-        apiUrl = NEXTBASE_APP_ORIGIN + '/entitlements?session_id=' + encodeURIComponent(pendingSessionId);
-    } else {
-        return null;
-    }
-    var res = await fetch(apiUrl, { cache: 'no-store' });
-    var data = await res.json();
-    if (data && data.ok && data.customer_id) {
-        localStorage.setItem(LS_CUSTOMER_ID, data.customer_id);
-        if (data.core_subscribed) {
-            persistBillingState({ plan: PLAN_CORE_299, active: true, source: 'entitlements_api', updatedAt: Date.now() });
-        } else {
-            var st = parseBillingState();
-            var holdCheckout = st && st.active && (st.source === 'stripe_success' || st.source === 'url_subscribed');
-            if (holdCheckout) {
-                persistBillingState({ plan: PLAN_CORE_299, active: true, source: st.source, updatedAt: Date.now() });
-            } else {
-                persistBillingState({ plan: null, active: false, source: 'entitlements_api', updatedAt: Date.now() });
-            }
-        }
-        try { localStorage.removeItem(LS_PENDING_SESSION_ID); } catch (e) { /* ignore */ }
-        updateEntitlementState(data);
-    }
-    return data;
-}
-
-async function handleTravelActivationFlow() {
-    var url = new URL(window.location.href);
-    var isTravelRedirect = url.searchParams.get('travel') === '1';
-    var isCoreRedirect = url.searchParams.get('subscribed') === '1';
-    var hasSessionId = !!(url.searchParams.get('session_id') || '').trim();
-    if (hasSessionId) {
-        try { localStorage.setItem(LS_PENDING_SESSION_ID, (url.searchParams.get('session_id') || '').trim()); } catch (e) { /* ignore */ }
-    }
-    if (!isTravelRedirect && !isCoreRedirect) {
-        try { await syncEntitlements(); } catch (e) { /* ignore */ }
-        return;
-    }
-    localStorage.setItem(LS_TRAVEL_PENDING, 'true');
-    showTravelStatus(isCoreRedirect ? 'Activating Core Access...' : 'Activating Travel Pass...');
-    var timeoutId = setTimeout(function () {
-        if (localStorage.getItem(LS_TRAVEL_PENDING) === 'true') {
-            localStorage.removeItem(LS_TRAVEL_PENDING);
-            if (isCoreRedirect) {
-                showTravelStatus('Core access activation is taking longer than expected. Please try again shortly.');
-            } else {
-                showTravelStatus('Travel pass activation is taking longer than expected. Base mode remains available.');
-            }
-            cleanupUrlParams();
-        }
-    }, 60000);
-    try {
-        var ent = await syncEntitlements();
-        if (ent && ent.ok && isCoreRedirect && ent.core_subscribed) {
-            localStorage.removeItem(LS_TRAVEL_PENDING);
-            showTravelStatus('Core Access Active');
-            cleanupUrlParams();
-        } else if (ent && ent.ok && ent.travel_active) {
-            localStorage.removeItem(LS_TRAVEL_PENDING);
-            showTravelStatus('Travel Pass Active');
-            cleanupUrlParams();
-        }
-    } catch (e) { /* ignore */ }
-    finally {
-        clearTimeout(timeoutId);
-        if ((localStorage.getItem(LS_CUSTOMER_ID) || '').trim()) {
-            cleanupUrlParams();
-        }
-    }
-}
+const NEXTBASE_APP = 'https://smile-friend-engine-125142687526.us-central1.run.app';
+const LS_QUOTA = 'glb_quota_v1';
+const LS_LANG = 'glb_ui_lang';
+const FREE_LIMIT = 5;
 
 const LANGS = [
-  {c:'en',l:'English'},{c:'ja',l:'日本語'},{c:'zh',l:'中文'},
-  {c:'ko',l:'한국어'},{c:'es',l:'Español'},{c:'fr',l:'Français'},
-  {c:'de',l:'Deutsch'},{c:'it',l:'Italiano'},{c:'ru',l:'Русский'},
-  {c:'th',l:'ไทย'},{c:'vi',l:'Tiếng Việt'},{c:'hi',l:'हिन्दी'},{c:'pt',l:'Português'}
+  {c:'en',l:'English',flag:'🇬🇧',short:'EN'},
+  {c:'ja',l:'日本語',flag:'🇯🇵',short:'日本語'},
+  {c:'zh',l:'中文',flag:'🇨🇳',short:'中文'},
+  {c:'ko',l:'한국어',flag:'🇰🇷',short:'한국어'},
+  {c:'es',l:'Español',flag:'🇪🇸',short:'ES'},
+  {c:'fr',l:'Français',flag:'🇫🇷',short:'FR'},
+  {c:'de',l:'Deutsch',flag:'🇩🇪',short:'DE'},
+  {c:'it',l:'Italiano',flag:'🇮🇹',short:'IT'},
+  {c:'ru',l:'Русский',flag:'🇷🇺',short:'RU'},
+  {c:'th',l:'ไทย',flag:'🇹🇭',short:'TH'},
+  {c:'vi',l:'Tiếng Việt',flag:'🇻🇳',short:'VN'},
+  {c:'hi',l:'हिन्दी',flag:'🇮🇳',short:'HI'},
+  {c:'pt',l:'Português',flag:'🇧🇷',short:'PT'},
 ];
-const FREE_LIMIT = 10;
-let uiLang = 'en';
 
-function glbTodayKey() {
-    var d = new Date();
-    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+// LANG_VERSION: 言語追加時はここを更新 → LANGSとI18Nに追記するだけ
+const LANG_VERSION = '1.0.0';
+const PRIMARY_LANGS = LANGS.map(l => l.c);
+let showingMore = false;
+let selectedLang = null;
+let currentLang = 'en';
+
+const I18N = {
+  en:{
+    gateQ:'Choose your language',gateMore:'More languages',gateCta:'Continue',
+    hEyebrow:'Global Language Breaker',
+    hTitle:'Break the<br><em>language barrier.</em><br>Anywhere.',
+    hBody:'Speak or type — instant translation in 13 languages. For travel, work, or any moment words fail you.',
+    hCta1:'Try Free — 5 translations/day',hCta2:'See plans',hHint:'No credit card · Works instantly',
+    s1Label:'How it works',s1Title:'3 steps.<br>That\'s it.',
+    step1H:'Pick your language',step1P:'Set your language once. GLB remembers it every time.',
+    step2H:'Speak or type',step2P:'Use the mic or keyboard. Translation appears instantly on screen.',
+    step3H:'Show the screen',step3P:'Hand your phone to the other person. One screen does it all.',
+    s2Label:'Simple pricing',s2Title:'Pay for what<br>you actually use.',
+    corePeriod:'/ month · cancel anytime',
+    cf1:'Unlimited translation',cf2:'13 languages',cf3:'Listen & read-aloud',cf4:'One screen, no switching',
+    coreBtn:'Start GLB $2.99',coreNote:'Try free — 5 translations/day, no card needed.',
+    travelTag:'Travel',travelPeriod:'30 days · one-time · no auto-renew',
+    tf1:'Voice input & TTS read-aloud',tf2:'Face-to-face travel UI',tf3:'Large display mode',tf4:'Returns to GLB after 30 days',
+    travelBtn:'Get Travel Pass',travelNote:'Buy only when you travel. No forgotten charges.',
+    s3Label:'Your journey',s3Title:'Start free.<br>Upgrade when you need.',
+    j1L:'Start',j1T:'Free — 5 translations/day',j1D:'Try the translation tool right now. No card, no signup. No forgotten charges.',
+    j2L:'Everyday use',j2T:'GLB — unlimited',j2D:'Unlimited translation, 13 languages, voice. Cancel anytime.',
+    j3L:'Travel time',j3T:'Travel Pass — 30 days',j3D:'Add face-to-face travel mode. One-time purchase.',
+    j4L:'Trip ends',j4T:'Automatically back to GLB',j4D:'After 30 days, back to Core. No hidden charges.',
+    s4Label:'Try it now',s4Title:'Free. Right here.',
+    fcTitle:'Start speaking<br><em>every language.</em>',fcBtn:'Try GLB Free',
+    modalTitle:'Change language',navLabel:'EN',
+    quotaLeft:(n)=>`${n} free translation${n!==1?'s':''} remaining today`,
+    quotaDone:'Daily limit reached — subscribe for unlimited',
+  },
+  ja:{
+    gateQ:'言語を選んでください',gateMore:'その他の言語',gateCta:'続ける',
+    hEyebrow:'グローバル言語ブレーカー',
+    hTitle:'言語の壁を、<br><em>今すぐ破れ。</em>',
+    hBody:'話すだけ、または入力するだけ。13言語でリアルタイム翻訳。旅行でも、仕事でも、どこでも。',
+    hCta1:'無料で試す — 1日5回翻訳',hCta2:'プランを見る',hHint:'クレジットカード不要 · すぐ使える',
+    s1Label:'使い方',s1Title:'3ステップ。<br>それだけ。',
+    step1H:'言語を選ぶ',step1P:'言語を一度設定するだけ。GLBが毎回記憶します。',
+    step2H:'話す、または入力する',step2P:'マイクかキーボードで入力。即座に翻訳結果が表示される。',
+    step3H:'相手に見せる',step3P:'画面をそのまま相手に向ける。一画面で完結。',
+    s2Label:'シンプルな料金',s2Title:'使う分だけ<br>支払う。',
+    corePeriod:'/ 月 · いつでも解約可能',
+    cf1:'翻訳 無制限',cf2:'13言語対応',cf3:'音声読み上げ',cf4:'1画面で完結',
+    coreBtn:'GLB を始める',coreNote:'無料で試す — 1日5回翻訳、カード不要。',
+    travelTag:'旅行者向け',travelPeriod:'30日間 買い切り · 自動更新なし',
+    tf1:'音声入力・TTS読み上げ',tf2:'旅行モード（対面会話特化）',tf3:'大きく表示・相手に見せる',tf4:'30日後にGLBへ自動返還',
+    travelBtn:'トラベルパスを購入',travelNote:'旅行の時だけ購入。課金し忘れの心配なし。',
+    s3Label:'あなたの使い方',s3Title:'無料から始めて、<br>必要な時にアップグレード。',
+    j1L:'スタート',j1T:'無料 — 1日5回翻訳',j1D:'今すぐ試せます。カードも登録不要。',
+    j2L:'日常使い',j2T:'GLB — 無制限',j2D:'翻訳無制限、13言語、音声機能。いつでも解約可能。',
+    j3L:'旅行時',j3T:'トラベルパス — 30日間',j3D:'旅行の時だけ追加。対面翻訳モード付き。買い切り。',
+    j4L:'旅行終了',j4T:'自動的にGLBへ戻る',j4D:'30日経過後は自動的にCoreへ。追加請求なし。',
+    s4Label:'今すぐ試す',s4Title:'無料。今ここで。',
+    fcTitle:'すべての言語で<br><em>話し始めよう。</em>',fcBtn:'無料で試す',
+    modalTitle:'言語を変更',navLabel:'日本語',
+    quotaLeft:(n)=>`本日残り ${n} 回翻訳`,
+    quotaDone:'本日の無料回数に達しました — 購読で無制限に',
+  },
+  zh:{
+    gateQ:'选择您的语言',gateMore:'更多语言',gateCta:'继续',
+    hEyebrow:'Global Language Breaker',
+    hTitle:'打破<br><em>语言障碍。</em><br>随时随地。',
+    hBody:'说或打字——13种语言即时翻译。适用于旅行、工作或任何需要的时刻。',
+    hCta1:'免费试用 — 每天5次翻译',hCta2:'查看方案',hHint:'无需信用卡 · 立即可用',
+    s1Label:'使用方法',s1Title:'3步。<br>就这样。',
+    step1H:'选择语言',step1P:'设置一次语言，GLB每次都会记住。',
+    step2H:'说话或输入',step2P:'使用麦克风或键盘。翻译结果立即显示。',
+    step3H:'展示屏幕',step3P:'将手机递给对方。一个屏幕搞定一切。',
+    s2Label:'简单定价',s2Title:'按需付费。',
+    corePeriod:'/ 月 · 随时取消',
+    cf1:'无限翻译',cf2:'13种语言',cf3:'听读与朗读',cf4:'一屏完成',
+    coreBtn:'GLB を始める',coreNote:'免费试用 — 每天5次翻译，无需信用卡。',
+    travelTag:'旅行者',travelPeriod:'30天 · 一次性 · 不自动续费',
+    tf1:'语音输入和朗读',tf2:'旅行模式—面对面UI',tf3:'大屏展示给对方',tf4:'30天后自动回到GLB',
+    travelBtn:'购买旅行通票',travelNote:'只在旅行时购买。不会忘记扣费。',
+    s3Label:'您的旅程',s3Title:'免费开始，<br>需要时升级。',
+    j1L:'开始',j1T:'免费 — 每天5次翻译',j1D:'现在就试用。无需注册，无需信用卡。',
+    j2L:'日常使用',j2T:'GLB — 无限',j2D:'无限翻译、13种语言、语音功能。随时取消。',
+    j3L:'旅行时',j3T:'旅行通票 — 30天',j3D:'旅行时添加面对面翻译模式。一次性购买。',
+    j4L:'旅行结束',j4T:'自动回到GLB',j4D:'30天后自动回到Core。无隐藏费用。',
+    s4Label:'立即试用',s4Title:'免费。就在这里。',
+    fcTitle:'开始说<br><em>每一种语言。</em>',fcBtn:'免费试用GLB',
+    modalTitle:'更改语言',navLabel:'中文',
+    quotaLeft:(n)=>`今日剩余 ${n} 次翻译`,
+    quotaDone:'今日免费次数已用完 — 订阅享无限次数',
+  },
+  ko:{
+    gateQ:'언어를 선택하세요',gateMore:'더 많은 언어',gateCta:'계속',
+    hEyebrow:'Global Language Breaker',
+    hTitle:'언어 장벽을<br><em>지금 바로 깨세요.</em>',
+    hBody:'말하거나 입력하면 — 13개 언어로 즉시 번역. 여행, 업무, 어디서든.',
+    hCta1:'무료 체험 — 하루 5회 번역',hCta2:'요금제 보기',hHint:'신용카드 불필요 · 즉시 사용 가능',
+    s1Label:'사용 방법',s1Title:'3단계.<br>그게 전부.',
+    step1H:'언어 선택',step1P:'언어를 한 번만 설정하면 GLB가 매번 기억합니다.',
+    step2H:'말하거나 입력하기',step2P:'마이크나 키보드를 사용하세요. 번역 결과가 즉시 표시됩니다.',
+    step3H:'화면 보여주기',step3P:'상대방에게 화면을 보여주면 끝. 한 화면으로 완결.',
+    s2Label:'간단한 요금',s2Title:'실제로 사용하는<br>만큼만 지불.',
+    corePeriod:'/ 월 · 언제든지 취소 가능',
+    cf1:'무제한 번역',cf2:'13개 언어',cf3:'듣기 & 읽어주기',cf4:'한 화면, 앱 전환 없음',
+    coreBtn:'GLB 시작',coreNote:'무료 체험 — 하루 5회 번역, 카드 불필요.',
+    travelTag:'여행자용',travelPeriod:'30일 · 1회 결제 · 자동 갱신 없음',
+    tf1:'음성 입력 및 TTS 읽기',tf2:'여행 모드 — 대면 UI',tf3:'상대방에게 보여주는 대형 디스플레이',tf4:'30일 후 자동으로 GLB로 복귀',
+    travelBtn:'트래블 패스 구매',travelNote:'여행할 때만 구매. 잊어버린 요금 걱정 없음.',
+    s3Label:'나의 여정',s3Title:'무료로 시작,<br>필요할 때 업그레이드.',
+    j1L:'시작',j1T:'무료 — 하루 5회 번역',j1D:'지금 바로 번역 툴을 사용해 보세요. 카드, 가입 불필요.',
+    j2L:'일상 사용',j2T:'GLB — 무제한',j2D:'무제한 번역, 13개 언어, 음성 기능. 언제든지 취소.',
+    j3L:'여행 시',j3T:'트래블 패스 — 30일',j3D:'필요할 때만 대면 번역 모드 추가. 1회 결제.',
+    j4L:'여행 종료',j4T:'자동으로 GLB로 복귀',j4D:'30일 후 Core로 자동 복귀. 숨겨진 요금 없음.',
+    s4Label:'지금 체험',s4Title:'무료. 바로 여기서.',
+    fcTitle:'모든 언어로<br><em>말하기 시작하세요.</em>',fcBtn:'GLB 무료 체험',
+    modalTitle:'언어 변경',navLabel:'한국어',
+    quotaLeft:(n)=>`오늘 남은 ${n}회 번역`,
+    quotaDone:'오늘 무료 한도 도달 — 구독으로 무제한',
+  },
+  es:{
+    gateQ:'Elige tu idioma',gateMore:'Más idiomas',gateCta:'Continuar',
+    hEyebrow:'Global Language Breaker',
+    hTitle:'Rompe la<br><em>barrera del idioma.</em><br>En cualquier lugar.',
+    hBody:'Habla o escribe — traducción instantánea en 13 idiomas. Para viajes, trabajo o cualquier momento.',
+    hCta1:'Prueba gratis — 5 traducciones/día',hCta2:'Ver planes',hHint:'Sin tarjeta · Funciona al instante',
+    s1Label:'Cómo funciona',s1Title:'3 pasos.<br>Eso es todo.',
+    step1H:'Elige tu idioma',step1P:'Configúralo una vez. GLB lo recuerda siempre.',
+    step2H:'Habla o escribe',step2P:'Usa el micrófono o el teclado. La traducción aparece al instante.',
+    step3H:'Muestra la pantalla',step3P:'Muéstrale tu teléfono a la otra persona. Una sola pantalla.',
+    s2Label:'Precio simple',s2Title:'Paga por lo que<br>realmente usas.',
+    corePeriod:'/ mes · cancela cuando quieras',
+    cf1:'Traducción ilimitada',cf2:'13 idiomas',cf3:'Escuchar & leer en voz alta',cf4:'Una pantalla, sin cambios',
+    coreBtn:'Empezar GLB',coreNote:'Prueba gratis — 5 traducciones/día, sin tarjeta.',
+    travelTag:'Viajero',travelPeriod:'30 días · pago único · sin renovación',
+    tf1:'Entrada de voz y lectura en voz alta',tf2:'Modo viaje — UI cara a cara',tf3:'Pantalla grande para mostrar',tf4:'Vuelve a GLB tras 30 días',
+    travelBtn:'Obtener Travel Pass',travelNote:'Solo compra cuando viajes. Sin cargos olvidados.',
+    s3Label:'Tu recorrido',s3Title:'Empieza gratis.<br>Mejora cuando lo necesites.',
+    j1L:'Inicio',j1T:'Gratis — 5 traducciones/día',j1D:'Prueba la herramienta ahora. Sin tarjeta, sin registro.',
+    j2L:'Uso diario',j2T:'GLB — ilimitado',j2D:'Traducción ilimitada, 13 idiomas, voz. Cancela cuando quieras.',
+    j3L:'Tiempo de viaje',j3T:'Travel Pass — 30 días',j3D:'Añade el modo de viaje cuando lo necesites. Pago único.',
+    j4L:'Fin del viaje',j4T:'Vuelve a GLB automáticamente',j4D:'Tras 30 días, vuelves a Core. Sin cargos ocultos.',
+    s4Label:'Pruébalo ahora',s4Title:'Gratis. Aquí mismo.',
+    fcTitle:'Empieza a hablar<br><em>todos los idiomas.</em>',fcBtn:'Probar GLB gratis',
+    modalTitle:'Cambiar idioma',navLabel:'ES',
+    quotaLeft:(n)=>`${n} traducción${n!==1?'es':''} gratis hoy`,
+    quotaDone:'Límite diario alcanzado — suscríbete para ilimitado',
+  },
+  fr:{
+    gateQ:'Choisissez votre langue',gateMore:'Plus de langues',gateCta:'Continuer',
+    hEyebrow:'Global Language Breaker',
+    hTitle:'Brisez la<br><em>barrière des langues.</em><br>Partout.',
+    hBody:'Parlez ou tapez — traduction instantanée en 13 langues. Pour voyager, travailler, ou tout moment.',
+    hCta1:'Essai gratuit — 5 traductions/jour',hCta2:'Voir les offres',hHint:'Sans carte · Fonctionne instantanément',
+    s1Label:'Comment ça marche',s1Title:'3 étapes.<br>C\'est tout.',
+    step1H:'Choisissez votre langue',step1P:'Configurez une fois. GLB s\'en souvient toujours.',
+    step2H:'Parlez ou tapez',step2P:'Utilisez le micro ou le clavier. La traduction apparaît instantanément.',
+    step3H:'Montrez l\'écran',step3P:'Tendez votre téléphone à l\'autre personne. Un seul écran suffit.',
+    s2Label:'Prix simple',s2Title:'Payez pour ce que<br>vous utilisez vraiment.',
+    corePeriod:'/ mois · annulez quand vous voulez',
+    cf1:'Traduction illimitée',cf2:'13 langues',cf3:'Écouter & lire à voix haute',cf4:'Un écran, sans changer d\'app',
+    coreBtn:'Commencer GLB',coreNote:'Essai gratuit — 5 traductions/jour, sans carte.',
+    travelTag:'Voyage',travelPeriod:'30 jours · paiement unique · sans renouvellement',
+    tf1:'Saisie vocale et lecture à voix haute',tf2:'Mode voyage — UI face à face',tf3:'Grand écran pour montrer',tf4:'Retour à GLB après 30 jours',
+    travelBtn:'Obtenir Travel Pass',travelNote:'Achetez uniquement quand vous voyagez.',
+    s3Label:'Votre parcours',s3Title:'Commencez gratuitement.<br>Améliorez quand vous en avez besoin.',
+    j1L:'Départ',j1T:'Gratuit — 5 traductions/jour',j1D:'Essayez maintenant. Sans carte, sans inscription.',
+    j2L:'Usage quotidien',j2T:'GLB — illimité',j2D:'Traduction illimitée, 13 langues, voix. Annulez quand vous voulez.',
+    j3L:'En voyage',j3T:'Travel Pass — 30 jours',j3D:'Ajoutez le mode voyage quand vous en avez besoin.',
+    j4L:'Retour',j4T:'Retour automatique à GLB',j4D:'Après 30 jours, retour à Core. Aucun frais caché.',
+    s4Label:'Essayez maintenant',s4Title:'Gratuit. Ici même.',
+    fcTitle:'Commencez à parler<br><em>toutes les langues.</em>',fcBtn:'Essayer GLB gratuitement',
+    modalTitle:'Changer de langue',navLabel:'FR',
+    quotaLeft:(n)=>`${n} traduction${n!==1?'s':''} gratuite${n!==1?'s':''} aujourd'hui`,
+    quotaDone:'Limite quotidienne atteinte — abonnez-vous pour illimité',
+  },
+  de:{
+    gateQ:'Wähle deine Sprache',gateMore:'Mehr Sprachen',gateCta:'Weiter',
+    hEyebrow:'Global Language Breaker',
+    hTitle:'Brich die<br><em>Sprachbarriere.</em><br>Überall.',
+    hBody:'Sprechen oder tippen — sofortige Übersetzung in 13 Sprachen. Für Reisen, Arbeit oder jeden Moment.',
+    hCta1:'Kostenlos testen — 5 Übersetzungen/Tag',hCta2:'Pläne ansehen',hHint:'Keine Karte · Sofort einsatzbereit',
+    s1Label:'So funktioniert es',s1Title:'3 Schritte.<br>Das war\'s.',
+    step1H:'Sprache wählen',step1P:'Einmal einstellen. GLB merkt es sich für immer.',
+    step2H:'Sprechen oder tippen',step2P:'Mikrofon oder Tastatur nutzen. Übersetzung erscheint sofort.',
+    step3H:'Bildschirm zeigen',step3P:'Telefon der anderen Person zeigen. Ein Bildschirm, fertig.',
+    s2Label:'Einfache Preise',s2Title:'Zahle für das,<br>was du wirklich nutzt.',
+    corePeriod:'/ Monat · jederzeit kündbar',
+    cf1:'Unbegrenzte Übersetzung',cf2:'13 Sprachen',cf3:'Anhören & Vorlesen',cf4:'Ein Bildschirm, kein Wechseln',
+    coreBtn:'GLB starten',coreNote:'Kostenlos testen — 5 Übersetzungen/Tag, keine Karte.',
+    travelTag:'Reise',travelPeriod:'30 Tage · einmalig · keine Verlängerung',
+    tf1:'Spracheingabe & Vorlesen',tf2:'Reisemodus — Gegenüber-UI',tf3:'Großanzeige zum Zeigen',tf4:'Nach 30 Tagen zurück zu GLB',
+    travelBtn:'Travel Pass holen',travelNote:'Nur kaufen wenn du reist. Keine vergessenen Kosten.',
+    s3Label:'Dein Weg',s3Title:'Kostenlos starten.<br>Upgraden wenn nötig.',
+    j1L:'Start',j1T:'Kostenlos — 5 Übersetzungen/Tag',j1D:'Jetzt ausprobieren. Keine Karte, keine Anmeldung.',
+    j2L:'Alltag',j2T:'GLB — unbegrenzt',j2D:'Unbegrenzte Übersetzung, 13 Sprachen, Stimme. Jederzeit kündbar.',
+    j3L:'Reisezeit',j3T:'Travel Pass — 30 Tage',j3D:'Reisemodus hinzufügen wenn nötig. Einmalzahlung.',
+    j4L:'Reise endet',j4T:'Automatisch zurück zu GLB',j4D:'Nach 30 Tagen zurück zu Core. Keine versteckten Kosten.',
+    s4Label:'Jetzt ausprobieren',s4Title:'Kostenlos. Genau hier.',
+    fcTitle:'Fang an,<br><em>jede Sprache zu sprechen.</em>',fcBtn:'GLB kostenlos testen',
+    modalTitle:'Sprache ändern',navLabel:'DE',
+    quotaLeft:(n)=>`Heute noch ${n} kostenlose Übersetzung${n!==1?'en':''}`,
+    quotaDone:'Tageslimit erreicht — für unbegrenzt abonnieren',
+  },
+  it:{
+    gateQ:'Scegli la tua lingua',gateMore:'Altre lingue',gateCta:'Continua',
+    hEyebrow:'Global Language Breaker',
+    hTitle:'Abbatti la<br><em>barriera linguistica.</em><br>Ovunque.',
+    hBody:'Parla o scrivi — traduzione istantanea in 13 lingue. Per viaggi, lavoro o qualsiasi momento.',
+    hCta1:'Prova gratis — 5 traduzioni/giorno',hCta2:'Vedi piani',hHint:'Senza carta · Funziona subito',
+    s1Label:'Come funziona',s1Title:'3 passi.<br>Ecco tutto.',
+    step1H:'Scegli la tua lingua',step1P:'Configuralo una volta. GLB lo ricorda sempre.',
+    step2H:'Parla o scrivi',step2P:'Usa il microfono o la tastiera. La traduzione appare subito.',
+    step3H:'Mostra lo schermo',step3P:'Mostra il telefono all\'altra persona. Uno schermo, niente cambio app.',
+    s2Label:'Prezzi semplici',s2Title:'Paga per quello<br>che usi davvero.',
+    corePeriod:'/ mese · cancella quando vuoi',
+    cf1:'Traduzione illimitata',cf2:'13 lingue',cf3:'Ascolta & leggi ad alta voce',cf4:'Uno schermo, senza cambiare app',
+    coreBtn:'Inizia GLB',coreNote:'Prova gratis — 5 traduzioni/giorno, senza carta.',
+    travelTag:'Viaggio',travelPeriod:'30 giorni · pagamento unico · nessun rinnovo',
+    tf1:'Input vocale e lettura ad alta voce',tf2:'Modalità viaggio — UI faccia a faccia',tf3:'Display grande per mostrare',tf4:'Torna a GLB dopo 30 giorni',
+    travelBtn:'Ottieni Travel Pass',travelNote:'Acquista solo quando viaggi. Nessun addebito dimenticato.',
+    s3Label:'Il tuo percorso',s3Title:'Inizia gratis.<br>Aggiorna quando ne hai bisogno.',
+    j1L:'Inizio',j1T:'Gratis — 5 traduzioni/giorno',j1D:'Prova lo strumento ora. Niente carta, niente registrazione.',
+    j2L:'Uso quotidiano',j2T:'GLB — illimitato',j2D:'Traduzione illimitata, 13 lingue, voce. Cancella quando vuoi.',
+    j3L:'Tempo di viaggio',j3T:'Travel Pass — 30 giorni',j3D:'Aggiungi la modalità viaggio quando ne hai bisogno.',
+    j4L:'Fine viaggio',j4T:'Torna automaticamente a GLB',j4D:'Dopo 30 giorni, torna a Core. Nessun costo nascosto.',
+    s4Label:'Prova ora',s4Title:'Gratis. Proprio qui.',
+    fcTitle:'Inizia a parlare<br><em>ogni lingua.</em>',fcBtn:'Prova GLB gratis',
+    modalTitle:'Cambia lingua',navLabel:'IT',
+    quotaLeft:(n)=>`Oggi rimangono ${n} traduzione${n!==1?'i':''}`,
+    quotaDone:'Limite giornaliero raggiunto — abbonati per illimitato',
+  },
+  ru:{
+    gateQ:'Выберите язык',gateMore:'Больше языков',gateCta:'Продолжить',
+    hEyebrow:'Global Language Breaker',
+    hTitle:'Сломайте<br><em>языковой барьер.</em><br>Везде.',
+    hBody:'Говорите или печатайте — мгновенный перевод на 13 языков. Для путешествий, работы или любого момента.',
+    hCta1:'Бесплатно — 5 переводов/день',hCta2:'Смотреть планы',hHint:'Без карты · Работает мгновенно',
+    s1Label:'Как это работает',s1Title:'3 шага.<br>Вот и всё.',
+    step1H:'Выберите язык',step1P:'Настройте один раз. GLB запомнит навсегда.',
+    step2H:'Говорите или печатайте',step2P:'Используйте микрофон или клавиатуру. Перевод появляется мгновенно.',
+    step3H:'Покажите экран',step3P:'Покажите телефон другому человеку. Один экран — всё готово.',
+    s2Label:'Простые цены',s2Title:'Платите только за то,<br>что используете.',
+    corePeriod:'/ месяц · отмена в любое время',
+    cf1:'Неограниченный перевод',cf2:'13 языков',cf3:'Слушать и читать вслух',cf4:'Один экран, без переключений',
+    coreBtn:'Начать GLB',coreNote:'Бесплатно — 5 переводов/день, без карты.',
+    travelTag:'Путешествие',travelPeriod:'30 дней · разовая оплата · без автопродления',
+    tf1:'Голосовой ввод и озвучивание',tf2:'Режим путешествия — UI лицом к лицу',tf3:'Большой экран для показа',tf4:'Возврат к Core после 30 дней',
+    travelBtn:'Получить Travel Pass',travelNote:'Покупайте только когда путешествуете.',
+    s3Label:'Ваш путь',s3Title:'Начните бесплатно.<br>Улучшайте когда нужно.',
+    j1L:'Старт',j1T:'Бесплатно — 5 переводов/день',j1D:'Попробуйте прямо сейчас. Без карты и регистрации.',
+    j2L:'Ежедневное использование',j2T:'GLB — безлимитный',j2D:'Безлимитный перевод, 13 языков, голос. Отмена в любое время.',
+    j3L:'Время путешествия',j3T:'Travel Pass — 30 дней',j3D:'Добавьте режим путешествия когда нужно. Разовая оплата.',
+    j4L:'Путешествие закончилось',j4T:'Автоматически назад к GLB',j4D:'После 30 дней — назад к Core. Никаких скрытых платежей.',
+    s4Label:'Попробуйте сейчас',s4Title:'Бесплатно. Прямо здесь.',
+    fcTitle:'Начните говорить<br><em>на любом языке.</em>',fcBtn:'Попробовать GLB бесплатно',
+    modalTitle:'Изменить язык',navLabel:'RU',
+    quotaLeft:(n)=>`Осталось ${n} бесплатных перевод${n===1?'':'ов'} сегодня`,
+    quotaDone:'Дневной лимит исчерпан — подпишитесь для безлимитного',
+  },
+  th:{
+    gateQ:'เลือกภาษาของคุณ',gateMore:'ภาษาอื่นๆ',gateCta:'ดำเนินการต่อ',
+    hEyebrow:'Global Language Breaker',
+    hTitle:'ทลายกำแพง<br><em>ทางภาษา</em><br>ทุกที่',
+    hBody:'พูดหรือพิมพ์ — แปลทันทีใน 13 ภาษา สำหรับการเดินทาง งาน หรือทุกโมเมนต์',
+    hCta1:'ทดลองฟรี — 5 ครั้ง/วัน',hCta2:'ดูแผน',hHint:'ไม่ต้องใช้บัตรเครดิต · ใช้งานได้ทันที',
+    s1Label:'วิธีการใช้งาน',s1Title:'3 ขั้นตอน<br>แค่นั้น',
+    step1H:'เลือกภาษา',step1P:'ตั้งค่าครั้งเดียว GLB จำให้ทุกครั้ง',
+    step2H:'พูดหรือพิมพ์',step2P:'ใช้ไมค์หรือแป้นพิมพ์ ผลการแปลปรากฏทันที',
+    step3H:'แสดงหน้าจอ',step3P:'ส่งโทรศัพท์ให้อีกฝ่าย หน้าจอเดียวจัดการทุกอย่าง',
+    s2Label:'ราคาเรียบง่าย',s2Title:'จ่ายเท่าที่<br>ใช้จริง',
+    corePeriod:'/ เดือน · ยกเลิกเมื่อไหรก็ได้',
+    cf1:'แปลไม่จำกัด',cf2:'13 ภาษา',cf3:'ฟังและอ่านออกเสียง',cf4:'หน้าจอเดียว ไม่ต้องสลับแอป',
+    coreBtn:'เริ่ม GLB',coreNote:'ทดลองฟรี — 5 ครั้ง/วัน ไม่ต้องใช้บัตร',
+    travelTag:'ท่องเที่ยว',travelPeriod:'30 วัน · ซื้อครั้งเดียว · ไม่ต่ออายุอัตโนมัติ',
+    tf1:'ป้อนเสียงและอ่านออกเสียง',tf2:'โหมดท่องเที่ยว — UI แบบเผชิญหน้า',tf3:'จอใหญ่สำหรับแสดงให้ดู',tf4:'กลับ Core หลัง 30 วัน',
+    travelBtn:'รับ Travel Pass',travelNote:'ซื้อเฉพาะเมื่อเดินทาง ไม่มีค่าใช้จ่ายที่ลืม',
+    s3Label:'การเดินทางของคุณ',s3Title:'เริ่มฟรี<br>อัปเกรดเมื่อต้องการ',
+    j1L:'เริ่มต้น',j1T:'ฟรี — 5 ครั้ง/วัน',j1D:'ลองใช้เดี๋ยวนี้ ไม่ต้องใช้บัตร ไม่ต้องสมัคร',
+    j2L:'ใช้งานประจำวัน',j2T:'GLB — ไม่จำกัด',j2D:'แปลไม่จำกัด 13 ภาษา เสียง ยกเลิกเมื่อไหรก็ได้',
+    j3L:'เวลาท่องเที่ยว',j3T:'Travel Pass — 30 วัน',j3D:'เพิ่มโหมดท่องเที่ยวเมื่อต้องการ ซื้อครั้งเดียว',
+    j4L:'ทริปจบแล้ว',j4T:'กลับ Core อัตโนมัติ',j4D:'หลัง 30 วัน กลับ Core โดยอัตโนมัติ ไม่มีค่าใช้จ่ายซ่อน',
+    s4Label:'ลองเลย',s4Title:'ฟรี ที่นี่เลย',
+    fcTitle:'เริ่มพูด<br><em>ทุกภาษา</em>',fcBtn:'ทดลอง GLB ฟรี',
+    modalTitle:'เปลี่ยนภาษา',navLabel:'TH',
+    quotaLeft:(n)=>`เหลือ ${n} ครั้งฟรีวันนี้`,
+    quotaDone:'ถึงขีดจำกัดรายวันแล้ว — สมัครสมาชิกเพื่อไม่จำกัด',
+  },
+  vi:{
+    gateQ:'Chọn ngôn ngữ của bạn',gateMore:'Thêm ngôn ngữ',gateCta:'Tiếp tục',
+    hEyebrow:'Global Language Breaker',
+    hTitle:'Phá vỡ<br><em>rào cản ngôn ngữ.</em><br>Ở mọi nơi.',
+    hBody:'Nói hoặc gõ — dịch tức thì sang 13 ngôn ngữ. Cho du lịch, công việc hoặc bất kỳ lúc nào.',
+    hCta1:'Thử miễn phí — 5 lần/ngày',hCta2:'Xem gói',hHint:'Không cần thẻ · Hoạt động ngay',
+    s1Label:'Cách hoạt động',s1Title:'3 bước.<br>Vậy thôi.',
+    step1H:'Chọn ngôn ngữ',step1P:'Thiết lập một lần. GLB sẽ nhớ mãi.',
+    step2H:'Nói hoặc gõ',step2P:'Dùng mic hoặc bàn phím. Bản dịch hiện ra ngay lập tức.',
+    step3H:'Hiển thị màn hình',step3P:'Đưa điện thoại cho người kia. Một màn hình làm tất cả.',
+    s2Label:'Giá đơn giản',s2Title:'Trả tiền cho những gì<br>bạn thực sự dùng.',
+    corePeriod:'/ tháng · hủy bất cứ lúc nào',
+    cf1:'Dịch không giới hạn',cf2:'13 ngôn ngữ',cf3:'Nghe & đọc to',cf4:'Một màn hình, không đổi app',
+    coreBtn:'Bắt đầu GLB',coreNote:'Thử miễn phí — 5 lần/ngày, không cần thẻ.',
+    travelTag:'Du lịch',travelPeriod:'30 ngày · một lần · không tự động gia hạn',
+    tf1:'Nhập giọng nói và đọc to',tf2:'Chế độ du lịch — UI đối mặt',tf3:'Màn hình lớn để hiển thị',tf4:'Trở về Core sau 30 ngày',
+    travelBtn:'Lấy Travel Pass',travelNote:'Chỉ mua khi du lịch. Không lo quên phí.',
+    s3Label:'Hành trình của bạn',s3Title:'Bắt đầu miễn phí.<br>Nâng cấp khi cần.',
+    j1L:'Bắt đầu',j1T:'Miễn phí — 5 lần/ngày',j1D:'Thử ngay bây giờ. Không cần thẻ, không cần đăng ký.',
+    j2L:'Dùng hàng ngày',j2T:'GLB — không giới hạn',j2D:'Dịch không giới hạn, 13 ngôn ngữ, giọng nói. Hủy bất cứ lúc nào.',
+    j3L:'Thời gian du lịch',j3T:'Travel Pass — 30 ngày',j3D:'Thêm chế độ du lịch khi cần. Một lần mua.',
+    j4L:'Chuyến đi kết thúc',j4T:'Tự động trở về Core',j4D:'Sau 30 ngày, về Core. Không phí ẩn.',
+    s4Label:'Thử ngay',s4Title:'Miễn phí. Ngay đây.',
+    fcTitle:'Bắt đầu nói<br><em>mọi ngôn ngữ.</em>',fcBtn:'Thử GLB miễn phí',
+    modalTitle:'Đổi ngôn ngữ',navLabel:'VN',
+    quotaLeft:(n)=>`Hôm nay còn ${n} lần miễn phí`,
+    quotaDone:'Đã đạt giới hạn ngày — đăng ký để không giới hạn',
+  },
+  hi:{
+    gateQ:'अपनी भाषा चुनें',gateMore:'अधिक भाषाएं',gateCta:'जारी रखें',
+    hEyebrow:'Global Language Breaker',
+    hTitle:'भाषा की<br><em>दीवार तोड़ें।</em><br>कहीं भी।',
+    hBody:'बोलें या टाइप करें — 13 भाषाओं में तुरंत अनुवाद। यात्रा, काम, या किसी भी पल के लिए।',
+    hCta1:'मुफ्त आज़माएं — 10 अनुवाद/दिन',hCta2:'प्लान देखें',hHint:'कार्ड की जरूरत नहीं · तुरंत काम करता है',
+    s1Label:'यह कैसे काम करता है',s1Title:'3 चरण।<br>बस इतना।',
+    step1H:'भाषा चुनें',step1P:'एक बार सेट करें। GLB हर बार याद रखता है।',
+    step2H:'बोलें या टाइप करें',step2P:'माइक या कीबोर्ड इस्तेमाल करें। अनुवाद तुरंत स्क्रीन पर दिखता है।',
+    step3H:'स्क्रीन दिखाएं',step3P:'दूसरे व्यक्ति को फोन दिखाएं। एक स्क्रीन में सब कुछ।',
+    s2Label:'सरल मूल्य',s2Title:'जितना उपयोग करें<br>उतना ही भुगतान करें।',
+    corePeriod:'/ महीना · कभी भी रद्द करें',
+    cf1:'असीमित अनुवाद',cf2:'13 भाषाएं',cf3:'सुनें और ज़ोर से पढ़ें',cf4:'एक स्क्रीन, कोई स्विचिंग नहीं',
+    coreBtn:'GLB शुरू करें',coreNote:'मुफ्त आज़माएं — 10 अनुवाद/दिन, कार्ड नहीं चाहिए।',
+    travelTag:'यात्रा',travelPeriod:'30 दिन · एक बार का भुगतान · स्वतः नवीनीकरण नहीं',
+    tf1:'वॉइस इनपुट और TTS',tf2:'यात्रा मोड — आमने-सामने UI',tf3:'दिखाने के लिए बड़ा डिस्प्ले',tf4:'30 दिन बाद Core पर वापस',
+    travelBtn:'Travel Pass लें',travelNote:'केवल यात्रा के समय खरीदें। भूले हुए शुल्क की चिंता नहीं।',
+    s3Label:'आपकी यात्रा',s3Title:'मुफ्त शुरू करें।<br>जरूरत पर अपग्रेड करें।',
+    j1L:'शुरुआत',j1T:'मुफ्त — 5 अनुवाद/दिन',j1D:'अभी आज़माएं। कोई कार्ड नहीं, कोई साइनअप नहीं।',
+    j2L:'रोज़ाना उपयोग',j2T:'GLB — असीमित',j2D:'असीमित अनुवाद, 13 भाषाएं, आवाज। कभी भी रद्द करें।',
+    j3L:'यात्रा का समय',j3T:'Travel Pass — 30 दिन',j3D:'जरूरत पर यात्रा मोड जोड़ें। एकबारगी खरीद।',
+    j4L:'यात्रा समाप्त',j4T:'स्वतः Core पर वापस',j4D:'30 दिन बाद Core पर वापस। कोई छिपे शुल्क नहीं।',
+    s4Label:'अभी आज़माएं',s4Title:'मुफ्त। यहीं।',
+    fcTitle:'हर भाषा में<br><em>बोलना शुरू करें।</em>',fcBtn:'GLB मुफ्त आज़माएं',
+    modalTitle:'भाषा बदलें',navLabel:'HI',
+    quotaLeft:(n)=>`आज ${n} मुफ्त अनुवाद बचे हैं`,
+    quotaDone:'दैनिक सीमा समाप्त — असीमित के लिए सदस्यता लें',
+  },
+  pt:{
+    gateQ:'Escolha seu idioma',gateMore:'Mais idiomas',gateCta:'Continuar',
+    hEyebrow:'Global Language Breaker',
+    hTitle:'Quebre a<br><em>barreira do idioma.</em><br>Em qualquer lugar.',
+    hBody:'Fale ou digite — tradução instantânea em 13 idiomas. Para viagens, trabalho ou qualquer momento.',
+    hCta1:'Tente grátis — 5 traduções/dia',hCta2:'Ver planos',hHint:'Sem cartão · Funciona na hora',
+    s1Label:'Como funciona',s1Title:'3 passos.<br>É isso.',
+    step1H:'Escolha seu idioma',step1P:'Configure uma vez. O GLB lembra sempre.',
+    step2H:'Fale ou digite',step2P:'Use o microfone ou teclado. A tradução aparece instantaneamente.',
+    step3H:'Mostre a tela',step3P:'Mostre o telefone para a outra pessoa. Uma tela faz tudo.',
+    s2Label:'Preço simples',s2Title:'Pague pelo que<br>você realmente usa.',
+    corePeriod:'/ mês · cancele quando quiser',
+    cf1:'Tradução ilimitada',cf2:'13 idiomas',cf3:'Ouvir & ler em voz alta',cf4:'Uma tela, sem trocar de app',
+    coreBtn:'Começar GLB',coreNote:'Tente grátis — 5 traduções/dia, sem cartão.',
+    travelTag:'Viagem',travelPeriod:'30 dias · pagamento único · sem renovação',
+    tf1:'Entrada de voz e leitura em voz alta',tf2:'Modo viagem — UI face a face',tf3:'Tela grande para mostrar',tf4:'Volta ao Core após 30 dias',
+    travelBtn:'Obter Travel Pass',travelNote:'Compre apenas quando viajar. Sem cobranças esquecidas.',
+    s3Label:'Sua jornada',s3Title:'Comece grátis.<br>Melhore quando precisar.',
+    j1L:'Início',j1T:'Grátis — 5 traduções/dia',j1D:'Experimente agora. Sem cartão, sem cadastro.',
+    j2L:'Uso diário',j2T:'GLB — ilimitado',j2D:'Tradução ilimitada, 13 idiomas, voz. Cancele quando quiser.',
+    j3L:'Hora de viajar',j3T:'Travel Pass — 30 dias',j3D:'Adicione o modo viagem quando precisar. Pagamento único.',
+    j4L:'Viagem termina',j4T:'Volta ao Core automaticamente',j4D:'Após 30 dias, de volta ao Core. Sem custos ocultos.',
+    s4Label:'Experimente agora',s4Title:'Grátis. Bem aqui.',
+    fcTitle:'Comece a falar<br><em>todos os idiomas.</em>',fcBtn:'Experimentar GLB grátis',
+    modalTitle:'Mudar idioma',navLabel:'PT',
+    quotaLeft:(n)=>`${n} tradução${n!==1?'es':''} grátis hoje`,
+    quotaDone:'Limite diário atingido — assine para ilimitado',
+  },
+};
+
+function T(lang,key,...args){
+  const d=I18N[lang]||I18N.en;
+  const v=d[key]!==undefined?d[key]:(I18N.en[key]||'');
+  if(typeof v==='function') return v(...args);
+  return v;
 }
 
-function getQuota() {
-    try {
-        var today = glbTodayKey();
-        var raw = localStorage.getItem(LS_GLB_QUOTA);
-        if (!raw) return { day: today, count: 0 };
-        var j = JSON.parse(raw);
-        if (j.day !== today) return { day: today, count: 0 };
-        return j;
-    } catch (e) { return { day: '', count: 0 }; }
+function buildLangGrid(containerId,clickFn){
+  const container=document.getElementById(containerId);
+  if(!container) return;
+  container.innerHTML='';
+  const show=showingMore?LANGS:LANGS.filter(l=>PRIMARY_LANGS.includes(l.c));
+  show.forEach(lang=>{
+    const btn=document.createElement('button');
+    btn.className='lang-opt'+(selectedLang===lang.c?' selected':'');
+    btn.innerHTML=lang.flag+' '+lang.l;
+    btn.onclick=()=>clickFn(lang.c,btn,containerId);
+    container.appendChild(btn);
+  });
 }
 
-function bumpQuota() {
-    if (glbBillingPaidActive()) return;
-    try {
-        var q = getQuota();
-        q.count = (q.count || 0) + 1;
-        localStorage.setItem(LS_GLB_QUOTA, JSON.stringify(q));
-    } catch (e) {}
+function selectGateLang(code,btn,containerId){
+  selectedLang=code;
+  document.querySelectorAll('#'+containerId+' .lang-opt').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const cta=document.getElementById('gate-cta');
+  cta.classList.add('visible');
+  cta.textContent=T(code,'gateCta');
 }
 
-function updateQuotaDisplay() {
-    var el = document.getElementById('t-quota');
-    if (!el) return;
-    if (glbBillingPaidActive() || GLB_CORE_SUBSCRIBED) {
-        el.textContent = 'Unlimited — Core or Travel active';
-        return;
+function showMoreLangs(){
+  showingMore=true;
+  buildLangGrid('lang-grid',selectGateLang);
+  document.getElementById('gate-more').style.display='none';
+}
+
+function enterApp(){
+  if(!selectedLang) return;
+  currentLang=selectedLang;
+  try{localStorage.setItem(LS_LANG,currentLang);}catch(e){}
+  const gate=document.getElementById('lang-gate');
+  gate.classList.add('exit');
+  setTimeout(()=>{gate.style.display='none';},500);
+  // Show intro screen
+  showIntro(currentLang);
+}
+
+function proceedToApp(){
+  closeIntro();
+  setTimeout(()=>{
+    const app=document.getElementById('app');
+    app.classList.add('visible');
+    applyLang(currentLang);
+  },300);
+}
+
+function applyLang(lang){
+  const t=(key,...args)=>T(lang,key,...args);
+  const set=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html;};
+  const langData=LANGS.find(l=>l.c===lang)||LANGS[0];
+  document.getElementById('nav-flag').textContent=langData.flag;
+  document.getElementById('nav-lang-label').textContent=langData.short;
+  set('h-eyebrow',t('hEyebrow'));
+  set('h-title',t('hTitle'));
+  set('h-body',t('hBody'));
+  document.getElementById('h-cta1').textContent=t('hCta1');
+  document.getElementById('h-cta2').textContent=t('hCta2');
+  set('h-hint',t('hHint'));
+  set('s1-label',t('s1Label'));set('s1-title',t('s1Title'));
+  set('step1-h',t('step1H'));set('step1-p',t('step1P'));
+  set('step2-h',t('step2H'));set('step2-p',t('step2P'));
+  set('step3-h',t('step3H'));set('step3-p',t('step3P'));
+  set('s2-label',t('s2Label'));set('s2-title',t('s2Title'));
+  set('core-period',t('corePeriod'));
+  ['cf1','cf2','cf3','cf4'].forEach((id,i)=>set(id,t('cf'+(i+1))));
+  document.getElementById('core-btn').textContent=t('coreBtn');
+  set('core-note',t('coreNote'));
+  set('travel-tag',t('travelTag'));set('travel-period',t('travelPeriod'));
+  ['tf1','tf2','tf3','tf4'].forEach((id,i)=>set(id,t('tf'+(i+1))));
+  document.getElementById('travel-btn').textContent=t('travelBtn');
+  set('travel-note',t('travelNote'));
+  set('s3-label',t('s3Label'));set('s3-title',t('s3Title'));
+  [1,2,3,4].forEach(i=>{set('j'+i+'-l',t('j'+i+'L'));set('j'+i+'-t',t('j'+i+'T'));set('j'+i+'-d',t('j'+i+'D'));});
+  set('fc-title',t('fcTitle'));
+  document.getElementById('fc-btn').textContent=t('fcBtn');
+  updateQuotaDisplay(lang);
+}
+
+function openLangModal(){
+  const modal=document.getElementById('lang-modal-bg');
+  modal.classList.add('open');
+  document.getElementById('modal-title').textContent=T(currentLang,'modalTitle');
+  buildLangGrid('modal-grid',(code,btn)=>{
+    currentLang=code;
+    try{localStorage.setItem(LS_LANG,currentLang);}catch(e){}
+    applyLang(currentLang);
+    closeLangModal();
+  });
+}
+
+function closeLangModal(e){
+  if(!e||e.target===document.getElementById('lang-modal-bg')){
+    document.getElementById('lang-modal-bg').classList.remove('open');
+  }
+}
+
+function getQuota(){
+  try{
+    const d=new Date();
+    const today=d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
+    const raw=localStorage.getItem(LS_QUOTA);
+    if(!raw) return{day:today,count:0};
+    const j=JSON.parse(raw);
+    return j.day!==today?{day:today,count:0}:j;
+  }catch(e){return{day:'',count:0};}
+}
+
+function bumpQuota(){
+  try{
+    const q=getQuota();q.count=(q.count||0)+1;
+    localStorage.setItem(LS_QUOTA,JSON.stringify(q));
+  }catch(e){}
+}
+
+function updateQuotaDisplay(lang){
+  const el=null; if(!el) return;
+  const q=getQuota();
+  const left=Math.max(0,FREE_LIMIT-q.count);
+  el.textContent=left>0?T(lang||currentLang,'quotaLeft',left):T(lang||currentLang,'quotaDone');
+}
+
+const stepObserver=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
+},{threshold:.15});
+document.querySelectorAll('.step').forEach(s=>stepObserver.observe(s));
+
+
+const INTRO_I18N = {
+  en:{
+    p1:'GLB is a translation app built around <strong>your language</strong>. Set your language once — GLB remembers it everywhere.',
+    coreName:'GLB · Everyday',coreDesc:'Text translation · Flip · Zoom display · 13 languages · Cancel anytime<br><span style="color:#f0c93a;font-size:11px;">No forgotten charges — cancel before your next billing date.</span>',
+    travelName:'Travel Pass · 30 days',travelDesc:'Everything in Core + voice input · TTS read-aloud · Face-to-face dialogue mode · 6 scene categories · Emergency phrases<br><span style="color:#f0c93a;font-size:11px;">One-time purchase. No auto-renew. Returns to Core automatically.</span>',
+    p2:"This app is still growing. We're learning from every user and improving as we go. <strong>We grow together with you.</strong>",
+    futureTitle:'Coming next',futureItems:["Travel Pass monthly plan","Business plan (AI assistant)","Leisure specialty plan"],
+    p3:'Starting at $2.99/month — by NextBase.',
+    btnFree:'Try Free — 5 translations/day',btnPlans:'See plans',note:'Você será redirecionado para a página de pagamento seguro do Stripe.<br><span style="color:#f0c93a;font-size:10px;">* Impostos podem ser adicionados dependendo do seu país.</span>'
+  },
+  ja:{
+    p1:'GLBは<strong>あなたの言語</strong>に特化した翻訳アプリです。最初に言語を設定するだけ。以後すべてのモードがその言語を中心に動きます。',
+    coreName:'GLB · 日常使い',coreDesc:'テキスト翻訳 · 反転表示 · 拡大表示 · 13言語対応 · いつでも解約可能<br><span style="color:#f0c93a;font-size:11px;">無駄な課金忘れをなくすため、次の請求日前に解約すれば追加料金なし。</span>',
+    travelName:'Travel Pass · 30日間',travelDesc:'Coreの全機能 + 音声入力 · 読み上げ · 対話型旅行モード · 6カテゴリ即用フレーズ · 緊急フレーズパネル<br><span style="color:#f0c93a;font-size:11px;">30日買い切り。自動更新なし。無駄な課金忘れを防ぎます。終了後はCoreへ自動返還。</span>',
+    p2:'まだ発展途上のアプリです。皆さまのご意見を勉強させて頂き改良を重ねていきます。<strong>ユーザーと一緒に育つアプリであり、自社であります。</strong>',
+    futureTitle:'今後の予定',futureItems:["旅行モード月額継続プラン","ビジネス特化プラン（あなただけのAI秘書搭載）","レジャー特化プラン"],
+    p3:'入口は月額 $2.99 から。NextBase が手掛けるあなた特化の翻訳アプリを是非体験してください。',
+    btnFree:'無料で試す — 1日5回翻訳',btnPlans:'プランを見る',note:'クレジットカード不要 · すぐ使える'
+  },
+  zh:{
+    p1:'GLB 是一款围绕<strong>您的语言</strong>构建的翻译应用。只需设置一次语言，GLB 将在所有模式中记住它。',
+    coreName:'GLB · 日常使用',coreDesc:'文字翻译 · 翻转显示 · 放大显示 · 13种语言 · 随时取消<br><span style="color:#f0c93a;font-size:11px;">避免忘记取消的多余费用——在下次账单日前取消即可。</span>',
+    travelName:'Travel Pass · 30天',travelDesc:'Core全部功能 + 语音输入 · 朗读 · 面对面对话模式 · 6大场景短语 · 紧急短语<br><span style="color:#f0c93a;font-size:11px;">一次性购买，不自动续费，30天后自动回到Core。</span>',
+    p2:'这款应用仍在成长中。我们向每位用户学习，持续改进。<strong>与用户一起成长。</strong>',
+    futureTitle:'即将推出',futureItems:["旅行Pass月度计划","商务专属计划（AI助手）","休闲专属计划"],
+    p3:'从 $2.99/月 开始 — 由 NextBase 打造。',
+    btnFree:'免费试用 — 每天5次翻译',btnPlans:'查看方案',note:'无需信用卡 · 立即可用'
+  },
+  ko:{
+    p1:'GLB는 <strong>당신의 언어</strong>에 특화된 번역 앱입니다. 언어를 한 번 설정하면 모든 모드에서 그 언어가 중심이 됩니다.',
+    coreName:'GLB · 일상 사용',coreDesc:'텍스트 번역 · 반전 표시 · 확대 표시 · 13개 언어 · 언제든지 취소<br><span style="color:#f0c93a;font-size:11px;">불필요한 요금 발생을 막기 위해 다음 청구일 전에 취소하면 추가 요금 없음.</span>',
+    travelName:'Travel Pass · 30일',travelDesc:'Core 전체 기능 + 음성 입력 · TTS 읽기 · 대면 대화 모드 · 6개 카테고리 즉시 사용 문구 · 긴급 문구<br><span style="color:#f0c93a;font-size:11px;">1회 결제, 자동 갱신 없음. 30일 후 Core로 자동 복귀.</span>',
+    p2:'아직 성장 중인 앱입니다. 모든 사용자로부터 배우며 계속 개선해 나갑니다. <strong>사용자와 함께 성장하는 앱입니다.</strong>',
+    futureTitle:'향후 계획',futureItems:["여행 패스 월정액 플랜","비즈니스 전용 플랜 (AI 비서)","레저 전용 플랜"],
+    p3:'$2.99/월부터 시작 — NextBase 제공.',
+    btnFree:'무료 체험 — 하루 5회 번역',btnPlans:'요금제 보기',note:'신용카드 불필요 · 즉시 사용 가능'
+  },
+  es:{
+    p1:'GLB es una app de traducción construida alrededor de <strong>tu idioma</strong>. Configúralo una vez — GLB lo recuerda en todo momento.',
+    coreName:'GLB · Uso diario',coreDesc:'Traducción de texto · Voltear · Zoom · 13 idiomas · Cancela cuando quieras<br><span style="color:#f0c93a;font-size:11px;">Sin cargos olvidados — cancela antes de tu próxima fecha de facturación.</span>',
+    travelName:'Travel Pass · 30 días',travelDesc:'Todo de Core + voz · lectura en voz alta · modo diálogo cara a cara · 6 categorías de frases · frases de emergencia<br><span style="color:#f0c93a;font-size:11px;">Pago único. Sin renovación automática. Vuelve a Core automáticamente.</span>',
+    p2:'Esta app todavía está creciendo. Aprendemos de cada usuario y mejoramos continuamente. <strong>Crecemos juntos contigo.</strong>',
+    futureTitle:'Próximamente',futureItems:["Plan mensual Travel Pass","Plan empresarial (asistente IA)","Plan de ocio especializado"],
+    p3:'Desde $2.99/mes — por NextBase.',
+    btnFree:'Prueba gratis — 5 traducciones/día',btnPlans:'Ver planes',note:'Sin tarjeta · Funciona al instante'
+  },
+  fr:{
+    p1:'GLB is a translation app built around <strong>your language</strong>. Set your language once — GLB remembers it everywhere.',
+    coreName:'GLB · Everyday',coreDesc:'Text translation · Flip · Zoom display · 13 languages · Cancel anytime<br><span style="color:#f0c93a;font-size:11px;">No forgotten charges — cancel before your next billing date.</span>',
+    travelName:'Travel Pass · 30 days',travelDesc:'Everything in Core + voice input · TTS read-aloud · Face-to-face dialogue mode · 6 scene categories · Emergency phrases<br><span style="color:#f0c93a;font-size:11px;">One-time purchase. No auto-renew. Returns to Core automatically.</span>',
+    p2:"This app is still growing. We're learning from every user and improving as we go. <strong>We grow together with you.</strong>",
+    futureTitle:'Coming next',futureItems:["Travel Pass monthly plan","Business plan (AI assistant)","Leisure specialty plan"],
+    p3:'Starting at $2.99/month — by NextBase.',
+    btnFree:'Try Free — 5 translations/day',btnPlans:'See plans',note:'No credit card · Works instantly'
+  },
+  de:{
+    p1:'GLB is a translation app built around <strong>your language</strong>. Set your language once — GLB remembers it everywhere.',
+    coreName:'GLB · Everyday',coreDesc:'Text translation · Flip · Zoom display · 13 languages · Cancel anytime<br><span style="color:#f0c93a;font-size:11px;">No forgotten charges — cancel before your next billing date.</span>',
+    travelName:'Travel Pass · 30 days',travelDesc:'Everything in Core + voice input · TTS read-aloud · Face-to-face dialogue mode · 6 scene categories · Emergency phrases<br><span style="color:#f0c93a;font-size:11px;">One-time purchase. No auto-renew. Returns to Core automatically.</span>',
+    p2:"This app is still growing. We're learning from every user and improving as we go. <strong>We grow together with you.</strong>",
+    futureTitle:'Coming next',futureItems:["Travel Pass monthly plan","Business plan (AI assistant)","Leisure specialty plan"],
+    p3:'Starting at $2.99/month — by NextBase.',
+    btnFree:'Try Free — 5 translations/day',btnPlans:'See plans',note:'No credit card · Works instantly'
+  },
+  it:{
+    p1:'GLB is a translation app built around <strong>your language</strong>. Set your language once — GLB remembers it everywhere.',
+    coreName:'GLB · Everyday',coreDesc:'Text translation · Flip · Zoom display · 13 languages · Cancel anytime<br><span style="color:#f0c93a;font-size:11px;">No forgotten charges — cancel before your next billing date.</span>',
+    travelName:'Travel Pass · 30 days',travelDesc:'Everything in Core + voice input · TTS read-aloud · Face-to-face dialogue mode · 6 scene categories · Emergency phrases<br><span style="color:#f0c93a;font-size:11px;">One-time purchase. No auto-renew. Returns to Core automatically.</span>',
+    p2:"This app is still growing. We're learning from every user and improving as we go. <strong>We grow together with you.</strong>",
+    futureTitle:'Coming next',futureItems:["Travel Pass monthly plan","Business plan (AI assistant)","Leisure specialty plan"],
+    p3:'Starting at $2.99/month — by NextBase.',
+    btnFree:'Try Free — 5 translations/day',btnPlans:'See plans',note:'No credit card · Works instantly'
+  },
+  ru:{
+    p1:'GLB is a translation app built around <strong>your language</strong>. Set your language once — GLB remembers it everywhere.',
+    coreName:'GLB · Everyday',coreDesc:'Text translation · Flip · Zoom display · 13 languages · Cancel anytime<br><span style="color:#f0c93a;font-size:11px;">No forgotten charges — cancel before your next billing date.</span>',
+    travelName:'Travel Pass · 30 days',travelDesc:'Everything in Core + voice input · TTS read-aloud · Face-to-face dialogue mode · 6 scene categories · Emergency phrases<br><span style="color:#f0c93a;font-size:11px;">One-time purchase. No auto-renew. Returns to Core automatically.</span>',
+    p2:"This app is still growing. We're learning from every user and improving as we go. <strong>We grow together with you.</strong>",
+    futureTitle:'Coming next',futureItems:["Travel Pass monthly plan","Business plan (AI assistant)","Leisure specialty plan"],
+    p3:'Starting at $2.99/month — by NextBase.',
+    btnFree:'Try Free — 5 translations/day',btnPlans:'See plans',note:'No credit card · Works instantly'
+  },
+  th:{
+    p1:'GLB is a translation app built around <strong>your language</strong>. Set your language once — GLB remembers it everywhere.',
+    coreName:'GLB · Everyday',coreDesc:'Text translation · Flip · Zoom display · 13 languages · Cancel anytime<br><span style="color:#f0c93a;font-size:11px;">No forgotten charges — cancel before your next billing date.</span>',
+    travelName:'Travel Pass · 30 days',travelDesc:'Everything in Core + voice input · TTS read-aloud · Face-to-face dialogue mode · 6 scene categories · Emergency phrases<br><span style="color:#f0c93a;font-size:11px;">One-time purchase. No auto-renew. Returns to Core automatically.</span>',
+    p2:"This app is still growing. We're learning from every user and improving as we go. <strong>We grow together with you.</strong>",
+    futureTitle:'Coming next',futureItems:["Travel Pass monthly plan","Business plan (AI assistant)","Leisure specialty plan"],
+    p3:'Starting at $2.99/month — by NextBase.',
+    btnFree:'Try Free — 5 translations/day',btnPlans:'See plans',note:'No credit card · Works instantly'
+  },
+  vi:{
+    p1:'GLB is a translation app built around <strong>your language</strong>. Set your language once — GLB remembers it everywhere.',
+    coreName:'GLB · Everyday',coreDesc:'Text translation · Flip · Zoom display · 13 languages · Cancel anytime<br><span style="color:#f0c93a;font-size:11px;">No forgotten charges — cancel before your next billing date.</span>',
+    travelName:'Travel Pass · 30 days',travelDesc:'Everything in Core + voice input · TTS read-aloud · Face-to-face dialogue mode · 6 scene categories · Emergency phrases<br><span style="color:#f0c93a;font-size:11px;">One-time purchase. No auto-renew. Returns to Core automatically.</span>',
+    p2:"This app is still growing. We're learning from every user and improving as we go. <strong>We grow together with you.</strong>",
+    futureTitle:'Coming next',futureItems:["Travel Pass monthly plan","Business plan (AI assistant)","Leisure specialty plan"],
+    p3:'Starting at $2.99/month — by NextBase.',
+    btnFree:'Try Free — 5 translations/day',btnPlans:'See plans',note:'No credit card · Works instantly'
+  },
+  hi:{
+    p1:'GLB is a translation app built around <strong>your language</strong>. Set your language once — GLB remembers it everywhere.',
+    coreName:'GLB · Everyday',coreDesc:'Text translation · Flip · Zoom display · 13 languages · Cancel anytime<br><span style="color:#f0c93a;font-size:11px;">No forgotten charges — cancel before your next billing date.</span>',
+    travelName:'Travel Pass · 30 days',travelDesc:'Everything in Core + voice input · TTS read-aloud · Face-to-face dialogue mode · 6 scene categories · Emergency phrases<br><span style="color:#f0c93a;font-size:11px;">One-time purchase. No auto-renew. Returns to Core automatically.</span>',
+    p2:"This app is still growing. We're learning from every user and improving as we go. <strong>We grow together with you.</strong>",
+    futureTitle:'Coming next',futureItems:["Travel Pass monthly plan","Business plan (AI assistant)","Leisure specialty plan"],
+    p3:'Starting at $2.99/month — by NextBase.',
+    btnFree:'Try Free — 5 translations/day',btnPlans:'See plans',note:'No credit card · Works instantly'
+  },
+  pt:{
+    p1:'GLB is a translation app built around <strong>your language</strong>. Set your language once — GLB remembers it everywhere.',
+    coreName:'GLB · Everyday',coreDesc:'Text translation · Flip · Zoom display · 13 languages · Cancel anytime<br><span style="color:#f0c93a;font-size:11px;">No forgotten charges — cancel before your next billing date.</span>',
+    travelName:'Travel Pass · 30 days',travelDesc:'Everything in Core + voice input · TTS read-aloud · Face-to-face dialogue mode · 6 scene categories · Emergency phrases<br><span style="color:#f0c93a;font-size:11px;">One-time purchase. No auto-renew. Returns to Core automatically.</span>',
+    p2:"This app is still growing. We're learning from every user and improving as we go. <strong>We grow together with you.</strong>",
+    futureTitle:'Coming next',futureItems:["Travel Pass monthly plan","Business plan (AI assistant)","Leisure specialty plan"],
+    p3:'Starting at $2.99/month — by NextBase.',
+    btnFree:'Try Free — 5 translations/day',btnPlans:'See plans',note:'No credit card · Works instantly'
+  }
+};
+
+function applyIntroLang(lang) {
+  const d = INTRO_I18N[lang] || INTRO_I18N.en;
+  const set = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
+  set('intro-p1', d.p1);
+  set('intro-core-name', d.coreName);
+  set('intro-core-desc', d.coreDesc);
+  set('intro-travel-name', d.travelName);
+  set('intro-travel-desc', d.travelDesc);
+  set('intro-p2', d.p2);
+  set('intro-future-title', d.futureTitle);
+  const ul = document.getElementById('intro-future-list');
+  if(ul) ul.innerHTML = d.futureItems.map(i => '<li>' + i + '</li>').join('');
+  set('intro-p3', d.p3);
+  const b1 = document.getElementById('intro-btn-free');
+  const b2 = document.getElementById('intro-btn-plans');
+  const n = document.getElementById('intro-note');
+  if(b1) b1.textContent = d.btnFree;
+  if(b2) b2.textContent = d.btnPlans;
+  if(n) n.textContent = d.note;
+}
+
+function showIntro(lang) {
+  const screen = document.getElementById('intro-screen');
+  if(!screen) return;
+  applyIntroLang(lang);
+  screen.style.display = 'flex';
+}
+
+function closeIntro() {
+  const screen = document.getElementById('intro-screen');
+  if(!screen) return;
+  screen.classList.add('exit');
+  setTimeout(() => { screen.style.display = 'none'; }, 500);
+}
+
+
+const STRIPE_MODAL_I18N = {
+  en:{title:'Secure checkout',period:'/ month · cancel anytime',note:'You will be redirected to Stripe secure payment page.<br>No forgotten charges — cancel before your next billing date.<br><span style="color:#f0c93a;font-size:10px;">* Tax may be added at checkout depending on your country.</span>',confirm:'Go to Stripe →',cancel:'Cancel'},
+  ja:{title:'Stripeで決済',period:'/ 月 · いつでも解約可能',note:'Stripeのセキュアな決済ページに移動します。<br>無駄な課金忘れをなくすため、次の請求日前に解約すれば追加料金なし。<br><span style="color:#f0c93a;font-size:10px;">※ お住まいの国によって、税金が加算される場合があります。</span>',confirm:'Stripeへ進む →',cancel:'キャンセル'},
+  zh:{title:'安全结账',period:'/ 月 · 随时取消',note:'您将被重定向到 Stripe 的安全支付页面。<br><span style="color:#f0c93a;font-size:10px;">* 根据您所在的国家，结账时可能会加收税费。</span>',confirm:'前往 Stripe →',cancel:'取消'},
+  ko:{title:'안전한 결제',period:'/ 월 · 언제든지 취소 가능',note:'Stripe의 안전한 결제 페이지로 이동합니다。<br><span style="color:#f0c93a;font-size:10px;">* 거주 국가에 따라 세금이 추가될 수 있습니다.</span>',confirm:'Stripe로 이동 →',cancel:'취소'},
+  es:{title:'Pago seguro',period:'/ mes · cancela cuando quieras',note:'Seras redirigido a la pagina de pago seguro de Stripe.<br><span style="color:#f0c93a;font-size:10px;">* Se pueden anadir impuestos segun tu pais.</span>',confirm:'Ir a Stripe →',cancel:'Cancelar'},
+  fr:{title:'Paiement securise',period:'/ mois · annulez quand vous voulez',note:'Vous serez redirige vers la page de paiement securise Stripe.<br><span style="color:#f0c93a;font-size:10px;">* Des taxes peuvent s&#39;appliquer selon votre pays.</span>',confirm:'Aller sur Stripe →',cancel:'Annuler'},
+  de:{title:'Sicherer Checkout',period:'/ Monat · jederzeit kundbar',note:'Sie werden zur sicheren Stripe-Zahlungsseite weitergeleitet.<br><span style="color:#f0c93a;font-size:10px;">* Je nach Land konnen Steuern anfallen.</span>',confirm:'Zu Stripe →',cancel:'Abbrechen'},
+  it:{title:'Pagamento sicuro',period:'/ mese · cancella quando vuoi',note:'Sarai reindirizzato alla pagina di pagamento sicuro di Stripe.<br><span style="color:#f0c93a;font-size:10px;">* Potrebbero essere applicate tasse in base al tuo paese.</span>',confirm:'Vai a Stripe →',cancel:'Annulla'},
+  ru:{title:'Bezopasnaya oplata',period:'/ mesyats · otmena v lyuboye vremya',note:'Vy budete perenapravleny na stranitsu bezopasnoy oplaty Stripe.<br><span style="color:#f0c93a;font-size:10px;">* V zavisimosti ot vashey strany mogut primenyatsya nalogi.</span>',confirm:'Pereyti v Stripe →',cancel:'Otmena'},
+  th:{title:'การชำระเงินที่ปลอดภัย',period:'/ เดือน · ยกเลิกเมื่อไหรก็ได้',note:'คุณจะถูกเปลี่ยนเส้นทางไปยังหน้าชำระเงินที่ปลอดภัยของ Stripe<br><span style="color:#f0c93a;font-size:10px;">* อาจมีการเพิ่มภาษีตามประเทศของคุณ</span>',confirm:'ไปที่ Stripe →',cancel:'ยกเลิก'},
+  vi:{title:'Thanh toan an toan',period:'/ thang · huy bat cu luc nao',note:'Ban se duoc chuyen den trang thanh toan an toan cua Stripe.<br><span style="color:#f0c93a;font-size:10px;">* Thue co the duoc them vao tuy theo quoc gia cua ban.</span>',confirm:'Den Stripe →',cancel:'Huy'},
+  hi:{title:'Surakshit checkout',period:'/ mahina · kabhi bhi raddh karen',note:'Aapko Stripe ke surakshit bhugtaan prushtha par bheja jayega.<br><span style="color:#f0c93a;font-size:10px;">* Aapke desh ke anusar kar joda ja sakta hai.</span>',confirm:'Stripe par jaen →',cancel:'Raddh karen'},
+  pt:{title:'Pagamento seguro',period:'/ mes · cancele quando quiser',note:'Voce sera redirecionado para a pagina de pagamento seguro do Stripe.<br><span style="color:#f0c93a;font-size:10px;">* Impostos podem ser adicionados dependendo do seu pais.</span>',confirm:'Ir para Stripe →',cancel:'Cancelar'},
+};
+
+function openStripeConfirm(e) {
+  if(e) e.preventDefault();
+  const d = STRIPE_MODAL_I18N[currentLang] || STRIPE_MODAL_I18N.en;
+  const set = (id, html) => { const el=document.getElementById(id); if(el) el.innerHTML=html; };
+  set('sm-title', d.title);
+  set('sm-period', d.period);
+  set('sm-note', d.note);
+  const btn = document.getElementById('sm-confirm');
+  if(btn) btn.textContent = d.confirm;
+  const cancel = document.getElementById('sm-cancel');
+  if(cancel) cancel.textContent = d.cancel;
+  document.getElementById('stripe-modal-bg').classList.add('open');
+}
+
+function closeStripeConfirm(e) {
+  if(e && e.target !== document.getElementById('stripe-modal-bg')) return;
+  document.getElementById('stripe-modal-bg').classList.remove('open');
+}
+
+function init(){
+  const stored=(()=>{try{return localStorage.getItem(LS_LANG);}catch(e){return null;}})();
+  if(stored&&LANGS.find(l=>l.c===stored)){
+    currentLang=stored;
+    document.getElementById('lang-gate').style.display='none';
+    // Skip intro for returning users
+    const app=document.getElementById('app');
+    app.style.transition='none';
+    app.classList.add('visible');
+    setTimeout(()=>{app.style.transition='';},100);
+      applyLang(currentLang);
+  } else {
+    buildLangGrid('lang-grid',selectGateLang);
+    const more=document.getElementById('gate-more');
+    more.textContent=T('en','gateMore');
+    document.getElementById('gate-q').textContent=T('en','gateQ');
     }
-    var q = getQuota();
-    var left = Math.max(0, FREE_LIMIT - (q.count || 0));
-    el.textContent = left > 0 ? (left + ' free run' + (left !== 1 ? 's' : '') + ' remaining today') : 'Daily limit reached — open Core for unlimited';
+  document.getElementById('t-swap').addEventListener('click',()=>{
+    const f=document.getElementById('t-from');
+    const t=document.getElementById('t-to');
+    const tmp=f.value;f.value=t.value;t.value=tmp;
+  });
+  document.getElementById('t-btn').addEventListener('click',runTranslate);
+  document.getElementById('t-input').addEventListener('keydown',e=>{
+    if(e.key==='Enter') runTranslate();
+  });
 }
 
-function fillSelect(sel, exclude) {
-    sel.innerHTML = '';
-    LANGS.forEach(function (lang) {
-        if (lang.c === exclude) return;
-        var o = document.createElement('option');
-        o.value = lang.c; o.textContent = lang.l;
-        sel.appendChild(o);
-    });
-}
-
-function setResult(text, isError, isLoading) {
-    var el = document.getElementById('t-result');
-    if (!el) return;
-    el.textContent = text;
-    el.classList.remove('idle');
-    el.style.color = isError ? '#c99' : (isLoading ? '#555' : 'var(--white)');
-    el.style.fontSize = isLoading || isError ? '14px' : '';
-}
-
-async function runTranslate() {
-    if (GLB_MAINTENANCE_ON) return;
-    if (!glbBillingPaidActive() && !GLB_CORE_SUBSCRIBED) {
-        var q = getQuota();
-        if ((q.count || 0) >= FREE_LIMIT) {
-            setResult('Daily limit reached. Subscribe for unlimited →', true);
-            return;
-        }
-    }
-    var textEl = document.getElementById('t-input');
-    var text = (textEl && textEl.value) ? textEl.value.trim() : '';
-    if (!text) return;
-    var from = document.getElementById('t-from').value;
-    var to = document.getElementById('t-to').value;
-    if (from === to) { setResult(text); return; }
-    setResult('Translating…', false, true);
-    try {
-        var r = await fetch(NEXTBASE_APP_ORIGIN + '/translate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text, source: from, target: to, caller_id: 'lp' }),
-            cache: 'no-store'
-        });
-        var raw = await r.text();
-        var out = raw;
-        try { var j = JSON.parse(raw); out = j.translatedText || raw; } catch (e) {}
-        setResult(out);
-        bumpQuota();
-        updateQuotaDisplay();
-        try { window.GLBFunnel.track('translate_click', { page: 'index.html' }); } catch (e) {}
-    } catch (e) {
-        setResult('Network error. Please try again.', true);
-    }
-}
-
-function syncLang(val) {
-    uiLang = val;
-    var from = document.getElementById('t-from');
-    if (from) {
-        from.value = val;
-        var to = document.getElementById('t-to');
-        if (to && to.value === val) {
-            var alt = LANGS.map(function (x) { return x.c; }).filter(function (c) { return c !== val; })[0] || 'ja';
-            to.value = alt;
-        }
-    }
-}
-
-function initTool() {
-    var from = document.getElementById('t-from');
-    var to = document.getElementById('t-to');
-    fillSelect(from, null);
-    fillSelect(to, null);
-    from.value = 'en';
-    to.value = 'ja';
-    var hero = document.getElementById('ui-lang-hero');
-    if (hero) {
-        hero.addEventListener('change', function () { syncLang(hero.value); });
-        if (hero.value) syncLang(hero.value);
-    }
-    document.getElementById('t-swap').addEventListener('click', function () {
-        var tmp = from.value;
-        from.value = to.value;
-        to.value = tmp;
-    });
-    document.getElementById('t-btn').addEventListener('click', runTranslate);
-    document.getElementById('t-input').addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') runTranslate();
-    });
-}
-
-var observer = new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.15 });
-document.querySelectorAll('.step').forEach(function (s) { observer.observe(s); });
-
-initTool();
-updateQuotaDisplay();
-handleTravelActivationFlow();
+init();
 </script>
 
+<!-- STRIPE CONFIRM MODAL -->
+
+<div class="stripe-modal-bg" id="stripe-modal-bg" onclick="closeStripeConfirm(event)">
+  <div class="stripe-modal">
+    <div class="stripe-modal-logo">GLB</div>
+    <div class="stripe-modal-title" id="sm-title">Secure checkout</div>
+    <div class="stripe-modal-price">$2.99</div>
+    <div class="stripe-modal-period" id="sm-period">/ month · cancel anytime</div>
+    <div class="stripe-modal-note" id="sm-note">You will be redirected to Stripe's secure payment page.<br>No forgotten charges — cancel before your next billing date.</div>
+    <div class="stripe-modal-btns">
+      <a href="https://buy.stripe.com/bJedRbefH5yogzZfuDasg09" class="stripe-confirm-btn" id="sm-confirm">Go to Stripe →</a>
+      <button class="stripe-cancel-btn" id="sm-cancel" onclick="closeStripeConfirm()">Cancel</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
