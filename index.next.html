@@ -5,7 +5,7 @@
 
   【ページ正本・CANONICAL_UNIFY_INDEX_NEXT】
   Core 2.99 本体は本ファイル index.next.html のみ。index.coreflow.html は廃止（参照禁止）。
-  無料10回/日: .../index.html（課金ボタンなし → Core ページへ誘導）
+  無料5回/日: .../index.html（課金ボタンなし → Core ページへ誘導）
   Core 本体・$2.99 Stripe: 本ファイル（未課金も閲覧可・同一クォータ）
   Travel 14.99: .../travel.html
   Premium LP: .../index.premium.html
@@ -634,7 +634,7 @@
             <div class="pricing-box">
                 <h2 id="t-pricing-h2">$2.99 / month</h2>
                 <ul>
-                    <li id="t-pricing-li1">Core on this page: subscribe for unlimited text plus listen &amp; read-aloud. Free tier: 10 text runs per day until you subscribe.</li>
+                    <li id="t-pricing-li1">Core on this page: subscribe for unlimited text plus listen &amp; read-aloud. Free tier: 5 text runs per day until you subscribe.</li>
                 </ul>
                 <p class="note" id="t-pricing-note"></p>
             </div>
@@ -1580,7 +1580,7 @@
         var GLB_UI_LANGS = ['en', 'ja', 'fa', 'zh', 'es', 'fr', 'de', 'pt', 'ar', 'ru', 'ko', 'hi', 'tr'];
 
         var CURRENT_LANG = 'en';
-        var GLB_FREE_DAILY = 10;
+        var GLB_FREE_DAILY = 5;
         var LS_GLB_QUOTA = 'glb_translate_quota_v1';
 
         /** false = ブラウザに 150k 辞書を配らない（サーバ ROUTES_CSV_PATH で照合）。パクり対策。開発時のみ localStorage glb_dev_csv=1 で従来のクライアント読込。 */
@@ -1686,8 +1686,8 @@
                 labelLangTo: 'To',
                 langFlowHint: '',
                 pricingH2: '$2.99 / month',
-                pricingLi1: '<strong>This page is text-only</strong> (no mic or read-aloud). <strong>$2.99/mo</strong> — unlimited cloud translation plus <strong>listen &amp; read-aloud</strong>. Free: <strong>10 text translations per day</strong>.',
-                pricingNote: 'Try 10 text runs per day here — subscribe for unlimited text plus voice features.',
+                pricingLi1: '<strong>This page is text-only</strong> (no mic or read-aloud). <strong>$2.99/mo</strong> — unlimited cloud translation plus <strong>listen &amp; read-aloud</strong>. Free: <strong>5 text translations per day</strong>.',
+                pricingNote: 'Try 5 text runs per day here — subscribe for unlimited text plus voice features.',
                 linkTerms: 'Terms of Service',
                 linkPrivacy: 'Privacy Policy',
                 linkLegal: 'Legal',
@@ -1741,8 +1741,8 @@
                 labelLangTo: '訳文',
                 langFlowHint: '',
                 pricingH2: '月額 $2.99',
-                pricingLi1: 'この画面は<strong>文字の翻訳のみ</strong>（マイク・読み上げはありません）。<strong>$2.99/月</strong>の購読ではクラウド翻訳に加え<strong>読み聞き・読み上げ</strong>が利用できます。無料は<strong>1日10回まで</strong>（文字）。',
-                pricingNote: 'まずはこの画面で毎日10回まで無料。購読で無制限の文字翻訳＋音声まわり。',
+                pricingLi1: 'この画面は<strong>文字の翻訳のみ</strong>（マイク・読み上げはありません）。<strong>$2.99/月</strong>の購読ではクラウド翻訳に加え<strong>読み聞き・読み上げ</strong>が利用できます。無料は<strong>1日5回まで</strong>（文字）。',
+                pricingNote: 'まずはこの画面で毎日5回まで無料。購読で無制限の文字翻訳＋音声まわり。',
                 linkTerms: '利用規約',
                 linkPrivacy: 'プライバシーポリシー',
                 linkLegal: '法的情報',
@@ -1792,7 +1792,7 @@
             zh: {
                 labelUiLang: '界面语言', labelRegion: '地区', labelLangFrom: '原文', labelLangTo: '译文',
                 langFlowHint: '',
-                pricingH2: '$2.99 / 月', pricingLi1: '本页仅<strong>文字翻译</strong>（无麦克风与朗读按钮）。<strong>$2.99/月</strong>含云端无限翻译及<strong>听读与朗读</strong>。免费每日<strong>10 次文字</strong>。', pricingNote: '先在此试用每日 10 次；订阅解锁无限文字与语音相关功能。',
+                pricingH2: '$2.99 / 月', pricingLi1: '本页仅<strong>文字翻译</strong>（无麦克风与朗读按钮）。<strong>$2.99/月</strong>含云端无限翻译及<strong>听读与朗读</strong>。免费每日<strong>5 次文字</strong>。', pricingNote: '先在此试用每日 5 次；订阅解锁无限文字与语音相关功能。',
                 linkTerms: '服务条款', linkPrivacy: '隐私政策', linkLegal: '法律信息', linkSupport: '支持',
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: '订阅（$2.99/月）', stripeHint: 'Stripe 安全支付',
@@ -1808,7 +1808,7 @@
             ko: {
                 labelUiLang: '앱 언어', labelRegion: '지역', labelLangFrom: '출발', labelLangTo: '도착',
                 langFlowHint: '',
-                pricingH2: '$2.99 / 월', pricingLi1: '이 화면은<strong>텍스트만</strong>(마이크·읽기 없음). <strong>$2.99/월</strong>에 클라우드 무제한 + <strong>듣기·읽어주기</strong>. 무료 하루 <strong>10회</strong>.', pricingNote: '매일 10회 무료 → 구독 시 무제한 텍스트 + 음성.',
+                pricingH2: '$2.99 / 월', pricingLi1: '이 화면은<strong>텍스트만</strong>(마이크·읽기 없음). <strong>$2.99/월</strong>에 클라우드 무제한 + <strong>듣기·읽어주기</strong>. 무료 하루 <strong>5회</strong>.', pricingNote: '매일 5회 무료 → 구독 시 무제한 텍스트 + 음성.',
                 linkTerms: '이용약관', linkPrivacy: '개인정보 처리방침', linkLegal: '법적 고지', linkSupport: '지원',
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: '구독 ($2.99/월)', stripeHint: 'Stripe 결제',
@@ -1824,7 +1824,7 @@
             es: {
                 labelUiLang: 'Idioma', labelRegion: 'Región', labelLangFrom: 'De', labelLangTo: 'A',
                 langFlowHint: '',
-                pricingH2: '$2.99 / mes', pricingLi1: 'Esta pantalla es solo <strong>texto</strong> (sin mic ni voz). <strong>$2.99/mes</strong>: traducción ilimitada + <strong>escuchar y leer en voz alta</strong>. Gratis: <strong>10 textos/día</strong>.', pricingNote: '10/día gratis aquí; al suscribirte, texto ilimitado + voz.',
+                pricingH2: '$2.99 / mes', pricingLi1: 'Esta pantalla es solo <strong>texto</strong> (sin mic ni voz). <strong>$2.99/mes</strong>: traducción ilimitada + <strong>escuchar y leer en voz alta</strong>. Gratis: <strong>5 textos/día</strong>.', pricingNote: '5/día gratis aquí; al suscribirte, texto ilimitado + voz.',
                 linkTerms: 'Términos', linkPrivacy: 'Privacidad', linkLegal: 'Legal', linkSupport: 'Soporte',
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: 'Suscribirse ($2.99/mes)', stripeHint: 'Pago con Stripe',
@@ -1840,7 +1840,7 @@
             fr: {
                 labelUiLang: 'Langue', labelRegion: 'Région', labelLangFrom: 'De', labelLangTo: 'Vers',
                 langFlowHint: '',
-                pricingH2: '$2.99 / mois', pricingLi1: 'Cette page : <strong>texte seulement</strong> (pas de micro ni lecture). <strong>$2.99/mois</strong> : traduction illimitée + <strong>écoute et lecture vocale</strong>. Gratuit : <strong>10 textes/jour</strong>.', pricingNote: '10 essais/jour ici ; abonnement = texte illimité + voix.',
+                pricingH2: '$2.99 / mois', pricingLi1: 'Cette page : <strong>texte seulement</strong> (pas de micro ni lecture). <strong>$2.99/mois</strong> : traduction illimitée + <strong>écoute et lecture vocale</strong>. Gratuit : <strong>5 textes/jour</strong>.', pricingNote: '5 essais/jour ici ; abonnement = texte illimité + voix.',
                 linkTerms: 'Conditions', linkPrivacy: 'Confidentialité', linkLegal: 'Mentions légales', linkSupport: 'Assistance',
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: 'S’abonner ($2.99/mois)', stripeHint: 'Paiement Stripe',
@@ -1856,7 +1856,7 @@
             de: {
                 labelUiLang: 'Sprache', labelRegion: 'Region', labelLangFrom: 'Von', labelLangTo: 'Nach',
                 langFlowHint: '',
-                pricingH2: '$2.99 / Monat', pricingLi1: 'Nur <strong>Text</strong> auf dieser Seite (kein Mikro/Vorlesen). <strong>$2.99/Monat</strong>: unbegrenzt + <strong>Hören &amp; Vorlesen</strong>. Gratis: <strong>10 Texte/Tag</strong>.', pricingNote: '10×/Tag testen — Abo: unbegrenzter Text + Sprachfunktionen.',
+                pricingH2: '$2.99 / Monat', pricingLi1: 'Nur <strong>Text</strong> auf dieser Seite (kein Mikro/Vorlesen). <strong>$2.99/Monat</strong>: unbegrenzt + <strong>Hören &amp; Vorlesen</strong>. Gratis: <strong>5 Texte/Tag</strong>.', pricingNote: '5×/Tag testen — Abo: unbegrenzter Text + Sprachfunktionen.',
                 linkTerms: 'AGB', linkPrivacy: 'Datenschutz', linkLegal: 'Impressum', linkSupport: 'Support',
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: 'Abonnieren ($2.99/Monat)', stripeHint: 'Stripe-Zahlung',
@@ -1872,7 +1872,7 @@
             th: {
                 labelUiLang: 'ภาษา', labelRegion: 'ภูมิภาค', labelLangFrom: 'จาก', labelLangTo: 'เป็น',
                 langFlowHint: '',
-                pricingH2: '$2.99 / เดือน', pricingLi1: 'หน้านี้<strong>พิมพ์ข้อความอย่างเดียว</strong> (ไม่มีไมค์/อ่านออกเสียง). <strong>$2.99/เดือน</strong> รวมแปลไม่จำกัด + <strong>ฟังและอ่านออกเสียง</strong> ฟรี <strong>10 ครั้ง/วัน</strong>', pricingNote: 'ลอง 10 ครั้ง/วัน — สมัครเพื่อข้อความไม่จำกัด + เสียง',
+                pricingH2: '$2.99 / เดือน', pricingLi1: 'หน้านี้<strong>พิมพ์ข้อความอย่างเดียว</strong> (ไม่มีไมค์/อ่านออกเสียง). <strong>$2.99/เดือน</strong> รวมแปลไม่จำกัด + <strong>ฟังและอ่านออกเสียง</strong> ฟรี <strong>5 ครั้ง/วัน</strong>', pricingNote: 'ลอง 5 ครั้ง/วัน — สมัครเพื่อข้อความไม่จำกัด + เสียง',
                 linkTerms: 'ข้อกำหนด', linkPrivacy: 'ความเป็นส่วนตัว', linkLegal: 'กฎหมาย', linkSupport: 'ช่วยเหลือ',
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: 'สมัคร ($2.99/เดือน)', stripeHint: 'ชำระด้วย Stripe',
@@ -1888,7 +1888,7 @@
             vi: {
                 labelUiLang: 'Ngôn ngữ', labelRegion: 'Khu vực', labelLangFrom: 'Từ', labelLangTo: 'Sang',
                 langFlowHint: '',
-                pricingH2: '$2.99 / tháng', pricingLi1: 'Trang này chỉ <strong>chữ</strong> (không mic/đọc). <strong>$2.99/tháng</strong>: dịch không giới hạn + <strong>nghe &amp; đọc</strong>. Miễn phí <strong>10 lần/ngày</strong>.', pricingNote: 'Dùng thử 10 lần/ngày — đăng ký để chữ không giới hạn + giọng.',
+                pricingH2: '$2.99 / tháng', pricingLi1: 'Trang này chỉ <strong>chữ</strong> (không mic/đọc). <strong>$2.99/tháng</strong>: dịch không giới hạn + <strong>nghe &amp; đọc</strong>. Miễn phí <strong>5 lần/ngày</strong>.', pricingNote: 'Dùng thử 5 lần/ngày — đăng ký để chữ không giới hạn + giọng.',
                 linkTerms: 'Điều khoản', linkPrivacy: 'Riêng tư', linkLegal: 'Pháp lý', linkSupport: 'Hỗ trợ',
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: 'Đăng ký ($2.99/tháng)', stripeHint: 'Thanh toán Stripe',
