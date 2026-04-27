@@ -1166,15 +1166,6 @@ function init(){
     more.textContent=T('en','gateMore');
     document.getElementById('gate-q').textContent=T('en','gateQ');
     }
-  document.getElementById('t-swap').addEventListener('click',()=>{
-    const f=document.getElementById('t-from');
-    const t=document.getElementById('t-to');
-    const tmp=f.value;f.value=t.value;t.value=tmp;
-  });
-  document.getElementById('t-btn').addEventListener('click',runTranslate);
-  document.getElementById('t-input').addEventListener('keydown',e=>{
-    if(e.key==='Enter') runTranslate();
-  });
 }
 
 init();
