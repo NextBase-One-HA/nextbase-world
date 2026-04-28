@@ -4,16 +4,16 @@
   https://nextbase-one-ha.github.io/nextbase-world/
 
   【ページ正本・CANONICAL_CORE_299】
-  Core 2.99 本体は本ファイル。index.next.html は無料体験導線。課金後は必ず本ページへ着地。
-  無料5回/日: .../index.html（課金ボタンなし → Core ページへ誘導）
-  Core 本体・$2.99 Stripe: 本ファイル（未課金も閲覧可・同一クォータ）
+  Core 2.99 本体は本ファイル。index.next.html は無料体験導線。課金後は本ページへ着地。
+  無料5回/日: .../index.html（課金ボタンなし → index.next.html へ誘導）
+  Core 本体・$2.99 Stripe: 本ファイル（購入者向け本体ページ）
   Travel 14.99: .../index.14.99.html
   Premium LP: .../index.premium.html
 
   Stripe Payment Link（Dashboard 絶対URL・index.html DOCTYPE と同一）:
   - 2.99 success:  .../index.2.99.html?session_id={CHECKOUT_SESSION_ID}
   - 2.99 cancel:    .../index.html
-  - 14.99 success:  .../index.14.99.html?travel=1&session_id={CHECKOUT_SESSION_ID}
+  - 14.99 success:  .../index.14.99.html?session_id={CHECKOUT_SESSION_ID}&travel=1
   - 14.99 purchase/help 正本: .../index.premium.html
 
   PORTAL_RETURN_URL 正本: .../index.next.html
@@ -360,6 +360,57 @@
             font-weight: 700;
             cursor: pointer;
         }
+        .stripe-modal-bg {
+            position: fixed; inset: 0; z-index: 100000;
+            background: rgba(4, 4, 10, 0.92);
+            backdrop-filter: blur(16px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .stripe-modal-bg.open { opacity: 1; pointer-events: all; }
+        .stripe-modal {
+            background: #0f0f1a;
+            border: 1px solid rgba(240, 201, 58, 0.3);
+            border-radius: 18px;
+            padding: 28px 24px;
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+        }
+        .stripe-modal-logo { font-family: 'Instrument Serif', serif; font-size: 28px; color: var(--gold); margin-bottom: 4px; }
+        .stripe-modal-title { font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+        .stripe-modal-price { font-family: 'Instrument Serif', serif; font-size: 40px; color: var(--gold); line-height: 1; margin-bottom: 4px; }
+        .stripe-modal-period { font-size: 11px; color: #888; letter-spacing: .06em; margin-bottom: 20px; }
+        .stripe-modal-note { font-size: 11px; color: #888; line-height: 1.6; margin-bottom: 20px; }
+        .stripe-modal-btns { display: flex; flex-direction: column; gap: 10px; }
+        .stripe-confirm-btn {
+            padding: 15px;
+            background: linear-gradient(180deg, #fff5a0 0%, var(--gold) 50%, #c9960a 100%);
+            color: #07060a !important;
+            font-size: 14px;
+            font-weight: 800;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 24px rgba(240, 201, 58, 0.28);
+            text-decoration: none;
+            display: block;
+            transition: filter .2s;
+        }
+        .stripe-confirm-btn:hover { filter: brightness(1.06); }
+        .stripe-cancel-btn {
+            padding: 12px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            color: #888;
+            font-size: 13px;
+            cursor: pointer;
+            transition: border-color .2s, color .2s;
+        }
+        .stripe-cancel-btn:hover { border-color: var(--border-gold); color: var(--white); }
         .tr-run-wrap { text-align: center; margin-top: 10px; margin-bottom: 6px; }
         #tr-run.glb-main-btn {
             display: inline-block;
@@ -638,7 +689,7 @@
                 </ul>
                 <p class="note" id="t-pricing-note"></p>
             </div>
-            <a href="https://buy.stripe.com/bJedRbefH5yogzZfuDasg09" class="btn glb-subscribe-btn" style="font-size:18px; padding:18px 20px; border-radius:999px; margin-top:4px;" id="t-btn-monthly">
+            <a href="javascript:void(0)" onclick="openStripeConfirm(event)" class="btn glb-subscribe-btn" style="font-size:18px; padding:18px 20px; border-radius:999px; margin-top:4px;" id="t-btn-monthly">
                 Start GLB 2.99
             </a>
             <p class="stripe-hint" id="t-stripe-hint">Secure checkout with Stripe.</p>
@@ -685,12 +736,26 @@
         <p class="footer-copy" id="footer-copyright">&copy; 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending</p>
     </footer>
     </div>
+    <div class="stripe-modal-bg" id="stripe-modal-bg" onclick="closeStripeConfirm(event)">
+        <div class="stripe-modal">
+            <div class="stripe-modal-logo">GLB</div>
+            <div class="stripe-modal-title" id="sm-title">Secure checkout</div>
+            <div class="stripe-modal-price">$2.99</div>
+            <div class="stripe-modal-period" id="sm-period">/ month · cancel anytime</div>
+            <div class="stripe-modal-note" id="sm-note">You will be redirected to Stripe secure payment.<br>Tax may be added at checkout.</div>
+            <div class="stripe-modal-btns">
+                <a href="https://buy.stripe.com/bJedRbefH5yogzZfuDasg09" class="stripe-confirm-btn" id="sm-confirm">Proceed to Stripe →</a>
+                <button class="stripe-cancel-btn" id="sm-cancel" onclick="closeStripeConfirm()">Cancel plan</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         var GLB_PROJECT_PUBLIC_ROOT = './';
         /** Translate /health: smile-friend-engine (us-central1) */
         const NEXTBASE_APP_ORIGIN = 'https://smile-friend-engine-125142687526.us-central1.run.app';
         var GLB_STRIPE_PORTAL_LOGIN_FALLBACK = 'https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00';
+        var GLB_STRIPE_CORE_URL = 'https://buy.stripe.com/bJedRbefH5yogzZfuDasg09';
         const APP_VERSION = '2026.04.24.core.funnel.1';
         const NEXTBASE_TRAVEL_MODE_FULL = (function () {
             try {
@@ -714,6 +779,44 @@
                     window.GLBFunnel.track(event, detail || {});
                 }
             } catch (e) { /* ignore */ }
+        }
+        const STRIPE_MODAL_I18N = {
+            en: {
+                title: 'Secure checkout',
+                period: '/ month · cancel anytime',
+                note: 'You will be redirected to Stripe secure payment.<br>Tax may be added at checkout.',
+                confirm: 'Proceed to Stripe →',
+                cancel: 'Cancel plan'
+            },
+            ja: {
+                title: 'Stripeで決済',
+                period: '/ 月 · いつでも解約可能',
+                note: 'Stripeのセキュアな決済ページに移動します。<br><span style="color:#f0c93a;font-size:10px;">税金が加算される場合があります。</span>',
+                confirm: 'Stripeへ進む →',
+                cancel: 'キャンセル'
+            }
+        };
+        function openStripeConfirm(e) {
+            if (e) e.preventDefault();
+            var d = STRIPE_MODAL_I18N[CURRENT_LANG] || STRIPE_MODAL_I18N.en;
+            var set = function (id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; };
+            set('sm-title', d.title);
+            set('sm-period', d.period);
+            set('sm-note', d.note);
+            var cta = document.getElementById('sm-confirm');
+            if (cta) {
+                cta.textContent = d.confirm;
+                cta.setAttribute('href', GLB_STRIPE_CORE_URL);
+            }
+            var cancel = document.getElementById('sm-cancel');
+            if (cancel) cancel.textContent = d.cancel;
+            var bg = document.getElementById('stripe-modal-bg');
+            if (bg) bg.classList.add('open');
+        }
+        function closeStripeConfirm(e) {
+            if (e && e.target !== document.getElementById('stripe-modal-bg')) return;
+            var bg = document.getElementById('stripe-modal-bg');
+            if (bg) bg.classList.remove('open');
         }
         function glbInitTravelMinimal() {
             var box = document.getElementById('glb-travel-minimal');

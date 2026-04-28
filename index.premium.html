@@ -2,7 +2,7 @@
 <!--
   PROJECT_PUBLIC_ROOT: https://nextbase-one-ha.github.io/nextbase-world/
   本ファイル: .../index.premium.html（14.99 Travel Pass 専用LP・cancel 着地）。
-  Core 正本: index.next.html。index.coreflow.html 廃止。Stripe / PORTAL 注記は index.html / index.next.html DOCTYPE と同一正本。
+  Core 正本: index.2.99.html（index.next.html は無料体験導線）。index.coreflow.html 廃止。
   PHASE_TRAVEL_MARKETING_01: ポジティブ訴求LP（#glb-travel-lp-hero）。30日買い切り・自動更新なし・Core（$2.99/月）とは別商品であることを明記。
   Stripe 14.99 success 正: .../index.14.99.html?session_id={CHECKOUT_SESSION_ID}&travel=1（Dashboard 絶対URL）。
 -->
@@ -1067,7 +1067,7 @@
                     return;
                 }
                 if (!glbCorePaidActive()) {
-                    window.location.replace(new URL('index.html', window.location.href).href);
+                    window.location.replace(new URL('index.next.html', window.location.href).href);
                 }
             } catch (e) { /* ignore */ }
         })();
