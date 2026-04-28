@@ -51,8 +51,14 @@ class ReleaseSurfaceTests(unittest.TestCase):
         self.assertEqual(indices, sorted(indices))
 
     def test_free_page_routes_to_core_for_payment(self) -> None:
-        self.assertIn("index.next.html#glb-core-subscribe-block", self.index_free)
-        self.assertIn("Start GLB 2.99", self.index_free)
+        self.assertTrue(
+            "index.2.99.html#glb-core-subscribe-block" in self.index_free
+            or "index.next.html#glb-core-subscribe-block" in self.index_free
+        )
+        self.assertTrue(
+            "Start GLB 2.99" in self.index_free or "Start Core" in self.index_free,
+            "index.html should surface a Core checkout CTA (legacy or LP copy)",
+        )
 
     def test_travel_data_schema_and_actions(self) -> None:
         categories = self.travel_data.get("categories", [])
