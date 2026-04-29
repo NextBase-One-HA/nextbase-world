@@ -1029,6 +1029,43 @@
         })();
         const MAINTENANCE_DEFAULT = 'We are currently enhancing the system for a better experience. Please check back shortly.';
         const LS_CUSTOMER_ID = 'GLB_CUSTOMER_ID';
+        const LS_GLB_CLIENT_ID = 'glb_client_id_v1';
+        function glbEnsureClientId() {
+            try {
+                var k = LS_GLB_CLIENT_ID;
+                var v = localStorage.getItem(k);
+                if (v && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v).trim())) {
+                    return String(v).trim();
+                }
+                if (window.crypto && window.crypto.randomUUID) {
+                    v = window.crypto.randomUUID();
+                } else {
+                    v = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                        var r = Math.random() * 16 | 0;
+                        var v2 = c === 'x' ? r : (r & 0x3 | 0x8);
+                        return v2.toString(16);
+                    });
+                }
+                localStorage.setItem(k, v);
+                return v;
+            } catch (e) {
+                return '00000000-0000-4000-8000-000000000001';
+            }
+        }
+        function glbTranslatePayload(text, source, target, callerId) {
+            var o = {
+                text: text,
+                source: source,
+                target: target,
+                caller_id: callerId || 'prod',
+                client_id: glbEnsureClientId()
+            };
+            try {
+                var cid = (localStorage.getItem(LS_CUSTOMER_ID) || '').trim();
+                if (cid) o.customer_id = cid;
+            } catch (e1) { /* ignore */ }
+            return o;
+        }
         let EXECUTION_ALLOWED = false;
         const HOLD_FIXED = {
             STATE: 'HOLD',
@@ -1838,6 +1875,7 @@
                 freeQuotaUnlimited: 'Unlimited (subscriber)',
                 freeLeft: '{{n}} left today',
                 freeLimitExceeded: 'Daily limit reached. Try again tomorrow.',
+                upgradePrompt429: 'Cloud free limit reached. Open GLB (2.99/mo) for unlimited server translation — or try again tomorrow.',
                 langDetailsSummary: '{{from}} → {{to}} · tap to change languages',
                 resultLangLabel: 'Translation ({{lang}})',
                 ttsError: 'Read-aloud failed. Check volume, silent mode, and language.'
@@ -2609,6 +2647,14 @@
             }
 
             function parseResponse(x) {
+                if (x.status === 429) {
+                    try {
+                        var j429 = JSON.parse(x.body);
+                        return { ok: false, status: 429, json: j429, body: x.body };
+                    } catch (e429) {
+                        return { ok: false, status: 429, body: x.body, json: null };
+                    }
+                }
                 if (x.status >= 200 && x.status < 300) {
                     try {
                         var j = JSON.parse(x.body);
@@ -2628,12 +2674,7 @@
                 return fetch(NEXTBASE_APP_ORIGIN + '/translate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: text,
-                        source: source,
-                        target: target,
-                        caller_id: 'prod'
-                    }),
+                    body: JSON.stringify(glbTranslatePayload(text, source, target, 'prod')),
                     cache: 'no-store'
                 }).then(function (r) {
                     return r.text().then(function (t) {
@@ -2725,6 +2766,11 @@
                     fetchTranslate(text, source, target)
                         .then(function (x) {
                             var p = parseResponse(x);
+                            if (p.status === 429 && p.json && (p.json.error === 'FREE_LIMIT_REACHED' || p.json.reasonCode === 'FREE_QUOTA_EXCEEDED')) {
+                                setResultText(T('upgradePrompt429'), '#c99', '0');
+                                glbTrackOpsEvent('translation_failure', { stage: 'quota_cloud', status: 429 });
+                                return;
+                            }
                             if (p.ok) finishOk(p.text, p.json);
                             else if (p.json && p.json.reasonCode) {
                                 setResultText(String(p.json.reasonCode), '#c99', '0');
@@ -2746,6 +2792,11 @@
                 fetchTranslate(text, source, 'en')
                     .then(function (x1) {
                         var p1 = parseResponse(x1);
+                        if (p1.status === 429 && p1.json && (p1.json.error === 'FREE_LIMIT_REACHED' || p1.json.reasonCode === 'FREE_QUOTA_EXCEEDED')) {
+                            setResultText(T('upgradePrompt429'), '#c99', '0');
+                            glbTrackOpsEvent('translation_failure', { stage: 'quota_cloud', status: 429 });
+                            return null;
+                        }
                         if (!p1.ok) {
                             if (p1.json && p1.json.reasonCode) {
                                 setResultText(String(p1.json.reasonCode), '#c99', '0');
@@ -2762,6 +2813,11 @@
                     .then(function (x2) {
                         if (x2 == null) return;
                         var p2 = parseResponse(x2);
+                        if (p2.status === 429 && p2.json && (p2.json.error === 'FREE_LIMIT_REACHED' || p2.json.reasonCode === 'FREE_QUOTA_EXCEEDED')) {
+                            setResultText(T('upgradePrompt429'), '#c99', '0');
+                            glbTrackOpsEvent('translation_failure', { stage: 'quota_cloud', status: 429 });
+                            return;
+                        }
                         if (p2.ok) finishOk(p2.text, p2.json);
                         else if (p2.json && p2.json.reasonCode) {
                             setResultText(String(p2.json.reasonCode), '#c99', '0');

@@ -1,0 +1,4 @@
+# For tests/test_translate_free_quota.py (FastAPI TestClient)
+fastapi>=0.110.0
+httpx>=0.27.0
+google-cloud-firestore>=2.16.0

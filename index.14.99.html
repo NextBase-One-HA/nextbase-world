@@ -497,6 +497,43 @@ var GLB_STRIPE_PORTAL_LOGIN_FALLBACK = 'https://billing.stripe.com/p/login/fZuaE
 const APP_VERSION = '2026.04.26.travel.ui.1';
 const MAINTENANCE_DEFAULT = 'We are currently enhancing the system for a better experience. Please check back shortly.';
 const LS_CUSTOMER_ID = 'GLB_CUSTOMER_ID';
+const LS_GLB_CLIENT_ID = 'glb_client_id_v1';
+function glbEnsureClientId() {
+    try {
+        var k = LS_GLB_CLIENT_ID;
+        var v = localStorage.getItem(k);
+        if (v && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v).trim())) {
+            return String(v).trim();
+        }
+        if (window.crypto && window.crypto.randomUUID) {
+            v = window.crypto.randomUUID();
+        } else {
+            v = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0;
+                var v2 = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v2.toString(16);
+            });
+        }
+        localStorage.setItem(k, v);
+        return v;
+    } catch (e) {
+        return '00000000-0000-4000-8000-000000000001';
+    }
+}
+function glbTranslatePayloadTravel(text, from, to, callerId) {
+    var o = {
+        text: text,
+        source: from,
+        target: to,
+        caller_id: callerId || 'travel',
+        client_id: glbEnsureClientId()
+    };
+    try {
+        var cid = (localStorage.getItem(LS_CUSTOMER_ID) || '').trim();
+        if (cid) o.customer_id = cid;
+    } catch (e1) { /* ignore */ }
+    return o;
+}
 const LS_TRAVEL_PENDING = 'glb_travel_pending';
 const LS_PENDING_SESSION_ID = 'GLB_PENDING_SESSION_ID';
 const LS_BILLING_STATE = 'glb_billing_state_v1';
@@ -1149,9 +1186,13 @@ async function translate(text, from, to) {
         var r = await fetch(NEXTBASE_APP + '/translate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text, source: from, target: to, caller_id: 'travel' }),
+            body: JSON.stringify(glbTranslatePayloadTravel(text, from, to, 'travel')),
             cache: 'no-store'
         });
+        if (r.status === 429) {
+            setResult('Cloud daily limit reached. Subscribe to GLB for unlimited translation.', true);
+            return null;
+        }
         var raw = await r.text();
         var out = raw;
         try { var j = JSON.parse(raw); out = j.translatedText || raw; } catch(e) {}
@@ -1254,9 +1295,13 @@ async function renderEssentials() {
                     var r = await fetch(NEXTBASE_APP + '/translate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: phrase.en, source: 'en', target: to, caller_id: 'essentials' }),
+                        body: JSON.stringify(glbTranslatePayloadTravel(phrase.en, 'en', to, 'essentials')),
                         cache: 'no-store'
                     });
+                    if (r.status === 429) {
+                        transLine.textContent = phrase.en;
+                        return;
+                    }
                     var raw = await r.text();
                     var out = raw;
                     try { var j = JSON.parse(raw); out = j.translatedText || raw; } catch(e) {}
