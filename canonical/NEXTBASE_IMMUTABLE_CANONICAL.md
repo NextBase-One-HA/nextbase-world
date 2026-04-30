@@ -47,16 +47,23 @@ GLB is the current user-facing translation app.
 Users should see a clear product, clear price, clear free limit, clear cancellation explanation, and clear result.
 
 ### 5. Runtime engine layer
-Current direction:
+Primary production direction:
 
 ```text
 User
   -> GLB
   -> Smile Friend Engine
-  -> translate
   -> AI Router
   -> AI provider
   -> GLB
+```
+
+Optional adapter direction:
+
+```text
+Smile Friend Engine
+  -> translate
+  -> AI Router
 ```
 
 ## Roles
@@ -74,8 +81,10 @@ Physical entrance/exit verifier inside Smile Friend Engine.
 It checks the actual request, actual response, route mismatch, and stop conditions.
 
 ### translate
-Bridge between Smile Friend Engine and AI Router.
+translate is not the primary production route.
+translate is a fallback, test, compatibility, sandbox, or provider-adapter layer.
 It must not become the product.
+It must not own final user authority.
 It must not bypass AI Router.
 
 ### AI Router
@@ -110,6 +119,7 @@ NextBase is the OS.
 GLB is the product.
 Smile Friend Engine controls the human-side entrance and exit.
 AI Router controls the AI-side route.
+translate is an adapter, fallback, compatibility, and test layer, not the primary route.
 Self Optimization Layer corrects drift from outside.
 Proof Mode proves the system has not drifted.
 Dynamic canonical moves.
