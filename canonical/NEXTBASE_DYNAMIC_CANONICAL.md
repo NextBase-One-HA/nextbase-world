@@ -9,8 +9,8 @@ It cannot override the immutable canonical.
 ```text
 STATE: HOLD
 GOAL: Make GLB work as the first revenue product inside NextBase OS.
-BLOCKER: AI Router endpoint compatibility is not fully verified after rebuild.
-NEXT_ACTION: Restore/verify AI Router gateway behavior, then verify translate and Smile Friend Engine.
+BLOCKER: AI Router credential usage is still returning expired key error.
+NEXT_ACTION: Fix AI Router credential read path and verify endpoint returns HTTP 200.
 OUTPUT: HOLD until real endpoint evidence passes.
 ```
 
@@ -20,10 +20,17 @@ OUTPUT: HOLD until real endpoint evidence passes.
 User
   -> GLB
   -> Smile Friend Engine
-  -> translate
   -> AI Router
   -> AI provider
   -> GLB
+```
+
+## Adapter path (non-primary)
+
+```text
+Smile Friend Engine
+  -> translate
+  -> AI Router
 ```
 
 ## Current service map
@@ -40,7 +47,7 @@ Smile Friend Engine:
 translate:
   Cloud Run service: translate
   Region: us-central1
-  Role: bridge from Smile Friend Engine to AI Router
+  Role: fallback / test / compatibility adapter to AI Router
 
 AI Router:
   Cloud Run service: nextbase-gateway-v1
@@ -54,40 +61,34 @@ nextbase-app:
 
 ## Confirmed facts
 
-- NextBase immutable canonical exists.
-- Self Optimization Layer V2 exists.
-- Proof Mode 120 context exists.
-- Tomori preflight exists.
-- Tomori response gate exists.
-- Smile Friend Engine `/docs` exposes `/health` and `/translate`.
-- AI Router-related services expose gateway-style API structures in screenshots.
-- AI Router was rebuilt and redeployed, but `/gateway` behavior must be verified.
-- `GEMINI_MODEL` has been set to `gemini-2.5-flash` on AI Router, but runtime behavior must be checked by real endpoint response.
+- Path mismatch between translate and AI Router was fixed.
+- translate `/health` returns gateway_v1_configured true.
+- translate POST reaches AI Router `/translate`.
+- Remaining error is provider-level API key expired.
+- AI Router uses NB_GATE_PROD in code.
 
 ## Current release gate
 
 HOLD until all pass:
 
-1. AI Router expected gateway endpoint returns valid response.
-2. translate `/health` shows gateway mode.
-3. translate POST `/translate` returns HTTP 200.
-4. Smile Friend Engine requests 1 to 5 return HTTP 200.
-5. Smile Friend Engine request 6 returns HTTP 429 with `FREE_LIMIT_REACHED`.
-6. GLB UI uses Smile Friend Engine route correctly.
-7. Payment flow still routes through modal.
-8. Cancellation flow explains before external portal.
+1. AI Router `/translate` returns HTTP 200.
+2. translate POST `/translate` returns HTTP 200.
+3. Smile Friend Engine requests 1 to 5 return HTTP 200.
+4. Smile Friend Engine request 6 returns HTTP 429 with `FREE_LIMIT_REACHED`.
+5. GLB UI uses Smile Friend Engine route correctly.
+6. Payment flow still routes through modal.
+7. Cancellation flow explains before external portal.
 
 ## Immediate technical priority
 
 ```text
-1. Identify the correct AI Router endpoint path.
-2. If `/gateway` was lost, restore it from the original gateway structure.
-3. Keep existing API shape.
-4. Change only model selection and current compatibility.
-5. Do not rebuild AI Router as a different service.
+1. Confirm AI Router reads NB_GATE_PROD correctly.
+2. Ensure NB_GATE_PROD is valid and not expired.
+3. Verify genai.Client(api_key=...) uses NB_GATE_PROD.
+4. Re-test endpoint until HTTP 200 is achieved.
 ```
 
-## Current naming rule
+## Naming rule
 
 Use:
 
@@ -98,8 +99,6 @@ Use:
 - AI Router
 - Self Optimization Layer
 - Proof Mode
-
-Old names may appear only as historical notes.
 
 ## Evidence rule
 
@@ -115,4 +114,6 @@ GO candidate requires real endpoint evidence.
 ## Short form
 Immutable canonical points.
 Dynamic canonical moves.
+translate is now adapter only.
+Primary path is Smile Friend Engine -> AI Router.
 Current state is HOLD until endpoint proof passes.
