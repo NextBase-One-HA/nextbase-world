@@ -16,468 +16,116 @@
     <meta property="og:url" content="https://nextbase-one-ha.github.io/nextbase-world/index.14.99.html">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
+
 :root {
-  --black: #0a0a10;
-  --black2: #121222;
-  --gold: #f3c623;
-  --gold2: #c98a0a;
-  --gold-glow: rgba(243,198,35,0.22);
-  --white: #f3f2fa;
-  --muted: #8e8ea7;
-  --border: rgba(255,255,255,0.09);
+  --black:#050508; --panel:#11111a; --accent:#f3c623;
+  --accent-soft:rgba(243,198,35,.15); --white:#fff;
+  --text-dim:#9494b8; --border-glass:rgba(255,255,255,.08);
 }
-
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; }
-
-body {
-  background: radial-gradient(circle at top right, #1a1a2e, var(--black));
-  color: var(--white);
-  font-family: 'DM Sans', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  padding-bottom: env(safe-area-inset-bottom, 0);
-  overflow-x: hidden;
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--black); color:var(--white);
+  font-family:'DM Sans',sans-serif; margin:0;
+  display:flex; flex-direction:column; min-height:100vh;
+  overflow:hidden; -webkit-font-smoothing:antialiased;
 }
-body::after{
-  content:'';
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  z-index:0;
-  opacity:.04;
-  background-image:radial-gradient(rgba(255,255,255,.34) .6px, transparent .6px);
-  background-size:3px 3px;
-  mix-blend-mode:soft-light;
-}
-
-/* ── HEADER ── */
-.glb-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  background: rgba(10,10,16,0.82);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-}
-
-.glb-logo {
-  font-family: 'Syne', sans-serif;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  background: linear-gradient(135deg, #fff 24%, var(--gold));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-transform: uppercase;
-}
-
-.glb-lang-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.glb-lang-sel {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--white);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  padding: 6px 10px;
-  outline: none;
-  cursor: pointer;
-  max-width: 110px;
-}
-
-.glb-lang-swap {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--gold);
-  font-size: 16px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-/* ── RESULT STAGE ── */
-.glb-stage {
-  min-height: 38vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 28px 24px;
-  margin: 12px;
-  border-radius: 20px;
-  background: radial-gradient(ellipse 110% 80% at 50% 35%, rgba(243,198,35,0.10) 0%, rgba(18,18,34,0.88) 62%);
-  border-bottom: 1px solid var(--border);
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 18px 36px rgba(0,0,0,0.35);
-  position: relative;
-}
-
-.glb-result {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(28px, 9vw, 56px);
-  font-weight: 800;
-  line-height: 1.2;
-  text-align: center;
-  color: var(--white);
-  word-break: break-word;
-  max-width: 100%;
-  transition: transform 0.3s ease;
-  text-shadow: 0 0 18px rgba(255,255,255,0.16);
-}
-
-.glb-result.idle {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 400;
-  color: #6f6f89;
-}
-
-.glb-result.flipped {
-  transform: rotate(180deg);
-}
-
-.glb-flip-btn {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: #555;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  padding: 6px 12px;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
-}
-
-.glb-flip-btn:hover {
-  color: var(--gold);
-  border-color: rgba(255,220,80,0.3);
-}
-
-/* ── 3 MAIN BUTTONS ── */
-.glb-actions {
-  padding: 14px 20px 16px;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
-}
-
-.glb-action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 20px 10px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, transform 0.1s;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.glb-action-btn:active {
-  transform: scale(0.97);
-  background: rgba(255,255,255,0.08);
-}
-
-.glb-action-btn.active {
-  border-color: rgba(243,198,35,0.55);
-  background: rgba(243,198,35,0.12);
-}
-
-.glb-action-icon {
-  font-size: 26px;
-  line-height: 1;
-}
-
-.glb-action-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #a3a3ba;
-  text-align: center;
-}
-
-.glb-action-btn.active .glb-action-label {
-  color: var(--gold);
-}
-
-/* ── SPEAK MODE ── */
-.glb-speak-panel {
-  padding: 0 20px 16px;
-  display: none;
-}
-
-.glb-speak-panel.visible { display: block; }
-
-.glb-mic-btn {
-  width: 100%;
-  padding: 20px;
-  background: #ffffff;
-  color: #08080a;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  border-radius: 16px;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
-  transition: filter 0.2s, transform 0.1s;
-}
-
-.glb-mic-btn:active { filter: brightness(1.06); transform: scale(0.98); }
-.glb-mic-btn.recording {
-  background: #ff3b30;
-  color: #fff;
-  box-shadow: 0 0 0 0 rgba(255,59,48,0.35);
-  animation: glbPulseRing 1.4s infinite;
-}
-@keyframes glbPulseRing {
-  0% { box-shadow: 0 0 0 0 rgba(255,59,48,0.35); }
-  70% { box-shadow: 0 0 0 14px rgba(255,59,48,0); }
-  100% { box-shadow: 0 0 0 0 rgba(255,59,48,0); }
-}
-
-/* ── SHOW MODE ── */
-.glb-show-panel {
-  padding: 0 20px 16px;
-  display: none;
-}
-
-.glb-show-panel.visible { display: block; }
-
-.glb-input {
-  width: 100%;
-  background: var(--black2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--white);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  padding: 14px 16px;
-  outline: none;
-  margin-bottom: 12px;
-  transition: border-color 0.2s;
-}
-
-.glb-input:focus { border-color: rgba(255,220,80,0.35); }
-.glb-input::placeholder { color: #333; }
-.glb-input::placeholder { color: #70708c; }
-
-.glb-translate-btn {
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(180deg, #fff9b8 0%, var(--gold) 55%, var(--gold2) 100%);
-  color: #08080a;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  border-radius: 999px;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 0 24px rgba(255,220,80,0.2);
-  transition: filter 0.2s;
-}
-
-.glb-translate-btn:active { filter: brightness(1.06); }
-
-/* ── ESSENTIALS MODE ── */
-.glb-essentials-panel {
-  padding: 0 20px 16px;
-  display: none;
-}
-
-.glb-essentials-panel.visible { display: block; }
-
-.glb-cards {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.glb-card {
-  background: var(--black2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px 14px;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.15s;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.glb-card:active { background: #141414; }
-
-.glb-card-en {
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-
-.glb-card-translated {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--white);
-  line-height: 1.3;
-}
-
-/* ── QUOTA ── */
-.glb-quota {
-  text-align: center;
-  font-size: 11px;
-  color: #7d7d99;
-  padding: 8px 20px 20px;
-  letter-spacing: 0.04em;
-}
-
-/* ── FOOTER ── */
-.glb-footer {
-  padding: 16px 20px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: #7d7d99;
-}
-
-.glb-footer a {
-  color: #9a9ab3;
-  text-decoration: none;
-}
-
-.glb-footer a:hover { color: var(--gold); }
-
-
-/* ── maintenance (travel 正本) ── */
-.maintenance-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: rgba(8, 8, 8, 0.96);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  box-sizing: border-box;
-}
-.maintenance-overlay.show { display: flex; }
-.maintenance-card {
-  width: min(520px, 100%);
-  border: 1px solid #2a2a2a;
-  border-radius: 14px;
-  background: #121212;
-  box-shadow: 0 0 28px rgba(255, 220, 100, 0.08);
-  padding: 18px 16px;
-  text-align: left;
-}
-.maintenance-card h2 {
-  margin: 0 0 10px;
-  color: #fff8c8;
-  font-size: 18px;
-  letter-spacing: 0.03em;
-}
-.maintenance-card p {
-  margin: 0;
-  color: #d0d0d0;
-  line-height: 1.6;
-  font-size: 14px;
-}
-.maintenance-reload {
-  margin-top: 12px;
-  display: inline-block;
-  border: 1px solid #ffe566;
-  color: #fff8c8;
-  background: #1a1a1a;
-  border-radius: 999px;
-  padding: 10px 14px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
+.glb-header{padding:20px;display:flex;flex-direction:column;gap:15px;background:linear-gradient(to bottom,rgba(18,18,34,1),rgba(10,10,16,0));z-index:10}
+.brand-row{display:flex;justify-content:space-between;align-items:center}
+.glb-logo{font-family:'Syne',sans-serif;font-size:14px;letter-spacing:.1em;color:var(--accent);font-weight:800}
+.lang-selector-group{display:flex;align-items:center;background:var(--panel);border:1px solid var(--border-glass);border-radius:999px;padding:4px 12px}
+.lang-sel{background:transparent;border:0;color:var(--white);font-size:14px;font-weight:500;padding:8px 4px;outline:none;max-width:120px}
+.lang-swap-icon{color:var(--accent);padding:0 10px;font-size:18px;cursor:pointer}
+.glb-stage{flex:1;margin:0 20px;background:var(--panel);border:1px solid var(--border-glass);border-radius:32px;position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px 24px;box-shadow:0 20px 40px rgba(0,0,0,.5)}
+.stage-label{position:absolute;top:24px;font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:var(--text-dim)}
+.glb-result{font-family:'Syne',sans-serif;font-size:clamp(32px,8vw,48px);font-weight:800;text-align:center;line-height:1.1;width:100%;word-break:break-word}
+.glb-result.idle{font-family:'DM Sans',sans-serif;font-size:18px;color:var(--text-dim);opacity:.7}
+.glb-result.flipped{transform:rotate(180deg)}
+.flip-action{position:absolute;bottom:24px;background:var(--accent-soft);color:var(--accent);border:0;padding:8px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer}
+.control-hub{padding:24px 20px calc(24px + env(safe-area-inset-bottom));background:var(--black)}
+.mode-switcher{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.mode-btn{background:var(--panel);border:1px solid var(--border-glass);border-radius:20px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text-dim);cursor:pointer}
+.mode-btn.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.mode-icon{font-size:22px}.mode-label{font-size:11px;font-weight:700}
+.input-panel{display:none;animation:slideUp .3s ease-out}.input-panel.visible{display:block}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.primary-action-btn{width:100%;padding:20px;border-radius:24px;border:0;font-size:17px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+.mic-trigger{background:var(--white);color:var(--black)}.mic-trigger.recording{background:#ff3b30;color:#fff;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(.98)}}
+.text-input-group{display:flex;flex-direction:column;gap:12px}
+.modern-input{background:var(--panel);border:1px solid var(--border-glass);border-radius:16px;padding:18px;color:white;font-size:16px;outline:none}
+.translate-trigger{background:var(--accent);color:var(--black)}
+.quota-banner{text-align:center;padding:15px;font-size:12px;color:var(--text-dim)}
+.upgrade-link{color:var(--accent);text-decoration:underline;font-weight:700;margin-left:5px;cursor:pointer}
+.glb-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:30vh;overflow-y:auto}
+.glb-card{background:var(--panel);border:1px solid var(--border-glass);padding:15px;border-radius:16px;cursor:pointer}
+.glb-card-en{font-size:11px;color:var(--text-dim);margin-bottom:4px}
+.glb-card-translated{font-size:15px;font-weight:700}
+.maintenance-overlay{position:fixed;inset:0;z-index:99999;background:rgba(8,8,8,.96);display:none;align-items:center;justify-content:center;padding:24px}
+.maintenance-overlay.show{display:flex}
+.maintenance-card{width:min(520px,100%);border:1px solid #2a2a2a;border-radius:14px;background:#121212;padding:18px 16px}
+.maintenance-reload{margin-top:12px;border:1px solid #ffe566;color:#fff8c8;background:#1a1a1a;border-radius:999px;padding:10px 14px;font-size:12px;font-weight:700}
 
 </style>
 </head>
+
 <body>
-
-    <div id="maintenance-overlay" class="maintenance-overlay" style="display:none;" aria-hidden="true" hidden aria-live="polite" aria-modal="true" role="dialog">
-        <div class="maintenance-card">
-            <h2>Maintenance</h2>
-            <p id="maintenance-message">We are currently enhancing the system for a better experience. Please check back shortly.</p>
-            <button type="button" id="maintenance-reload" class="maintenance-reload" style="display:none;">Reload</button>
-        </div>
-    </div>
-    <p id="travel-status" style="display:none;font-size:11px;text-align:center;color:#888;margin:8px 0 0;padding:0 16px;"></p>
-    <p id="travel-remaining-line" style="display:none;font-size:11px;text-align:center;color:#a89860;margin:4px 0;padding:0 16px;" role="status" aria-live="polite"></p>
-    <p id="travel-expiry-display" style="display:none;font-size:11px;text-align:center;color:#a89860;margin:0 0 8px;padding:0 16px;" role="status" aria-live="polite"></p>
-
-<!-- HEADER -->
-<div class="glb-header">
-  <span class="glb-logo">GLB Travel</span>
-  <div class="glb-lang-row">
-    <select id="t-from" class="glb-lang-sel"></select>
-    <button class="glb-lang-swap" id="t-swap">⇄</button>
-    <select id="t-to" class="glb-lang-sel"></select>
+<div id="maintenance-overlay" class="maintenance-overlay" style="display:none;" aria-hidden="true" hidden aria-live="polite" aria-modal="true" role="dialog">
+  <div class="maintenance-card">
+    <h2>Maintenance</h2>
+    <p id="maintenance-message">We are currently enhancing the system for a better experience. Please check back shortly.</p>
+    <button type="button" id="maintenance-reload" class="maintenance-reload" style="display:none;">Reload</button>
   </div>
 </div>
 
-<!-- RESULT STAGE -->
-<div class="glb-stage">
-  <button class="glb-flip-btn" id="flip-btn">Flip</button>
-  <div class="glb-result idle" id="glb-result">Ready to help</div>
+<p id="travel-status" style="display:none;font-size:11px;text-align:center;color:#f3c623;margin:8px 0 0;padding:0 16px;"></p>
+<p id="travel-remaining-line" style="display:none;font-size:11px;text-align:center;color:#a89860;margin:4px 0;padding:0 16px;" role="status" aria-live="polite"></p>
+<p id="travel-expiry-display" style="display:none;font-size:11px;text-align:center;color:#a89860;margin:0 0 8px;padding:0 16px;" role="status" aria-live="polite"></p>
+
+<div class="glb-header">
+  <div class="brand-row">
+    <span class="glb-logo">GLB TRAVEL</span>
+    <span style="font-size:10px;color:var(--accent);letter-spacing:.08em;">30 DAY PASS</span>
+  </div>
+  <div class="lang-selector-group">
+    <select id="t-from" class="lang-sel"></select>
+    <span class="lang-swap-icon" id="t-swap">⇄</span>
+    <select id="t-to" class="lang-sel"></select>
+  </div>
 </div>
 
-<!-- 3 MAIN BUTTONS -->
-<div class="glb-actions">
-  <button class="glb-action-btn" id="btn-speak">
-    <span class="glb-action-icon">🎤</span>
-    <span class="glb-action-label">Speak</span>
-  </button>
-  <button class="glb-action-btn" id="btn-show">
-    <span class="glb-action-icon">⌨️</span>
-    <span class="glb-action-label">Show</span>
-  </button>
-  <button class="glb-action-btn" id="btn-essentials">
-    <span class="glb-action-icon">📋</span>
-    <span class="glb-action-label">Essentials</span>
-  </button>
+<div class="glb-stage" id="stage-area">
+  <span class="stage-label">Show this to someone</span>
+  <div class="glb-result idle" id="glb-result">Tap to start conversation</div>
+  <button class="flip-action" id="flip-btn">🔄 Flip for them</button>
 </div>
 
-<!-- SPEAK PANEL -->
-<div class="glb-speak-panel" id="panel-speak">
-  <button class="glb-mic-btn" id="mic-btn">
-    🎤 &nbsp; Tap to start conversation
-  </button>
-</div>
+<div class="control-hub">
+  <div class="mode-switcher">
+    <button class="mode-btn active" id="btn-speak"><span class="mode-icon">🎙️</span><span class="mode-label">VOICE</span></button>
+    <button class="mode-btn" id="btn-show"><span class="mode-icon">⌨️</span><span class="mode-label">TYPE</span></button>
+    <button class="mode-btn" id="btn-essentials"><span class="mode-icon">💡</span><span class="mode-label">PHRASES</span></button>
+  </div>
 
-<!-- SHOW PANEL -->
-<div class="glb-show-panel" id="panel-show">
-  <input type="text" id="show-input" class="glb-input" placeholder="Type to translate…" autocomplete="off">
-  <button class="glb-translate-btn" id="t-btn">Translate now</button>
-</div>
+  <div class="input-panel visible" id="panel-speak">
+    <button class="primary-action-btn mic-trigger" id="mic-btn">🎤 Speak now</button>
+  </div>
 
-<!-- ESSENTIALS PANEL -->
-<div class="glb-essentials-panel" id="panel-essentials">
-  <div class="glb-cards" id="glb-cards"></div>
-</div>
+  <div class="input-panel" id="panel-show">
+    <div class="text-input-group">
+      <input type="text" id="show-input" class="modern-input" placeholder="Enter message..." autocomplete="off">
+      <button class="primary-action-btn translate-trigger" id="t-btn">Translate</button>
+    </div>
+  </div>
 
-<p class="glb-quota" id="glb-quota"></p>
+  <div class="input-panel" id="panel-essentials">
+    <div class="glb-cards" id="glb-cards"></div>
+  </div>
 
-<!-- FOOTER -->
-<div class="glb-footer">
-  <span>© 2026 NEXT BASE</span>
-  <a href="support.html">Support</a>
+  <div class="quota-banner" id="glb-quota-container">
+    <span id="glb-quota"></span>
+    <span id="upgrade-prompt" class="upgrade-link" style="display:none;" onclick="location.href='index.premium.html'">Keep it unlimited</span>
+  </div>
 </div>
 
 <script>
@@ -1345,6 +993,33 @@ updateQuota();
 refreshTravelRemainingLine();
 handleTravelActivationFlow();
 
+
+
+
+(function enhanceQuotaCopy() {
+    if (typeof updateQuota !== 'function') return;
+    var originalUpdateQuota = updateQuota;
+    updateQuota = function () {
+        originalUpdateQuota();
+        var q = getQuota();
+        var el = document.getElementById('glb-quota');
+        var prompt = document.getElementById('upgrade-prompt');
+        if (!el || !prompt) return;
+        if (isTravelUiUnlimited()) {
+            el.textContent = 'Unlimited Access Active';
+            prompt.style.display = 'none';
+            return;
+        }
+        var left = Math.max(0, FREE_LIMIT - q.count);
+        el.textContent = left + ' free chats left today.';
+        prompt.style.display = left < 3 ? 'inline' : 'none';
+        if (left === 0) {
+            el.textContent = "Limit reached. Don't let language stop you.";
+            prompt.textContent = 'Upgrade to Pro now';
+            prompt.style.display = 'inline';
+        }
+    };
+})();
 
 </script>
 
