@@ -159,7 +159,7 @@ function glbResolveApiOrigin() {
 const NEXTBASE_APP_ORIGIN = glbResolveApiOrigin();
 const NEXTBASE_APP = NEXTBASE_APP_ORIGIN;
 var GLB_STRIPE_PORTAL_LOGIN_FALLBACK = 'https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00';
-const APP_VERSION = '2026.04.26.travel.ui.4';
+const APP_VERSION = '2026.04.26.travel.ui.5';
 const MAINTENANCE_DEFAULT = 'We are currently enhancing the system for a better experience. Please check back shortly.';
 const LS_CUSTOMER_ID = 'GLB_CUSTOMER_ID';
 const LS_GLB_CLIENT_ID = 'glb_client_id_v1';
@@ -796,9 +796,13 @@ function initLang() {
     var from = document.getElementById('t-from');
     var to = document.getElementById('t-to');
     fillSelect(from); fillSelect(to);
-    const USER_LANG = localStorage.getItem('glb_ui_lang') || 'en';
-    from.value = USER_LANG;
-    to.value = USER_LANG === 'en' ? 'ja' : 'en';
+    var detectedLang = ((navigator.language || 'en').split('-')[0] || 'en');
+    var savedFrom = localStorage.getItem('glb_user_base_lang') || detectedLang;
+    var savedTo = localStorage.getItem('glb_user_target_lang');
+    from.value = LANGS.some(function (x) { return x.c === savedFrom; }) ? savedFrom : 'en';
+    to.value = savedTo || (from.value === 'en' ? 'ja' : 'en');
+    localStorage.setItem('glb_user_base_lang', from.value);
+    localStorage.setItem('glb_user_target_lang', to.value);
     document.getElementById('t-swap').addEventListener('click', function () {
         var tmp = from.value;
         from.value = to.value;
@@ -806,7 +810,11 @@ function initLang() {
         essentialCache = {};
         if (currentMode === 'essentials') renderEssentials();
     });
+    from.addEventListener('change', function () {
+        localStorage.setItem('glb_user_base_lang', from.value);
+    });
     to.addEventListener('change', function () {
+        localStorage.setItem('glb_user_target_lang', to.value);
         essentialCache = {};
         if (currentMode === 'essentials') renderEssentials();
     });
@@ -837,6 +845,35 @@ function setResult(text, isIdle) {
     el.classList.toggle('idle', !!isIdle);
 }
 
+
+const GLB_PERSONAL_DICT = {
+  _key: 'glb_personal_dict_v1',
+  getAll: function () {
+    try { return JSON.parse(localStorage.getItem(this._key)) || {}; }
+    catch (e) { return {}; }
+  },
+  makeKey: function (text, from, to) {
+    return [from, to, String(text || '').toLowerCase().trim()].join('|');
+  },
+  match: function (text, from, to) {
+    try { return this.getAll()[this.makeKey(text, from, to)] || null; }
+    catch (e) { return null; }
+  },
+  save: function (text, translated, from, to) {
+    try {
+      if (!text || !translated) return;
+      if (String(text).length > 80) return;
+      if (String(translated).length > 160) return;
+      var dict = this.getAll();
+      dict[this.makeKey(text, from, to)] = String(translated);
+      localStorage.setItem(this._key, JSON.stringify(dict));
+    } catch (e) {}
+  },
+  clear: function () {
+    try { localStorage.removeItem(this._key); } catch (e) {}
+  }
+};
+
 async function translate(text, from, to) {
     if (GLB_MAINTENANCE_ON) return null;
     if (!isTravelUiUnlimited()) {
@@ -846,6 +883,14 @@ async function translate(text, from, to) {
             return null;
         }
     }
+    var localHit = GLB_PERSONAL_DICT.match(text, from, to);
+    if (localHit) {
+        setResult(localHit);
+        bumpQuota();
+        updateQuota();
+        return localHit;
+    }
+
     try {
         setResult('Translating...');
         var r = await fetch(NEXTBASE_APP + '/translate', {
@@ -862,6 +907,7 @@ async function translate(text, from, to) {
         var out = raw;
         try { var j = JSON.parse(raw); out = j.translatedText || raw; } catch(e) {}
         setResult(out);
+        GLB_PERSONAL_DICT.save(text, out, from, to);
         bumpQuota();
         updateQuota();
         return out;
