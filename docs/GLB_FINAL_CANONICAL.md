@@ -15,6 +15,17 @@ Immutable product line:
 
 This is the root of the product. UI copy, routing, onboarding, dictionary logic, and monetization must not contradict it.
 
+Final product definition:
+
+```text
+GLB is not just a translation app.
+GLB is a mode-switching communication tool.
+```
+
+Modes:
+- Core mode: daily communication.
+- Travel mode: no-stuck travel communication.
+
 ## 1. Product roles
 
 ### GLB Core / 2.99
@@ -56,6 +67,11 @@ Important rule:
 - `index.premium.html` is the Travel Pass explanation and Stripe entrance.
 - Purchase blocks must not be inserted into `index.14.99.html` unless the canonical route is intentionally changed.
 
+Recovery exception:
+- `index.14.99.html` may contain a small recovery link back to `index.premium.html` when a user lands there without a valid Travel state.
+- This recovery link must be quiet and secondary.
+- It must not become a sales block, pricing block, Stripe CTA, FAQ, or marketing section.
+
 ## 2. Correct user flow
 
 ### Normal Travel purchase flow
@@ -90,6 +106,17 @@ This does not define the public purchase route.
 
 ## 3. Page responsibilities
 
+### `index.next.html`
+
+Public role:
+- Core 2.99 app body.
+- Daily translation utility.
+- Light and approachable entry point.
+- Can lead subscribed users toward Travel explanation when relevant.
+
+Meaning:
+- Daily mode.
+
 ### `index.premium.html`
 
 Public role:
@@ -98,6 +125,7 @@ Public role:
 - Reduce uncertainty.
 - Present Stripe checkout.
 - Show FAQ, billing notes, refund/help links.
+- Convert qualified Core users into Travel buyers.
 
 Public copy should focus on:
 - One-time 30-day travel pass.
@@ -128,6 +156,10 @@ Public role:
 - Show result to another person.
 - Maintain 30-day Travel Pass experience.
 
+Meaning:
+- Execution tool, not the main selling page.
+- Minimal, focused, no wasted motion.
+
 Primary public copy:
 
 ```text
@@ -145,12 +177,14 @@ Allowed:
 - Flip for them.
 - Travel expiration display.
 - Minimal support link.
+- Minimal recovery link to `index.premium.html` only when needed.
 
 Not allowed by current canonical:
 - Purchase block.
 - Stripe checkout CTA.
 - Marketing FAQ.
 - Subscription sales copy.
+- Large paywall block.
 
 ### `support.html`
 
@@ -167,7 +201,29 @@ Must include:
 - Travel Pass is one-time 30-day purchase.
 - On-device personal dictionary notice.
 
-## 4. Backend/service structure
+## 4. Product layer model
+
+```text
+L1: User surface
+  UI / copy / controls
+
+L2: Experience
+  fast response / scene feeling / safety
+
+L3: Logic
+  dictionary / quota / entitlement / translation
+
+L4: Black box
+  router / cost optimizer / provider / keys
+```
+
+Rules:
+- L1 must be simple.
+- L2 must feel premium.
+- L3 must be reliable.
+- L4 must stay internal.
+
+## 5. Backend/service structure
 
 Canonical runtime route:
 
@@ -229,7 +285,7 @@ Role:
 - Currently Gemini 2.5 Flash.
 - Provider details must not leak into UI copy.
 
-## 5. Public vs black-box rules
+## 6. Public vs black-box rules
 
 ### Public to user
 
@@ -259,7 +315,7 @@ Internal wording allowed in logs/docs:
 - on-device dictionary.
 - provider bypass.
 
-## 6. On-device personal dictionary
+## 7. On-device personal dictionary
 
 Role:
 - User-adaptive translation memory.
@@ -300,7 +356,7 @@ Example:
 en|ja|i lost my bag -> バッグをなくしました。
 ```
 
-## 7. Fuzzy / similar phrase matching
+## 8. Fuzzy / similar phrase matching
 
 Role:
 - Optional enhancement.
@@ -328,7 +384,7 @@ I did not lose my bag
 
 Negation must block fuzzy reuse.
 
-## 8. Onboarding language fixed model
+## 9. Onboarding language fixed model
 
 Role:
 - Reduce user confusion.
@@ -351,7 +407,7 @@ GLB remembers your usual language pair on this device.
 Not public:
 - Cost reduction from fewer retries.
 
-## 9. Pricing and monetization boundary
+## 10. Pricing and monetization boundary
 
 ### Core 2.99
 
@@ -377,7 +433,7 @@ Preferred Travel wording:
 One-time checkout · 30-day access · Not recurring
 ```
 
-## 10. Current rollback rule
+## 11. Current rollback rule
 
 Because the canonical flow uses `index.premium.html` as the purchase entrance:
 
@@ -393,8 +449,9 @@ Keep in `index.14.99.html`:
 - On-device dictionary.
 - Language pair memory.
 - Travel entitlement guard.
+- Small recovery link only if it does not become a purchase block.
 
-## 11. Acceptance checklist
+## 12. Acceptance checklist
 
 ### Premium page PASS
 
@@ -411,6 +468,7 @@ Keep in `index.14.99.html`:
 - Translation works through Smile Friend Engine -> AI Router.
 - On-device dictionary saves repeated phrases.
 - Travel app does not show purchase CTA in current canonical.
+- If user lands invalidly, recovery route to premium is quiet and secondary.
 
 ### Cost optimizer PASS
 
@@ -418,13 +476,16 @@ Keep in `index.14.99.html`:
 - Repeated phrases can return from on-device dictionary.
 - User-facing UI does not mention cost optimizer.
 
-## 12. Final short canonical
+## 13. Final short canonical
 
 ```text
-GLB Core 2.99 is the entry translator.
-GLB Travel 14.99 is the 30-day travel mode.
+GLB is a mode-switching communication tool.
+GLB Core 2.99 is the daily mode.
+GLB Travel 14.99 is the 30-day no-stuck travel mode.
+index.next.html is the Core app body.
 index.premium.html sells and explains Travel Pass.
 index.14.99.html is the post-purchase Travel app body.
+A small recovery link from Travel to Premium is allowed only when the user is not validly activated.
 Smile Friend Engine gates quota and billing.
 AI Router handles model/key/provider routing and response normalization.
 On-device dictionary personalizes repeated translations locally.
