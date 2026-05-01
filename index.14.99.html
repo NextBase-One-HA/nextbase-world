@@ -1070,7 +1070,7 @@ async function renderEssentials() {
             if (!isTravelUiUnlimited()) {
                 var q = getQuota();
                 if (q.count >= FREE_LIMIT) {
-                    setResult('Today\\'s free limit reached.', true);
+                    setResult("Today's free limit reached.", true);
                     return;
                 }
             }
