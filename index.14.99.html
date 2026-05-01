@@ -28,7 +28,7 @@ body{
   background:var(--black); color:var(--white);
   font-family:'DM Sans',sans-serif; margin:0;
   display:flex; flex-direction:column; min-height:100vh;
-  overflow:hidden; -webkit-font-smoothing:antialiased;
+  overflow-x:hidden; overflow-y:auto; -webkit-font-smoothing:antialiased;
 }
 .glb-header{padding:20px;display:flex;flex-direction:column;gap:15px;background:linear-gradient(to bottom,rgba(18,18,34,1),rgba(10,10,16,0));z-index:10}
 .brand-row{display:flex;justify-content:space-between;align-items:center}
@@ -115,7 +115,7 @@ body{
   <div class="input-panel" id="panel-show">
     <div class="text-input-group">
       <input type="text" id="show-input" class="modern-input" placeholder="Enter message..." autocomplete="off">
-      <button class="primary-action-btn translate-trigger" id="t-btn">Translate</button>
+      <button class="primary-action-btn translate-trigger" id="t-btn">GLB</button>
     </div>
   </div>
 
@@ -126,7 +126,7 @@ body{
   
 <div class="quota-banner" id="glb-quota-container">
     <span id="glb-quota"></span>
-    <span id="upgrade-prompt" class="upgrade-link" style="display:none;" onclick="location.href='index.premium.html'">Keep it unlimited</span>
+    <span id="upgrade-prompt" class="upgrade-link" style="display:none;" onclick="location.href='index.premium.html'">Travel Pass details</span>
   </div>
 </div>
 
@@ -144,7 +144,7 @@ function glbResolveApiOrigin() {
 const NEXTBASE_APP_ORIGIN = glbResolveApiOrigin();
 const NEXTBASE_APP = NEXTBASE_APP_ORIGIN;
 var GLB_STRIPE_PORTAL_LOGIN_FALLBACK = 'https://billing.stripe.com/p/login/fZuaEZ0oRgd25Vl96fasg00';
-const APP_VERSION = '2026.04.26.travel.ui.7';
+const APP_VERSION = '2026.04.26.travel.ui.9';
 const MAINTENANCE_DEFAULT = 'We are currently enhancing the system for a better experience. Please check back shortly.';
 const LS_CUSTOMER_ID = 'GLB_CUSTOMER_ID';
 const LS_GLB_CLIENT_ID = 'glb_client_id_v1';
@@ -275,8 +275,17 @@ function isTravelPassActive(nowMs) {
     return nowMs < exp;
 }
 
+function glbIsAdminMode() {
+    try {
+        var u = new URL(window.location.href);
+        return (u.searchParams.get('nori') || '') === 'admin';
+    } catch (e) {
+        return false;
+    }
+}
+
 function isTravelUiUnlimited() {
-    return isTravelPassActive() || !!GLB_TRAVEL_ACTIVE;
+    return glbIsAdminMode() || isTravelPassActive() || !!GLB_TRAVEL_ACTIVE;
 }
 
 function expireTravelPassIfNeeded() {
@@ -1140,8 +1149,8 @@ handleTravelActivationFlow();
         el.textContent = left + ' chances left today. Stay understood anywhere.';
         prompt.style.display = left < 3 ? 'inline' : 'none';
         if (left === 0) {
-            el.textContent = "Limit reached. Don't let language stop you.";
-            prompt.textContent = 'Upgrade to Pro now';
+            el.textContent = "Travel Pass is required for more translations.";
+            prompt.textContent = 'Open Travel Pass';
             prompt.style.display = 'inline';
         }
     };
@@ -1149,6 +1158,80 @@ handleTravelActivationFlow();
 
 
 
+
+
+(function applyTravelUiLanguageAndBind(){
+  function getBaseLang() {
+    try {
+      return (localStorage.getItem('glb_user_base_lang') || navigator.language || 'en').split('-')[0];
+    } catch (e) {
+      return 'en';
+    }
+  }
+
+  function setText(sel, text, html) {
+    var el = document.querySelector(sel);
+    if (!el) return;
+    if (html) el.innerHTML = text;
+    else el.textContent = text;
+  }
+
+  function applyLang() {
+    var lang = getBaseLang();
+
+    if (lang === 'ja') {
+      setText('.stage-label', '言葉に詰まったら');
+      setText('#glb-result', 'どこでも伝わる。');
+      setText('.subline', 'AIが旅行シーンを判別します。<br>空港・タクシー・ホテル・レストラン・緊急時', true);
+      setText('#btn-speak .mode-label', '声');
+      setText('#btn-show .mode-label', '入力');
+      setText('#btn-essentials .mode-label', '定番');
+      setText('#mic-btn', '🎤 話す');
+      setText('#t-btn', 'GLB');
+      var input = document.getElementById('show-input');
+      if (input) input.placeholder = '伝えたい言葉を入力';
+    } else {
+      setText('#t-btn', 'GLB');
+    }
+  }
+
+  function bindSafe() {
+    var speak = document.getElementById('btn-speak');
+    var show = document.getElementById('btn-show');
+    var essentials = document.getElementById('btn-essentials');
+    var mic = document.getElementById('mic-btn');
+    var tbtn = document.getElementById('t-btn');
+    var flip = document.getElementById('flip-btn');
+
+    if (speak) speak.onclick = function () { if (typeof setMode === 'function') setMode('speak'); };
+    if (show) show.onclick = function () { if (typeof setMode === 'function') setMode('show'); };
+    if (essentials) essentials.onclick = function () { if (typeof setMode === 'function') setMode('essentials'); };
+    if (mic) mic.onclick = function () { if (typeof toggleMic === 'function') toggleMic(); };
+    if (tbtn) tbtn.onclick = function () { if (typeof runTranslate === 'function') runTranslate(); };
+    if (flip) flip.onclick = function () {
+      try {
+        isFlipped = !isFlipped;
+        var r = document.getElementById('glb-result');
+        if (r) r.classList.toggle('flipped', isFlipped);
+        flip.textContent = isFlipped ? 'Unflip' : 'Flip';
+      } catch (e) {}
+    };
+  }
+
+  function boot() {
+    applyLang();
+    bindSafe();
+    try { if (typeof updateQuota === 'function') updateQuota(); } catch (e) {}
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+
+  window.addEventListener('pageshow', boot);
+})();
 
 </script>
 
