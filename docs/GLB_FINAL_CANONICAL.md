@@ -241,6 +241,7 @@ Role:
 - Quota control.
 - Billing entitlement check.
 - Request forwarding to AI Router.
+- Internal black-box host for CCAI / Self Optimization / NE / VOID-derived signal layers when needed.
 
 It is not the AI Router.
 
@@ -308,12 +309,20 @@ Never expose in product UI:
 - Cache hit as a sales gimmick.
 - Any language implying fake AI thinking.
 - Any language implying hidden manipulation of quota.
+- CCAI internals.
+- NE hold/audit internals.
+- VOID-derived sensor or gesture logic.
+- Self Optimization internals.
 
 Internal wording allowed in logs/docs:
 - Cost Optimizer.
 - local-cache.
 - on-device dictionary.
 - provider bypass.
+- CCAI.
+- Self Optimization Layer.
+- NE Gate.
+- VOID Signal Layer.
 
 ## 7. On-device personal dictionary
 
@@ -356,7 +365,101 @@ Example:
 en|ja|i lost my bag -> バッグをなくしました。
 ```
 
-## 8. Fuzzy / similar phrase matching
+## 8. Self Optimization / CCAI / NE / VOID composite layer
+
+This is the internal black-box intelligence layer that makes GLB stronger without exposing implementation details.
+
+### Layer definition
+
+```text
+AI Router output
+  -> CCAI control
+  -> NE gate
+  -> Self Optimization memory
+  -> VOID signal layer when applicable
+  -> UI-safe result
+```
+
+### CCAI role
+
+CCAI is the output-control and clean-copy layer.
+
+Role:
+- Preserve meaning.
+- Clean unsafe or noisy output.
+- Enforce JSON/structured output where applicable.
+- Reject risky output.
+- Fall back safely when AI output drifts.
+
+Canonical status:
+- CCAI is black-box.
+- Public UI must show only the result.
+- Internal implementation can use cleanCopy, risk detection, strict JSON parsing, fallback, kill switch, rate limit, and signed audit.
+
+### Self Optimization Layer role
+
+Self Optimization is the adaptive memory layer above CCAI.
+
+Role:
+- Learn user-specific phrase success patterns.
+- Prefer prior successful translations.
+- Adapt tone and phrase choices only when safe.
+- Keep base model unchanged.
+- Store only minimal, purpose-limited memory.
+
+Rules:
+- Do not mutate the base AI model.
+- Do not expose memory mechanics publicly.
+- Prefer on-device storage first.
+- Cloud memory is HOLD unless explicit consent and policy are prepared.
+- Sensitive, legal, medical, financial, official, or identity-heavy text must not be auto-learned.
+
+### NE system role
+
+NE is the human-governed output safety layer.
+
+Role:
+- HOLD outputs that contain numerical mismatch, unit confusion, prohibited terms, or language-mixing risk.
+- Separate processing layer from execution/sending layer.
+- Require human action before external execution in high-risk cases.
+- Keep audit trail where appropriate.
+
+GLB application:
+- Normal travel translation can display immediately.
+- High-risk output can show a caution or require user confirmation before sharing/speaking/sending.
+- Room/chat messages may pass through NE Gate before delivery if risk is detected.
+
+### VOID signal layer role
+
+VOID is not the main GLB translation engine.
+
+Role:
+- Optional physical/signal layer for device-side interaction cues.
+- Can support gesture, shake, flip, emergency trigger, or embodied interaction states.
+- Must not become required for core translation.
+
+GLB application:
+- Optional emergency gesture.
+- Optional flip/show motion enhancement.
+- Optional low-latency input signal for future travel mode UX.
+
+### Correct placement
+
+```text
+Smile Friend Engine = black-box host and policy gate.
+AI Router = provider/model routing and translation normalization.
+CCAI = output control.
+Self Optimization = user-adaptive memory.
+NE = safety/approval gate.
+VOID = optional device signal layer.
+```
+
+### Critical rule
+
+Do not merge all layers into one uncontrolled translate() override.
+Each layer must stay logically separated.
+
+## 9. Fuzzy / similar phrase matching
 
 Role:
 - Optional enhancement.
@@ -384,7 +487,7 @@ I did not lose my bag
 
 Negation must block fuzzy reuse.
 
-## 9. Onboarding language fixed model
+## 10. Onboarding language fixed model
 
 Role:
 - Reduce user confusion.
@@ -407,13 +510,69 @@ GLB remembers your usual language pair on this device.
 Not public:
 - Cost reduction from fewer retries.
 
-## 10. Pricing and monetization boundary
+## 11. 30-Day Translation Room
+
+GLB Travel is not just a translation tool.
+It creates a temporary communication space between people.
+
+### Definition
+
+```text
+GLB Travel = A translation room that exists for 30 days.
+```
+
+### Roles
+
+Travel Pass / 14.99:
+- Can create a translation room.
+- Room lasts up to 30 days.
+- Acts as the host.
+
+Core / 2.99:
+- Can join an existing room.
+- Cannot create rooms.
+
+### Flow
+
+1. Travel user creates a room.
+2. Travel user shares link or code.
+3. Other user joins with valid Core or Travel access.
+4. Translation chat begins.
+5. Room expires after 30 days or when the Travel host expires.
+
+### Constraints
+
+- No permanent user account required for room identity.
+- No phone book linkage.
+- No public user search.
+- No long-term chat history storage.
+- Room is time-bound and ephemeral by design.
+
+### Product positioning
+
+```text
+Translation app: no.
+Time-limited human connection tool: yes.
+```
+
+Key value:
+
+```text
+Create a connection that lasts 30 days.
+```
+
+### Critical rule
+
+Do not convert this into a permanent chat/social network.
+
+## 12. Pricing and monetization boundary
 
 ### Core 2.99
 
 - Monthly subscription.
 - Cancel via Stripe Customer Portal.
 - General usage / daily utility.
+- Can join a Travel-created 30-day room.
 
 ### Travel 14.99
 
@@ -421,6 +580,7 @@ Not public:
 - Not recurring.
 - Bought through `index.premium.html`.
 - Used through `index.14.99.html`.
+- Can create 30-day translation rooms.
 
 Important:
 - Do not confuse Core subscription and Travel Pass.
@@ -433,7 +593,7 @@ Preferred Travel wording:
 One-time checkout · 30-day access · Not recurring
 ```
 
-## 11. Current rollback rule
+## 13. Current rollback rule
 
 Because the canonical flow uses `index.premium.html` as the purchase entrance:
 
@@ -451,7 +611,7 @@ Keep in `index.14.99.html`:
 - Travel entitlement guard.
 - Small recovery link only if it does not become a purchase block.
 
-## 12. Acceptance checklist
+## 14. Acceptance checklist
 
 ### Premium page PASS
 
@@ -459,6 +619,7 @@ Keep in `index.14.99.html`:
 - Stripe Travel checkout works.
 - Price and 30-day one-time terms are clear.
 - FAQ/support exists.
+- 30-Day Translation Room is positioned as Travel's headline feature after it is implemented and protected.
 
 ### Travel app PASS
 
@@ -476,7 +637,31 @@ Keep in `index.14.99.html`:
 - Repeated phrases can return from on-device dictionary.
 - User-facing UI does not mention cost optimizer.
 
-## 13. Final short canonical
+### Self Optimization / NE / CCAI PASS
+
+- CCAI can reject or fallback risky AI output.
+- Self Optimization remembers only safe successful patterns.
+- NE Gate can hold risky output before external execution.
+- VOID remains optional and does not block normal translation.
+- Public UI does not expose internal layer names.
+
+## 15. Patent / IP status
+
+Known Japan patent filings provided by founder:
+- Self Optimization Layer: filed in Japan.
+- Global Language Breaker: filed in Japan.
+- NE System: filed in Japan.
+- VOID / VOID_BONE: filed in Japan.
+
+New patent candidate:
+- 30-Day Translation Room.
+
+Status:
+- Treat as confidential until filing.
+- Do not disclose detailed implementation publicly before filing.
+- Implement internally as needed, but keep external copy high-level until protection strategy is fixed.
+
+## 16. Final short canonical
 
 ```text
 GLB is a mode-switching communication tool.
@@ -485,8 +670,8 @@ GLB Travel 14.99 is the 30-day no-stuck travel mode.
 index.next.html is the Core app body.
 index.premium.html sells and explains Travel Pass.
 index.14.99.html is the post-purchase Travel app body.
-A small recovery link from Travel to Premium is allowed only when the user is not validly activated.
-Smile Friend Engine gates quota and billing.
+Travel can create 30-day translation rooms; Core can join them.
+Smile Friend Engine gates quota, billing, CCAI, Self Optimization, NE, and optional VOID signal logic.
 AI Router handles model/key/provider routing and response normalization.
 On-device dictionary personalizes repeated translations locally.
 Cost optimizer is internal only.
