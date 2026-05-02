@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY main.py .
 COPY rooms_firestore.py .
+COPY session_firestore.py .
 
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8080
