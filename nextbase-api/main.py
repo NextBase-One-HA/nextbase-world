@@ -95,7 +95,7 @@ def _hold(*, reason: str) -> dict:
 
 app = FastAPI(
     title="NextBase API — Gateway + Rooms + Sessions + Agent Tasks",
-    version="1.3.0",
+    version="1.3.1",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -192,7 +192,15 @@ async def mandatory_gateway(payload: GatewayPayload):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "protocol": "NEXTBASE_API_GATEWAY_FIXED"}
+    out: dict = {
+        "status": "ok",
+        "protocol": "NEXTBASE_API_GATEWAY_FIXED",
+        "api_version": "1.3.1",
+    }
+    rev = os.getenv("K_REVISION")
+    if rev:
+        out["revision"] = rev
+    return out
 
 
 @app.post("/agent/task/start")
