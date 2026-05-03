@@ -200,13 +200,17 @@ async def agent_task_start(body: dict = Body(...)):
     return await agent_tasks.task_start(
         title=body.get("title", "untitled"),
         detail=body.get("detail", {}),
+        ttl_hours=body.get("ttl_hours"),
     )
 
 
 @app.post("/agent/task/finish")
 async def agent_task_finish(body: dict = Body(...)):
+    task_id = body.get("task_id")
+    if not task_id:
+        return {"status": "HOLD", "securityLevel": 1, "reason": "missing_task_id"}
     return await agent_tasks.task_finish(
-        task_id=body.get("task_id"),
+        task_id=task_id,
         evidence=body.get("evidence", {}),
     )
 
