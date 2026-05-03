@@ -1,6 +1,6 @@
 """
 NextBase API:
-- POST /gateway — canonical + inventory + optional session + OPEN_AGENT_TASKS, then TRANSLATE_UPSTREAM_URL.
+- POST /gateway — canonical + inventory + optional session + OPEN_AGENT_TASKS + DONE_RULE, then TRANSLATE_UPSTREAM_URL.
 - POST /agent/task/* — agent task ledger (Firestore agent_tasks).
 - POST /rooms/* — Firestore rooms / messages / audit_logs.
 
@@ -23,6 +23,10 @@ import rooms_firestore
 import session_firestore
 
 CANONICAL_FETCH_TIMEOUT = float(os.getenv("NEXTBASE_CANONICAL_FETCH_TIMEOUT", "15"))
+DONE_RULE_TEXT = """DONE is valid only when agent_tasks evidence says DONE.
+Required physical evidence: git_commit, deploy_revision, test_command, test_response.
+If evidence is missing, incomplete, unverifiable, or inconsistent, answer HOLD with securityLevel=1.
+Do not claim, imply, or summarize DONE from language alone."""
 
 
 def _docs_base_dir() -> Path:
@@ -95,7 +99,7 @@ def _hold(*, reason: str) -> dict:
 
 app = FastAPI(
     title="NextBase API — Gateway + Rooms + Sessions + Agent Tasks",
-    version="1.3.1",
+    version="1.3.2",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -171,6 +175,7 @@ async def mandatory_gateway(payload: GatewayPayload):
     blocks = [
         f"### SYSTEM_CANONICAL_LAW ###\n{canonical_text}\n\n",
         f"### SYSTEM_INVENTORY ###\n{inventory_text}\n\n",
+        f"### DONE_RULE ###\n{DONE_RULE_TEXT}\n\n",
     ]
     if session_context:
         blocks.append(f"### SESSION_CONTEXT ###\n{session_context}\n\n")
@@ -195,7 +200,7 @@ def health():
     out: dict = {
         "status": "ok",
         "protocol": "NEXTBASE_API_GATEWAY_FIXED",
-        "api_version": "1.3.1",
+        "api_version": "1.3.2",
     }
     rev = os.getenv("K_REVISION")
     if rev:
@@ -231,9 +236,6 @@ async def agent_task_get(task_id: str):
 @app.get("/agent/tasks/open")
 async def agent_tasks_open():
     return await agent_tasks.open_tasks()
-
-
-# --- Firestore: rooms / TTL / messages / audit (no Stripe / no billing lock) ---
 
 
 class RoomCreateBody(BaseModel):
