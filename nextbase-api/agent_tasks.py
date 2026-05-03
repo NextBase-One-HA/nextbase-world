@@ -9,6 +9,7 @@ DONE is only allowed when physical evidence exists:
 - test_response
 
 Open-task listing is injected into POST /gateway under ### OPEN_AGENT_TASKS ###.
+DONE-rule violations are written to agent_violations.
 """
 from __future__ import annotations
 
@@ -22,8 +23,10 @@ from google.cloud import firestore
 
 _fs: firestore.Client | None = None
 COL_AGENT_TASKS = "agent_tasks"
+COL_AGENT_VIOLATIONS = "agent_violations"
 DEFAULT_TTL_HOURS = int(os.getenv("NEXTBASE_AGENT_TASK_TTL_HOURS", "12"))
 REQUIRED_EVIDENCE = ("git_commit", "deploy_revision", "test_command", "test_response")
+DONE_MARKERS = ("DONE", "Done", "done", "完了", "完成", "完遂", "実行完了", "終了しました")
 
 
 def _client() -> firestore.Client:
@@ -59,6 +62,19 @@ def _status_from_evidence(evidence: dict[str, Any]) -> tuple[str, list[str]]:
     if missing:
         return "HOLD", missing
     return "DONE", []
+
+
+def _response_text(response: Any) -> str:
+    if isinstance(response, dict):
+        for key in ("translatedText", "text", "response", "message"):
+            if response.get(key):
+                return _safe_text(response.get(key))
+        return _safe_text(response)
+    return _safe_text(response)
+
+
+def _contains_done_claim(text: str) -> bool:
+    return any(marker in text for marker in DONE_MARKERS)
 
 
 async def task_start(*, title: str, detail: dict[str, Any] | None = None, ttl_hours: int | None = None) -> dict[str, Any]:
@@ -187,3 +203,56 @@ async def open_tasks(limit: int = 10) -> dict[str, Any]:
 
     rows = await asyncio.to_thread(read)
     return {"tasks": rows}
+
+
+async def log_done_violation_if_needed(*, response: Any, open_tasks_payload: Any, session_id: str | None = None) -> dict[str, Any]:
+    """Log if an AI response claims DONE while open tasks still lack evidence."""
+    text = _response_text(response)
+    if not _contains_done_claim(text):
+        return {"violation_logged": False, "reason": "no_done_claim"}
+
+    tasks = []
+    if isinstance(open_tasks_payload, dict):
+        tasks = open_tasks_payload.get("tasks") or []
+    elif isinstance(open_tasks_payload, list):
+        tasks = open_tasks_payload
+
+    blocking = []
+    for task in tasks:
+        if not isinstance(task, dict):
+            continue
+        status = task.get("status")
+        missing = task.get("missing_evidence") or []
+        if status in ("RUNNING", "HOLD") or missing:
+            blocking.append(
+                {
+                    "task_id": task.get("task_id"),
+                    "status": status,
+                    "missing_evidence": missing,
+                    "title": task.get("title"),
+                }
+            )
+
+    if not blocking:
+        return {"violation_logged": False, "reason": "no_open_blocking_tasks"}
+
+    fs = _client()
+    violation = {
+        "event": "done_claim_without_evidence",
+        "session_id": session_id,
+        "blocking_tasks": blocking,
+        "response_excerpt": _safe_text(text, 2000),
+        "created_at": firestore.SERVER_TIMESTAMP,
+    }
+
+    def write() -> str:
+        ref = fs.collection(COL_AGENT_VIOLATIONS).document()
+        ref.set(violation)
+        return ref.id
+
+    violation_id = await asyncio.to_thread(write)
+    return {
+        "violation_logged": True,
+        "violation_id": violation_id,
+        "reason": "done_claim_without_evidence",
+    }
