@@ -79,11 +79,14 @@ Confirmed in repository:
 - `agent_tasks` exists for evidence-gated task completion.
 - `agent_violations` exists for DONE-rule violation visibility.
 - `agent_reputation` exists for score, route class, and reputation ranking.
+- `entitlements.py` exists as the GLB billing entitlement ledger.
+- `stripe` dependency is included in `nextbase-api/requirements.txt`.
+- `entitlements.py` is included in the Cloud Run container Dockerfile.
 
 Current API code state:
 
 ```text
-api_version = 1.3.7
+api_version = 1.4.0
 Gateway includes:
 - SYSTEM_CANONICAL_LAW
 - SYSTEM_INVENTORY
@@ -110,9 +113,6 @@ score >= 50 = normal
 score < 50 = restricted
 score <= 0 = blocked
 ```
-
-Current limitation:
-- Latest repository changes after api_version 1.3.7 still require Cloud Run deployment and physical curl verification before REALITY_DONE.
 
 ## 5. GLB product truth
 
@@ -159,42 +159,68 @@ Product boundary:
 - No long-term chat history.
 - Temporary room is the value.
 
-## 6. Billing and entitlement target
+## 6. Billing and entitlement OS state
 
 Billing truth must be server-side only.
 
-Required API surface for monetization:
+Implemented in repository:
 
 ```text
-GET  /entitlements
-POST /billing/core/checkout        # Core $2.99 monthly
-POST /billing/travel/checkout      # Travel $14.99 one-time 30 days
-POST /billing/webhook              # Stripe source of truth
-POST /rooms/create                 # requires travel_active=true
-POST /rooms/join                   # requires core_subscribed or travel_active
-POST /rooms/{room_id}/messages     # requires active room participant
-GET  /rooms/{room_id}/messages     # active room only
-POST /translate                    # room-aware translation endpoint
+POST /billing/core/checkout        # returns configured Core Stripe checkout URL
+POST /billing/travel/checkout      # returns configured Travel Stripe checkout URL
+POST /billing/webhook              # consumes Stripe events and writes entitlement state
+GET  /entitlements                 # reads server-side entitlement state
+POST /rooms/create                 # now requires travel_active=true
+POST /rooms/join                   # now requires core_subscribed or travel_active
+POST /rooms/message                # now requires core_subscribed or travel_active
 ```
 
-Implementation status:
-- Existing repository has `/rooms/create`, `/rooms/join`, `/rooms/message`, `/rooms/status` minimal TTL APIs.
-- Billing/entitlement APIs are canonical but not yet confirmed implemented in `nextbase-api`.
-- Room chat message endpoint shape needs GLB canonical alignment.
+Firestore source of truth:
+
+```text
+entitlements/{customer_id}
+checkout_sessions/{checkout_session_id}
+```
+
+Core result:
+
+```text
+core_subscribed = true
+room_join_allowed = true
+```
+
+Travel result:
+
+```text
+travel_active = true
+travel_pass_started_at = now
+travel_pass_expires_at = now + 30 days
+room_create_allowed = true
+room_join_allowed = true
+```
+
+Current limitation:
+- Latest entitlement code is repository-implemented but requires Cloud Run deployment and physical curl verification before REALITY_DONE.
+- Frontend must pass `customer_id` or `session_id` to room APIs, or NextBase cannot know who paid.
 - `/translate` room-aware product endpoint still needs implementation.
+- Room chat endpoint shape is still minimal (`/rooms/message`) and may need alignment with canonical `/rooms/{room_id}/messages` later.
 
 ## 7. Immediate GLB build priority
 
 Priority is revenue, not unlimited OS expansion.
 
 Next build order:
-1. Server-side `/entitlements` for Core/Travel access.
-2. Stripe checkout + webhook for Core $2.99 and Travel $14.99.
-3. Enforce room creation only for Travel active users.
-4. Enforce room joining only for Core or Travel users.
-5. Add room-aware `/translate`.
-6. Connect minimal Travel Room UI.
-7. Verify with physical evidence: git_commit, deploy_revision, test_command, test_response.
+1. Deploy `nextbase-api` api_version 1.4.0.
+2. Set Cloud Run env vars for Stripe secret/webhook/checkout URLs.
+3. Verify `/health` returns api_version 1.4.0.
+4. Verify unpaid `/rooms/create` returns 403.
+5. Trigger Stripe Travel checkout/webhook.
+6. Verify `/entitlements?session_id=...` or `/entitlements?customer_id=...` returns `travel_active=true`.
+7. Verify paid `/rooms/create` returns a 6-digit room code.
+8. Verify Core entitlement allows `/rooms/join` and `/rooms/message`.
+9. Add room-aware `/translate`.
+10. Connect minimal Travel Room UI.
+11. Verify with physical evidence: git_commit, deploy_revision, test_command, test_response.
 
 HOLD condition:
 - If billing truth is only localStorage, HOLD.
@@ -227,5 +253,5 @@ End state:
 
 ```text
 NextBase OS focus = GLB Travel monetization path.
-Immediate target = paid 30-day Travel Room with server-side entitlement.
+Immediate target = deploy and verify paid 30-day Travel Room with server-side entitlement.
 ```
