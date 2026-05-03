@@ -1,12 +1,4 @@
-"""
-NextBase API:
-- POST /gateway — canonical + inventory + optional session + OPEN_AGENT_TASKS + DONE_RULE, then TRANSLATE_UPSTREAM_URL.
-- POST /agent/task/* — agent task ledger (Firestore agent_tasks).
-- POST /rooms/* — Firestore rooms / messages / audit_logs.
-
-Canonical: NEXTBASE_CANONICAL_URL or local NEXTBASE_SYSTEM_CANONICAL.md.
-Inventory: NEXTBASE_INVENTORY_URL or local SYSTEM_INVENTORY.md.
-"""
+"""NextBase API gateway, rooms, sessions, and agent evidence ledger."""
 from __future__ import annotations
 
 import json
@@ -58,7 +50,6 @@ async def canonical_loader() -> tuple[str | None, str | None]:
                 return r.text, None
         except Exception:
             pass
-
     local = _path_canonical_local()
     if local.is_file():
         return local.read_text(encoding="utf-8"), None
@@ -75,7 +66,6 @@ async def inventory_loader() -> tuple[str | None, str | None]:
                 return r.text, None
         except Exception:
             pass
-
     p = _path_inventory_local()
     if p.is_file():
         return p.read_text(encoding="utf-8"), None
@@ -83,11 +73,7 @@ async def inventory_loader() -> tuple[str | None, str | None]:
 
 
 def security_level_hold(combined_audit_text: str) -> bool:
-    if "STATE: HOLD" in combined_audit_text:
-        return True
-    if "STATE: INVALID" in combined_audit_text:
-        return True
-    return False
+    return "STATE: HOLD" in combined_audit_text or "STATE: INVALID" in combined_audit_text
 
 
 def _hold(*, reason: str) -> dict:
@@ -97,10 +83,7 @@ def _hold(*, reason: str) -> dict:
     return out
 
 
-app = FastAPI(
-    title="NextBase API — Gateway + Rooms + Sessions + Agent Tasks",
-    version="1.3.2",
-)
+app = FastAPI(title="NextBase API — Gateway + Rooms + Sessions + Agent Tasks", version="1.3.3")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(",") if os.getenv("ALLOWED_ORIGINS") else ["*"],
@@ -112,7 +95,6 @@ app.add_middleware(
 
 class GatewayPayload(BaseModel):
     model_config = ConfigDict(extra="allow")
-
     prompt: str = ""
     target: str = ""
     caller_id: str = "prod"
@@ -127,10 +109,8 @@ async def forward_to_ai_router(enforced_prompt: str, payload: GatewayPayload) ->
     body = payload.model_dump(exclude_none=True)
     body.pop("prompt", None)
     body["text"] = enforced_prompt
-
-    url = f"{base}/gateway"
     async with httpx.AsyncClient(timeout=120.0) as client:
-        r = await client.post(url, json=body)
+        r = await client.post(f"{base}/gateway", json=body)
     try:
         data = r.json()
     except Exception:
@@ -145,11 +125,9 @@ async def mandatory_gateway(payload: GatewayPayload):
     canonical_text, c_err = await canonical_loader()
     if c_err or not canonical_text:
         return _hold(reason=c_err or "canonical_error")
-
     inventory_text, i_err = await inventory_loader()
     if i_err or not inventory_text:
         return _hold(reason=i_err or "inventory_error")
-
     audit_blob = canonical_text + "\n\n---\n\n" + inventory_text
     if security_level_hold(audit_blob):
         return _hold(reason="inventory_state_hold_or_invalid")
@@ -164,13 +142,10 @@ async def mandatory_gateway(payload: GatewayPayload):
 
     try:
         open_tasks_payload = await agent_tasks.open_tasks()
-        if isinstance(open_tasks_payload, list):
-            open_tasks_payload = {"tasks": open_tasks_payload}
         open_tasks_text = json.dumps(open_tasks_payload, ensure_ascii=False, indent=2)
     except Exception:
-        open_tasks_text = json.dumps(
-            {"tasks": [], "error": "open_tasks_unavailable"}, ensure_ascii=False
-        )
+        open_tasks_payload = {"tasks": [], "error": "open_tasks_unavailable"}
+        open_tasks_text = json.dumps(open_tasks_payload, ensure_ascii=False)
 
     blocks = [
         f"### SYSTEM_CANONICAL_LAW ###\n{canonical_text}\n\n",
@@ -181,9 +156,16 @@ async def mandatory_gateway(payload: GatewayPayload):
         blocks.append(f"### SESSION_CONTEXT ###\n{session_context}\n\n")
     blocks.append(f"### OPEN_AGENT_TASKS ###\n{open_tasks_text}\n\n")
     blocks.append(f"### USER_REQUEST ###\n{payload.prompt}")
-    enforced_prompt = "".join(blocks)
+    result = await forward_to_ai_router("".join(blocks), payload)
 
-    result = await forward_to_ai_router(enforced_prompt, payload)
+    try:
+        await agent_tasks.log_done_violation_if_needed(
+            response=result,
+            open_tasks_payload=open_tasks_payload,
+            session_id=payload.session_id,
+        )
+    except Exception:
+        pass
 
     if payload.session_id:
         await session_firestore.session_record_exchange(
@@ -191,17 +173,12 @@ async def mandatory_gateway(payload: GatewayPayload):
             user_prompt=payload.prompt,
             assistant_response=result,
         )
-
     return result
 
 
 @app.get("/health")
 def health():
-    out: dict = {
-        "status": "ok",
-        "protocol": "NEXTBASE_API_GATEWAY_FIXED",
-        "api_version": "1.3.2",
-    }
+    out = {"status": "ok", "protocol": "NEXTBASE_API_GATEWAY_FIXED", "api_version": "1.3.3"}
     rev = os.getenv("K_REVISION")
     if rev:
         out["revision"] = rev
@@ -210,11 +187,7 @@ def health():
 
 @app.post("/agent/task/start")
 async def agent_task_start(body: dict = Body(...)):
-    return await agent_tasks.task_start(
-        title=body.get("title", "untitled"),
-        detail=body.get("detail", {}),
-        ttl_hours=body.get("ttl_hours"),
-    )
+    return await agent_tasks.task_start(title=body.get("title", "untitled"), detail=body.get("detail", {}), ttl_hours=body.get("ttl_hours"))
 
 
 @app.post("/agent/task/finish")
@@ -222,10 +195,7 @@ async def agent_task_finish(body: dict = Body(...)):
     task_id = body.get("task_id")
     if not task_id:
         return {"status": "HOLD", "securityLevel": 1, "reason": "missing_task_id"}
-    return await agent_tasks.task_finish(
-        task_id=task_id,
-        evidence=body.get("evidence", {}),
-    )
+    return await agent_tasks.task_finish(task_id=task_id, evidence=body.get("evidence", {}))
 
 
 @app.get("/agent/task/{task_id}")
@@ -279,11 +249,7 @@ async def rooms_join(body: RoomJoinBody):
 
 @app.post("/rooms/message")
 async def rooms_message(body: RoomMessageBody):
-    out = await rooms_firestore.room_message(
-        room_code=body.code,
-        body=body.body,
-        sender_id=body.sender_id,
-    )
+    out = await rooms_firestore.room_message(room_code=body.code, body=body.body, sender_id=body.sender_id)
     if out.get("ok"):
         return out
     err = out.get("error", "unknown")
