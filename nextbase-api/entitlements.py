@@ -26,6 +26,11 @@ CORE_PRODUCT = "core"
 TRAVEL_PRODUCT = "travel"
 TRAVEL_TTL_DAYS = int(os.getenv("GLB_TRAVEL_TTL_DAYS", "30"))
 
+MESSAGE_PAYMENT_PROCESSING = "Payment is being confirmed. Please try again in a few seconds."
+MESSAGE_TRAVEL_REQUIRED = "A valid 30-day Travel Pass is required to create a room."
+MESSAGE_CORE_OR_TRAVEL_REQUIRED = "A valid GLB Core subscription or Travel Pass is required to join this room."
+MESSAGE_CHECKOUT_NOT_CONFIGURED = "Checkout is temporarily unavailable. Please contact support."
+
 
 def _client() -> firestore.Client:
     global _fs
@@ -66,6 +71,10 @@ def _normalize_customer_id(customer_id: str | None) -> str:
     return str(customer_id or "").strip()
 
 
+def _normalize_session_id(session_id: str | None) -> str:
+    return str(session_id or "").strip()
+
+
 def _product_from_session(session: dict[str, Any]) -> str | None:
     metadata = session.get("metadata") or {}
     product = (metadata.get("product") or metadata.get("glb_product") or metadata.get("plan") or "").lower()
@@ -90,14 +99,14 @@ def checkout_url(product: str) -> dict[str, Any]:
     elif product == TRAVEL_PRODUCT:
         url = os.getenv("GLB_TRAVEL_CHECKOUT_URL") or os.getenv("STRIPE_TRAVEL_CHECKOUT_URL")
     else:
-        return {"ok": False, "reason": "unknown_product"}
+        return {"ok": False, "status": "HOLD", "reason": "unknown_product", "message": MESSAGE_CHECKOUT_NOT_CONFIGURED}
     if not url:
-        return {"ok": False, "reason": "checkout_url_not_configured", "product": product}
+        return {"ok": False, "status": "HOLD", "reason": "checkout_url_not_configured", "product": product, "message": MESSAGE_CHECKOUT_NOT_CONFIGURED}
     return {"ok": True, "product": product, "checkout_url": url}
 
 
 async def _resolve_customer_from_session(session_id: str | None) -> str | None:
-    sid = str(session_id or "").strip()
+    sid = _normalize_session_id(session_id)
     if not sid:
         return None
     fs = _client()
@@ -113,11 +122,18 @@ async def _resolve_customer_from_session(session_id: str | None) -> str | None:
 
 
 async def entitlement_status(*, customer_id: str | None = None, session_id: str | None = None) -> dict[str, Any]:
-    cid = _normalize_customer_id(customer_id) or await _resolve_customer_from_session(session_id)
+    sid = _normalize_session_id(session_id)
+    cid = _normalize_customer_id(customer_id) or await _resolve_customer_from_session(sid)
     if not cid:
+        reason = "payment_processing" if sid.startswith("cs_") else "missing_customer_or_session"
+        message = MESSAGE_PAYMENT_PROCESSING if reason == "payment_processing" else "Payment identity was not found. Please reopen the purchase link or contact support."
         return {
             "ok": True,
+            "status": "HOLD" if reason == "payment_processing" else "DENY",
+            "reason": reason,
+            "message": message,
             "customer_id": None,
+            "session_id": sid or None,
             "core_subscribed": False,
             "travel_active": False,
             "travel_pass_expires_at": None,
@@ -135,9 +151,14 @@ async def entitlement_status(*, customer_id: str | None = None, session_id: str 
         core = bool(data.get("core_subscribed"))
         expires = data.get("travel_pass_expires_at")
         travel = bool(data.get("travel_active")) and _is_active_until(expires)
+        status = "ALLOW" if (core or travel) else "DENY"
         return {
             "ok": True,
+            "status": status,
+            "reason": None if status == "ALLOW" else "no_active_entitlement",
+            "message": "Access is active." if status == "ALLOW" else "No active GLB entitlement was found for this payment identity.",
             "customer_id": cid,
+            "session_id": sid or None,
             "core_subscribed": core,
             "travel_active": travel,
             "travel_pass_expires_at": _to_iso(expires),
@@ -150,18 +171,34 @@ async def entitlement_status(*, customer_id: str | None = None, session_id: str 
     return await asyncio.to_thread(read)
 
 
+def denial_payload(*, reason: str, message: str, entitlement: dict[str, Any], status_code: int = 403) -> dict[str, Any]:
+    status = "HOLD" if reason == "payment_processing" else "DENY"
+    return {
+        "ok": False,
+        "status": status,
+        "status_code": status_code,
+        "reason": reason,
+        "message": message,
+        "entitlement": entitlement,
+    }
+
+
 async def assert_room_create_allowed(*, customer_id: str | None = None, session_id: str | None = None) -> dict[str, Any]:
     ent = await entitlement_status(customer_id=customer_id, session_id=session_id)
     if ent.get("room_create_allowed"):
-        return {"ok": True, "entitlement": ent}
-    return {"ok": False, "status_code": 403, "reason": "travel_pass_required", "entitlement": ent}
+        return {"ok": True, "status": "ALLOW", "entitlement": ent}
+    if ent.get("reason") == "payment_processing":
+        return denial_payload(reason="payment_processing", message=MESSAGE_PAYMENT_PROCESSING, entitlement=ent, status_code=409)
+    return denial_payload(reason="travel_pass_required", message=MESSAGE_TRAVEL_REQUIRED, entitlement=ent, status_code=403)
 
 
 async def assert_room_join_allowed(*, customer_id: str | None = None, session_id: str | None = None) -> dict[str, Any]:
     ent = await entitlement_status(customer_id=customer_id, session_id=session_id)
     if ent.get("room_join_allowed"):
-        return {"ok": True, "entitlement": ent}
-    return {"ok": False, "status_code": 403, "reason": "core_or_travel_required", "entitlement": ent}
+        return {"ok": True, "status": "ALLOW", "entitlement": ent}
+    if ent.get("reason") == "payment_processing":
+        return denial_payload(reason="payment_processing", message=MESSAGE_PAYMENT_PROCESSING, entitlement=ent, status_code=409)
+    return denial_payload(reason="core_or_travel_required", message=MESSAGE_CORE_OR_TRAVEL_REQUIRED, entitlement=ent, status_code=403)
 
 
 def _event_payload(raw_body: bytes, signature: str | None) -> dict[str, Any]:
@@ -169,7 +206,6 @@ def _event_payload(raw_body: bytes, signature: str | None) -> dict[str, Any]:
     stripe.api_key = os.getenv("STRIPE_SECRET_KEY") or ""
     if secret:
         return stripe.Webhook.construct_event(raw_body, signature or "", secret)
-    # Test/local fallback. Production should set STRIPE_WEBHOOK_SECRET.
     import json
 
     return json.loads(raw_body.decode("utf-8"))
@@ -187,7 +223,7 @@ async def process_stripe_webhook(*, raw_body: bytes, signature: str | None) -> d
             session_id = session.get("id")
             customer_id = session.get("customer") or session.get("customer_id")
             if not customer_id:
-                return {"ok": False, "reason": "missing_customer", "event": event_type}
+                return {"ok": False, "status": "HOLD", "reason": "missing_customer", "message": MESSAGE_PAYMENT_PROCESSING, "event": event_type}
             product = _product_from_session(session)
             ent_ref = fs.collection(COL_ENTITLEMENTS).document(customer_id)
             now = _now()
@@ -208,7 +244,7 @@ async def process_stripe_webhook(*, raw_body: bytes, signature: str | None) -> d
                     }
                 )
             else:
-                return {"ok": False, "reason": "unknown_product", "event": event_type}
+                return {"ok": False, "status": "HOLD", "reason": "unknown_product", "message": "Payment was received, but the product type could not be confirmed. Please contact support.", "event": event_type}
 
             ent_ref.set(patch, merge=True)
             if session_id:
@@ -221,7 +257,7 @@ async def process_stripe_webhook(*, raw_body: bytes, signature: str | None) -> d
                     },
                     merge=True,
                 )
-            return {"ok": True, "event": event_type, "customer_id": customer_id, "product": product}
+            return {"ok": True, "status": "ALLOW", "event": event_type, "customer_id": customer_id, "product": product}
 
         if event_type in ("customer.subscription.deleted", "customer.subscription.updated"):
             subscription = obj
