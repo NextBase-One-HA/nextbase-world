@@ -7,6 +7,7 @@ COPY rooms_firestore.py .
 COPY session_firestore.py .
 COPY agent_tasks.py .
 COPY agent_violations.py .
+COPY entitlements.py .
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8080
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
