@@ -14,6 +14,7 @@ DONE-rule violations are written to agent_violations.
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -24,9 +25,30 @@ from google.cloud import firestore
 _fs: firestore.Client | None = None
 COL_AGENT_TASKS = "agent_tasks"
 COL_AGENT_VIOLATIONS = "agent_violations"
+COL_AGENT_REPUTATION = "agent_reputation"
 DEFAULT_TTL_HOURS = int(os.getenv("NEXTBASE_AGENT_TASK_TTL_HOURS", "12"))
 REQUIRED_EVIDENCE = ("git_commit", "deploy_revision", "test_command", "test_response")
-DONE_MARKERS = ("DONE", "Done", "done", "完了", "完成", "完遂", "実行完了", "終了しました")
+DONE_CLAIM_MARKERS = (
+    '"status":"DONE"',
+    '"status": "DONE"',
+    "status=DONE",
+    "Evidence verified",
+    "Deployment confirmed",
+    "完了しました",
+    "完了です",
+    "完遂しました",
+    "実行完了",
+    "完成しました",
+)
+DONE_NEGATION_MARKERS = (
+    "完了ではありません",
+    "完了していません",
+    "未完了",
+    "DONEではありません",
+    "not done",
+    "not completed",
+    "incomplete",
+)
 
 
 def _client() -> firestore.Client:
@@ -69,12 +91,55 @@ def _response_text(response: Any) -> str:
         for key in ("translatedText", "text", "response", "message"):
             if response.get(key):
                 return _safe_text(response.get(key))
-        return _safe_text(response)
+        return _safe_text(json.dumps(response, ensure_ascii=False))
     return _safe_text(response)
 
 
 def _contains_done_claim(text: str) -> bool:
-    return any(marker in text for marker in DONE_MARKERS)
+    normalized = text.strip()
+    lowered = normalized.lower()
+    if any(marker.lower() in lowered for marker in DONE_NEGATION_MARKERS):
+        return False
+    return any(marker.lower() in lowered for marker in DONE_CLAIM_MARKERS)
+
+
+def _blocking_tasks(open_tasks_payload: Any) -> list[dict[str, Any]]:
+    tasks = []
+    if isinstance(open_tasks_payload, dict):
+        tasks = open_tasks_payload.get("tasks") or []
+    elif isinstance(open_tasks_payload, list):
+        tasks = open_tasks_payload
+
+    blocking: list[dict[str, Any]] = []
+    for task in tasks:
+        if not isinstance(task, dict):
+            continue
+        status = task.get("status")
+        missing = task.get("missing_evidence") or []
+        if status in ("RUNNING", "HOLD") or missing:
+            blocking.append(
+                {
+                    "task_id": task.get("task_id"),
+                    "status": status,
+                    "missing_evidence": missing,
+                    "title": task.get("title"),
+                }
+            )
+    return blocking
+
+
+def _reputation_from_count(count: int) -> dict[str, Any]:
+    score = max(0, 100 - (count * 20))
+    if count >= 5:
+        route_class = "blocked"
+        security_level = 2
+    elif count >= 3:
+        route_class = "restricted"
+        security_level = 1
+    else:
+        route_class = "normal"
+        security_level = 1
+    return {"score": score, "route_class": route_class, "securityLevel": security_level}
 
 
 async def task_start(*, title: str, detail: dict[str, Any] | None = None, ttl_hours: int | None = None) -> dict[str, Any]:
@@ -205,41 +270,46 @@ async def open_tasks(limit: int = 10) -> dict[str, Any]:
     return {"tasks": rows}
 
 
+async def session_violation_count(*, session_id: str | None, limit: int = 50) -> int:
+    if not session_id:
+        return 0
+    fs = _client()
+
+    def read() -> int:
+        query = fs.collection(COL_AGENT_VIOLATIONS).where("session_id", "==", session_id).limit(limit)
+        return sum(1 for _ in query.stream())
+
+    return await asyncio.to_thread(read)
+
+
+async def reputation_status(*, session_id: str | None) -> dict[str, Any]:
+    count = await session_violation_count(session_id=session_id)
+    rep = _reputation_from_count(count)
+    return {"session_id": session_id, "violation_count": count, **rep}
+
+
 async def log_done_violation_if_needed(*, response: Any, open_tasks_payload: Any, session_id: str | None = None) -> dict[str, Any]:
     """Log if an AI response claims DONE while open tasks still lack evidence."""
     text = _response_text(response)
     if not _contains_done_claim(text):
         return {"violation_logged": False, "reason": "no_done_claim"}
 
-    tasks = []
-    if isinstance(open_tasks_payload, dict):
-        tasks = open_tasks_payload.get("tasks") or []
-    elif isinstance(open_tasks_payload, list):
-        tasks = open_tasks_payload
-
-    blocking = []
-    for task in tasks:
-        if not isinstance(task, dict):
-            continue
-        status = task.get("status")
-        missing = task.get("missing_evidence") or []
-        if status in ("RUNNING", "HOLD") or missing:
-            blocking.append(
-                {
-                    "task_id": task.get("task_id"),
-                    "status": status,
-                    "missing_evidence": missing,
-                    "title": task.get("title"),
-                }
-            )
-
+    blocking = _blocking_tasks(open_tasks_payload)
     if not blocking:
         return {"violation_logged": False, "reason": "no_open_blocking_tasks"}
+
+    prior_count = await session_violation_count(session_id=session_id)
+    violation_count = prior_count + 1
+    rep = _reputation_from_count(violation_count)
+    severity = "critical" if violation_count >= 3 else "high"
 
     fs = _client()
     violation = {
         "event": "done_claim_without_evidence",
+        "severity": severity,
         "session_id": session_id,
+        "violation_count": violation_count,
+        "reputation": rep,
         "blocking_tasks": blocking,
         "response_excerpt": _safe_text(text, 2000),
         "created_at": firestore.SERVER_TIMESTAMP,
@@ -248,6 +318,16 @@ async def log_done_violation_if_needed(*, response: Any, open_tasks_payload: Any
     def write() -> str:
         ref = fs.collection(COL_AGENT_VIOLATIONS).document()
         ref.set(violation)
+        if session_id:
+            fs.collection(COL_AGENT_REPUTATION).document(session_id).set(
+                {
+                    "session_id": session_id,
+                    "violation_count": violation_count,
+                    **rep,
+                    "updated_at": firestore.SERVER_TIMESTAMP,
+                },
+                merge=True,
+            )
         return ref.id
 
     violation_id = await asyncio.to_thread(write)
@@ -255,4 +335,7 @@ async def log_done_violation_if_needed(*, response: Any, open_tasks_payload: Any
         "violation_logged": True,
         "violation_id": violation_id,
         "reason": "done_claim_without_evidence",
+        "severity": severity,
+        "violation_count": violation_count,
+        **rep,
     }
