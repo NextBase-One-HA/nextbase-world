@@ -17,6 +17,7 @@ _fs: firestore.Client | None = None
 COL_ROOMS = "rooms"
 COL_MESSAGES = "messages"
 COL_AUDIT = "audit_logs"
+MAX_MESSAGE_CHARS = int(os.getenv("GLB_ROOM_MESSAGE_MAX_CHARS", "2000"))
 
 
 def _client() -> firestore.Client:
@@ -36,6 +37,20 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _as_utc(value: Any) -> datetime | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+        except Exception:
+            return None
+    return None
+
+
 def normalize_room_code(raw: str) -> str:
     digits = "".join(c for c in (raw or "") if c.isdigit())
     if not digits:
@@ -50,12 +65,17 @@ def _gen_code() -> str:
 
 
 def _expires_valid(expires_at: Any) -> bool:
-    if expires_at is None:
-        return False
-    if isinstance(expires_at, datetime):
-        ex = expires_at if expires_at.tzinfo else expires_at.replace(tzinfo=timezone.utc)
-        return ex > _utc_now()
-    return True
+    ex = _as_utc(expires_at)
+    return bool(ex and ex > _utc_now())
+
+
+def _validate_message_body(body: str) -> tuple[str | None, str | None]:
+    text = str(body or "").strip()
+    if not text:
+        return None, "empty_message"
+    if len(text) > MAX_MESSAGE_CHARS:
+        return None, "message_too_long"
+    return text, None
 
 
 async def _audit(event: str, room_id: str, detail: dict[str, Any] | None = None) -> None:
@@ -74,9 +94,19 @@ async def _audit(event: str, room_id: str, detail: dict[str, Any] | None = None)
     await asyncio.to_thread(_write)
 
 
-async def room_create(*, ttl_days: int = 30) -> dict[str, Any]:
+async def room_create(
+    *,
+    ttl_days: int = 30,
+    host_customer_id: str | None = None,
+    max_expires_at: Any = None,
+) -> dict[str, Any]:
     fs = _client()
-    expires_dt = _utc_now() + timedelta(days=ttl_days)
+    requested_expires_dt = _utc_now() + timedelta(days=ttl_days)
+    host_expires_dt = _as_utc(max_expires_at)
+    expires_dt = min(requested_expires_dt, host_expires_dt) if host_expires_dt else requested_expires_dt
+
+    if expires_dt <= _utc_now():
+        return {"ok": False, "error": "travel_pass_expired"}
 
     for _ in range(24):
         code = _gen_code()
@@ -87,6 +117,7 @@ async def room_create(*, ttl_days: int = 30) -> dict[str, Any]:
             c: str = code,
             exp: datetime = expires_dt,
             td: int = ttl_days,
+            host: str | None = host_customer_id,
         ) -> bool:
             snap = r.get()
             if snap.exists:
@@ -97,6 +128,8 @@ async def room_create(*, ttl_days: int = 30) -> dict[str, Any]:
                     "created_at": firestore.SERVER_TIMESTAMP,
                     "expires_at": exp,
                     "ttl_days": td,
+                    "host_customer_id": host,
+                    "room_type": "travel",
                 }
             )
             return True
@@ -105,8 +138,9 @@ async def room_create(*, ttl_days: int = 30) -> dict[str, Any]:
         if not ok:
             continue
 
-        await _audit("room_created", code, {"ttl_days": ttl_days})
+        await _audit("room_created", code, {"ttl_days": ttl_days, "host_customer_id": host_customer_id})
         return {
+            "ok": True,
             "room_id": code,
             "code": code,
             "expires_at": expires_dt.isoformat(),
@@ -117,7 +151,6 @@ async def room_create(*, ttl_days: int = 30) -> dict[str, Any]:
 
 
 async def room_get_snapshot(code: str) -> tuple[dict[str, Any] | None, str | None]:
-    """Returns (data, error_code). error_code: not_found | expired | invalid_code."""
     norm = normalize_room_code(code)
     if len(norm) != 6:
         return None, "invalid_code"
@@ -138,32 +171,25 @@ async def room_get_snapshot(code: str) -> tuple[dict[str, Any] | None, str | Non
 
 async def room_join(*, code: str) -> dict[str, Any]:
     data, err = await room_get_snapshot(code)
-    if err == "invalid_code":
-        return {"ok": False, "error": "invalid_code"}
-    if err == "not_found":
-        return {"ok": False, "error": "not_found"}
-    if err == "expired":
-        return {"ok": False, "error": "expired"}
+    if err:
+        return {"ok": False, "error": err}
     assert data is not None
     rid = str(data.get("code") or normalize_room_code(code))
-    ex = data.get("expires_at")
-    if isinstance(ex, datetime):
-        ex_iso = ex.isoformat()
-    else:
-        ex_iso = str(ex) if ex is not None else ""
+    ex = _as_utc(data.get("expires_at"))
+    ex_iso = ex.isoformat() if ex else ""
     await _audit("room_join", rid, {})
     return {"ok": True, "room_id": rid, "code": rid, "expires_at": ex_iso}
 
 
 async def room_message(*, room_code: str, body: str, sender_id: str | None) -> dict[str, Any]:
+    text, validation_err = _validate_message_body(body)
+    if validation_err:
+        return {"ok": False, "error": validation_err}
+
     data, err = await room_get_snapshot(room_code)
-    if err == "invalid_code":
-        return {"ok": False, "error": "invalid_code"}
-    if err == "not_found":
-        return {"ok": False, "error": "not_found"}
-    if err == "expired":
-        return {"ok": False, "error": "expired"}
-    assert data is not None
+    if err:
+        return {"ok": False, "error": err}
+    assert data is not None and text is not None
     rid = str(data.get("code") or normalize_room_code(room_code))
     fs = _client()
 
@@ -172,7 +198,7 @@ async def room_message(*, room_code: str, body: str, sender_id: str | None) -> d
         doc_ref.set(
             {
                 "room_id": rid,
-                "body": body,
+                "body": text,
                 "sender_id": sender_id,
                 "created_at": firestore.SERVER_TIMESTAMP,
             }
@@ -180,12 +206,42 @@ async def room_message(*, room_code: str, body: str, sender_id: str | None) -> d
         return doc_ref.id
 
     msg_id = await asyncio.to_thread(write_msg)
-    await _audit(
-        "message_posted",
-        rid,
-        {"message_id": msg_id, "sender_id": sender_id},
-    )
+    await _audit("message_posted", rid, {"message_id": msg_id, "sender_id": sender_id})
     return {"ok": True, "room_id": rid, "message_id": msg_id}
+
+
+async def room_messages(*, code: str, limit: int = 50) -> dict[str, Any]:
+    data, err = await room_get_snapshot(code)
+    if err:
+        return {"ok": False, "error": err, "messages": []}
+    assert data is not None
+    rid = str(data.get("code") or normalize_room_code(code))
+    safe_limit = max(1, min(int(limit or 50), 100))
+    fs = _client()
+
+    def read() -> list[dict[str, Any]]:
+        query = (
+            fs.collection(COL_MESSAGES)
+            .where("room_id", "==", rid)
+            .order_by("created_at", direction=firestore.Query.DESCENDING)
+            .limit(safe_limit)
+        )
+        rows: list[dict[str, Any]] = []
+        for snap in query.stream():
+            d = snap.to_dict() or {}
+            created = _as_utc(d.get("created_at"))
+            rows.append(
+                {
+                    "message_id": snap.id,
+                    "room_id": rid,
+                    "body": d.get("body") or "",
+                    "sender_id": d.get("sender_id"),
+                    "created_at": created.isoformat() if created else None,
+                }
+            )
+        return list(reversed(rows))
+
+    return {"ok": True, "room_id": rid, "messages": await asyncio.to_thread(read)}
 
 
 async def room_status(*, code: str) -> dict[str, Any]:
@@ -202,10 +258,9 @@ async def room_status(*, code: str) -> dict[str, Any]:
     if not snap.exists:
         return {"exists": False, "error": "not_found"}
     data = snap.to_dict() or {}
-    ex = data.get("expires_at")
-    if not isinstance(ex, datetime):
+    ex_utc = _as_utc(data.get("expires_at"))
+    if not ex_utc:
         return {"exists": True, "error": "bad_schema"}
-    ex_utc = ex if ex.tzinfo else ex.replace(tzinfo=timezone.utc)
     remaining = (ex_utc - _utc_now()).total_seconds()
     expired = remaining <= 0
     return {
@@ -215,4 +270,6 @@ async def room_status(*, code: str) -> dict[str, Any]:
         "expires_at": ex_utc.isoformat(),
         "expired": expired,
         "seconds_remaining": max(0, int(remaining)),
+        "host_customer_id": data.get("host_customer_id"),
+        "room_type": data.get("room_type") or "travel",
     }
