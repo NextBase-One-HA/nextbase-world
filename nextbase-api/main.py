@@ -84,7 +84,7 @@ def _hold(*, reason: str) -> dict:
     return out
 
 
-app = FastAPI(title="NextBase API — Gateway + Rooms + Sessions + Agent Tasks", version="1.3.5")
+app = FastAPI(title="NextBase API — Gateway + Rooms + Sessions + Agent Tasks", version="1.3.6")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(",") if os.getenv("ALLOWED_ORIGINS") else ["*"],
@@ -133,6 +133,17 @@ async def mandatory_gateway(payload: GatewayPayload):
     if security_level_hold(audit_blob):
         return _hold(reason="inventory_state_hold_or_invalid")
 
+    reputation = await agent_tasks.reputation_status(session_id=payload.session_id)
+    if reputation.get("route_class") == "blocked":
+        return {
+            "status": "HOLD",
+            "reason": "session_blocked",
+            "securityLevel": 2,
+            "reputation": reputation,
+        }
+    if reputation.get("route_class") == "restricted" and not payload.model:
+        payload.model = os.getenv("NEXTBASE_RESTRICTED_MODEL", "gemini-2.0-flash")
+
     session_context = ""
     if payload.session_id:
         session_context = await session_firestore.session_context(
@@ -158,6 +169,7 @@ async def mandatory_gateway(payload: GatewayPayload):
         f"### SYSTEM_CANONICAL_LAW ###\n{canonical_text}\n\n",
         f"### SYSTEM_INVENTORY ###\n{inventory_text}\n\n",
         f"### DONE_RULE ###\n{DONE_RULE_TEXT}\n\n",
+        f"### REPUTATION ###\n{json.dumps(reputation, ensure_ascii=False, indent=2)}\n\n",
     ]
     if session_context:
         blocks.append(f"### SESSION_CONTEXT ###\n{session_context}\n\n")
@@ -186,10 +198,12 @@ async def mandatory_gateway(payload: GatewayPayload):
         )
         return {
             "status": "HOLD",
-            "securityLevel": 1,
+            "securityLevel": violation_result.get("securityLevel", 1),
             "reason": "violation_detected",
             "severity": severity,
             "violation_count": count,
+            "score": violation_result.get("score"),
+            "route_class": violation_result.get("route_class"),
             "violation_id": violation_result.get("violation_id"),
             "message": message,
         }
@@ -205,7 +219,7 @@ async def mandatory_gateway(payload: GatewayPayload):
 
 @app.get("/health")
 def health():
-    out = {"status": "ok", "protocol": "NEXTBASE_API_GATEWAY_FIXED", "api_version": "1.3.5"}
+    out = {"status": "ok", "protocol": "NEXTBASE_API_GATEWAY_FIXED", "api_version": "1.3.6"}
     rev = os.getenv("K_REVISION")
     if rev:
         out["revision"] = rev
@@ -215,6 +229,11 @@ def health():
 @app.get("/agent/violations")
 async def get_violations():
     return await agent_violations.recent_violations()
+
+
+@app.get("/agent/reputation")
+async def get_reputation(session_id: str | None = Query(default=None)):
+    return await agent_tasks.reputation_status(session_id=session_id)
 
 
 @app.post("/agent/task/start")
