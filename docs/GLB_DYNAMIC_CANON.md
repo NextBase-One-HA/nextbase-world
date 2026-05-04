@@ -100,7 +100,7 @@ GLBはユーザー言語特化型アプリ。
 基本:
 - index.html のオンボーディングでユーザーの基本言語を決める
 - localStorage の glb_ui_lang に保存する
-- index.test.html / index.next.html / index.premium.html / travel.html は glb_ui_lang を読む
+- index.test.html / index.next.html / index.premium.html / index.14.99.html は glb_ui_lang を読む
 - 各ページでユーザーに再度言語設定を要求しない
 - ユーザー言語は固定表示する
 - 選ばせるのは相手の言語だけ
@@ -119,11 +119,13 @@ GLBはユーザー言語特化型アプリ。
 - 内部制限を制限として見せる
 
 ## PAGE_ROLES
+（物理パスの正本は `docs/GLB_FINAL_CANONICAL.md` §0.5 と同一。旧 `travel.html` / `apps/glb/` は使用しない。）
+
 - index.html = 多言語オンボーディング入口 / ユーザー言語決定 / GLB説明 / Core・Travel導線
-- index.test.html = 無料体験専用ページ / 1日5回無料翻訳 / 初回体験で掴むページ
+- index.test.html = 無料体験専用ページ / 1日5回無料翻訳 / 初回体験で掴むページ（ツリーに未収載の場合は実装後に監査）
 - index.next.html = Core $2.99 / 基本翻訳 / 課金後本体
 - index.premium.html = Travel Pass $14.99 / 30日買い切り説明・購入ページ
-- travel.html = Travel Pass購入後の本体UI
+- index.14.99.html = Travel Pass 購入後の本体UI（Travel アプリ本体）
 
 ## CURRENT_PRIORITY
 1. rebase中の index.html conflict を正本どおり解消する
@@ -131,7 +133,7 @@ GLBはユーザー言語特化型アプリ。
 3. index.html のユーザー言語を全ページへ引き継ぐ
 4. index.test.html を 1日5回無料翻訳ページとして完成させる
 5. index.test.html で翻訳API接続を確実に動かす
-6. index.next.html / index.premium.html / travel.html は壊さない
+6. index.next.html / index.premium.html / index.14.99.html は壊さない
 7. Stripe導線は勝手に変更しない
 
 ## FREE_TEST_PAGE_RULE
@@ -265,7 +267,7 @@ AI感を出さない。
 5. index.test.html で無料1日5回翻訳が動く
 6. index.next.html でCore $2.99導線が見える
 7. index.premium.html で Travel Pass $14.99 / 30日 / 自動更新なし が伝わる
-8. travel.html で Speak / Show / Essentials が迷わず使える
+8. index.14.99.html で Speak / Show / Essentials が迷わず使える
 9. Stripe success URL が正しい
 
 ## FEATURE_REDUCTION_RULE
@@ -276,7 +278,7 @@ AI感を出さない。
 - index.html: オンボーディング / ユーザー言語決定 / Core $2.99 / Travel $14.99
 - index.test.html: 無料5回 / 翻訳入力 / 結果 / ユーザー言語 / 相手言語 / Core導線 / Travel導線
 - index.next.html: 翻訳入力 / 結果 / ユーザー言語 / 相手言語 / 音声 / 購入導線
-- travel.html: Speak / Show / Essentials / Back
+- index.14.99.html: Speak / Show / Essentials / Back
 
 後回し:
 - Stats
@@ -298,7 +300,7 @@ AIらしさを出さない。
 index.html で理解させる。
 index.test.html で触らせる。
 index.next.html で継続させる。
-index.premium.html / travel.html で旅行価値を売る。
+index.premium.html で Travel Pass の価値を伝える。index.14.99.html で Travel 本体を提供する。
 
 もう作り足さない。
 必要なページだけ作る。
