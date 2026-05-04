@@ -459,25 +459,28 @@ def recompute_customer(customer_id: str) -> None:
     row = _row(customer_id)
     grace_until = float(row["grace_until"] or 0) if row else 0.0
 
-    subs = stripe.Subscription.list(customer=customer_id, status="all", limit=30)
     core_any = 0
     travel_any = 0
     status_last = ""
     past_due_core = 0
 
-    for s in subs.auto_paging_iter():
-        st = getattr(s, "status", "") or ""
-        status_last = st or status_last
-        pids = _price_ids_from_subscription(s)
-        cm = _subscription_matches_core(pids)
-        tm = _subscription_matches_travel(pids)
-        if st in ("active", "trialing"):
-            if cm:
-                core_any = 1
-            if tm:
-                travel_any = 1
-        elif st == "past_due" and cm:
-            past_due_core = 1
+    try:
+        subs = stripe.Subscription.list(customer=customer_id, status="all", limit=30)
+        for s in subs.auto_paging_iter():
+            st = getattr(s, "status", "") or ""
+            status_last = st or status_last
+            pids = _price_ids_from_subscription(s)
+            cm = _subscription_matches_core(pids)
+            tm = _subscription_matches_travel(pids)
+            if st in ("active", "trialing"):
+                if cm:
+                    core_any = 1
+                if tm:
+                    travel_any = 1
+            elif st == "past_due" and cm:
+                past_due_core = 1
+    except Exception:
+        pass
 
     if past_due_core:
         if grace_until > now:
@@ -740,10 +743,10 @@ def apply_checkout_session_completed(obj: dict[str, Any]) -> None:
     if not _checkout_line_items_include_travel_price(sid):
         return
     r = _row(cid)
-    core = int(r["core_subscribed"]) if r else 0
-    travel = max(int(r["travel_active"]) if r else 0, 1)
+    core = int(r["core_subscribed"] or 0) if r else 0
+    travel = max(int(r["travel_active"] or 0) if r else 0, 1)
     st = (r["subscription_status"] or "") if r else ""
-    pf = int(r["payment_failed"]) if r else 0
+    pf = int(r["payment_failed"] or 0) if r else 0
     fa = float(r["payment_failed_at"]) if r and r["payment_failed_at"] is not None else None
     gu = float(r["grace_until"]) if r and r["grace_until"] is not None else None
     _upsert_row(cid, core, travel, st, pf, fa, gu)
@@ -774,8 +777,8 @@ def apply_payment_intent_to_customer(payment_intent_id: str, customer_id: str) -
         return False
     recompute_customer(customer_id)
     r = _row(customer_id)
-    core = int(r["core_subscribed"]) if r else 0
-    travel = max(int(r["travel_active"]) if r else 0, 1)
+    core = int(r["core_subscribed"] or 0) if r else 0
+    travel = max(int(r["travel_active"] or 0) if r else 0, 1)
     row_st = (r["subscription_status"] or "") if r else ""
     pf = int(r["payment_failed"]) if r else 0
     fa = float(r["payment_failed_at"]) if r and r["payment_failed_at"] is not None else None
@@ -1096,12 +1099,23 @@ async def entitlements(
     force_sync: bool = Query(False),
     diagnose: bool = Query(False),
 ):
-    return await get_entitlements(
-        customer_id=customer_id,
-        session_id=session_id,
-        payment_intent_id=payment_intent_id,
-        diagnose=diagnose,
-    )
+    try:
+        return await get_entitlements(
+            customer_id=customer_id,
+            session_id=session_id,
+            payment_intent_id=payment_intent_id,
+            diagnose=diagnose,
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "status": "INVALID",
+                "reason": "internal_error",
+                "detail": str(e)[:500],
+            },
+        )
 
 
 @app.post("/billing/webhook")
