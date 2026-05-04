@@ -2,7 +2,8 @@
 <!--
   PROJECT_PUBLIC_ROOT: https://nextbase-one-ha.github.io/nextbase-world/
   【ページ正本・CANONICAL_TRAVEL_1499】
-  Travel モード本体は本ファイル。index.premium.html は説明ページ。課金後は本ページへ着地。
+  Travel モード本体は本ファイル。index.premium.html は説明LP。課金後は本ページへ着地。
+  30-Day Room 作成: glb-room.html?mode=create（本ページヘッダー直下の Create Room と同一導線）。
 -->
 
 <html lang="en" class="notranslate" translate="no">
@@ -66,6 +67,19 @@ body{
 .maintenance-card{width:min(520px,100%);border:1px solid #2a2a2a;border-radius:14px;background:#121212;padding:18px 16px}
 .maintenance-reload{margin-top:12px;border:1px solid #ffe566;color:#fff8c8;background:#1a1a1a;border-radius:999px;padding:10px 14px;font-size:12px;font-weight:700}
 
+/* Room CTA — aligned with index.premium.html .glb-travel-lp-secondary (tokens: --accent) */
+.glb-room-create-wrap{padding:4px 16px 14px;text-align:center;max-width:min(420px,100%);margin:0 auto}
+.glb-room-pass-hint{margin:0 0 12px;font-size:12px;color:var(--text-dim);line-height:1.6;text-align:center}
+.glb-room-pass-hint strong{color:var(--accent);font-weight:700}
+a.glb-travel-lp-secondary{
+  display:block;width:100%;max-width:340px;margin:0 auto;
+  padding:14px 20px;border-radius:999px;font-size:14px;font-weight:700;letter-spacing:.04em;
+  text-align:center;text-decoration:none;color:var(--accent);background:transparent;
+  border:1px solid rgba(243,198,35,.45);box-shadow:none;
+  transition:border-color .2s,background .2s;
+}
+a.glb-travel-lp-secondary:hover{border-color:rgba(243,198,35,.75);background:rgba(243,198,35,.08)}
+
 </style>
 </head>
 
@@ -94,9 +108,10 @@ body{
   </div>
 </div>
 
-<p style="text-align:center;margin:6px 0 10px;padding:0 16px;">
-  <a href="glb-room.html?mode=create" style="font-size:12px;color:var(--gold);text-decoration:underline;">Create Room</a>
-</p>
+<div class="glb-room-create-wrap" aria-label="30-day room">
+  <p class="glb-room-pass-hint"><strong>30-day translation room</strong> — included with this pass. Generate a 6-digit code; <strong>GLB Core ($2.99/mo) users can join</strong> your room. Access matches your Travel window.</p>
+  <a class="glb-travel-lp-secondary" href="glb-room.html?mode=create">Create Room</a>
+</div>
 
 <div class="glb-stage" id="stage-area">
   <span class="stage-label">When words fail</span>
