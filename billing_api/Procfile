@@ -1,0 +1,2 @@
+# Cloud Run / Buildpacks: bind PORT and run the FastAPI app.
+web: uvicorn main:app --host 0.0.0.0 --port $PORT
