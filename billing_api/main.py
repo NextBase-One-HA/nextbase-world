@@ -469,6 +469,119 @@ def recompute_customer(customer_id: str) -> None:
     )
 
 
+def _session_as_dict(sess: Any) -> dict[str, Any]:
+    if isinstance(sess, dict):
+        return sess
+    try:
+        td = getattr(sess, "to_dict", None)
+        if callable(td):
+            d = td()
+            if isinstance(d, dict):
+                return d
+    except Exception:
+        pass
+    return {}
+
+
+def _resolve_customer_id_from_checkout(obj: dict[str, Any]) -> Optional[str]:
+    """Webhook payload often has customer=null (guest / if_required); resolve via API or email."""
+    c = obj.get("customer")
+    if isinstance(c, str) and c.startswith("cus_"):
+        return c
+    if c is not None and not isinstance(c, str):
+        uid = getattr(c, "id", None) if not isinstance(c, dict) else c.get("id")
+        if uid and str(uid).startswith("cus_"):
+            return str(uid)
+
+    sid = obj.get("id")
+    if not isinstance(sid, str) or not sid.startswith("cs_"):
+        return None
+    if not STRIPE_SECRET_KEY:
+        return None
+
+    try:
+        sess = stripe.checkout.Session.retrieve(sid, expand=["customer", "payment_intent"])
+        sc = getattr(sess, "customer", None)
+        if isinstance(sc, str) and sc.startswith("cus_"):
+            return sc
+        if sc is not None and not isinstance(sc, str):
+            suid = getattr(sc, "id", None)
+            if suid and str(suid).startswith("cus_"):
+                return str(suid)
+        pi = getattr(sess, "payment_intent", None)
+        if pi is not None and not isinstance(pi, str):
+            pc = getattr(pi, "customer", None)
+            if pc and str(pc).startswith("cus_"):
+                return str(pc)
+        if isinstance(pi, str) and pi.startswith("pi_"):
+            pio = stripe.PaymentIntent.retrieve(pi)
+            pc = getattr(pio, "customer", None)
+            if pc and str(pc).startswith("cus_"):
+                return str(pc)
+    except Exception:
+        pass
+
+    details = obj.get("customer_details")
+    email = ""
+    if isinstance(details, dict):
+        email = (details.get("email") or "").strip()
+    if not email:
+        email = (obj.get("customer_email") or "").strip()
+    if email:
+        try:
+            lst = stripe.Customer.list(email=email, limit=5)
+            for customer in lst.data:
+                cu = getattr(customer, "id", "")
+                if isinstance(cu, str) and cu.startswith("cus_"):
+                    return cu
+        except Exception:
+            pass
+    return None
+
+
+def _checkout_line_items_include_travel_price(session_id: str) -> bool:
+    if not STRIPE_TRAVEL_PRICE_IDS or not session_id.startswith("cs_"):
+        return False
+    try:
+        lines = stripe.checkout.Session.list_line_items(session_id, limit=100)
+        for li in lines.auto_paging_iter():
+            price = getattr(li, "price", None)
+            if price is None:
+                continue
+            pid = getattr(price, "id", None)
+            if pid and str(pid) in STRIPE_TRAVEL_PRICE_IDS:
+                return True
+    except Exception:
+        pass
+    return False
+
+
+def apply_checkout_session_completed(obj: dict[str, Any]) -> None:
+    """payment-mode Payment Link: customer may be null in webhook; travel is not on subscriptions."""
+    ps = (obj.get("payment_status") or "").strip()
+    if ps not in ("paid", "complete", "no_payment_required"):
+        return
+    sid = obj.get("id")
+    if not isinstance(sid, str) or not sid.startswith("cs_"):
+        return
+    cid = _resolve_customer_id_from_checkout(obj)
+    if not cid:
+        return
+    recompute_customer(cid)
+    if obj.get("mode") != "payment":
+        return
+    if not _checkout_line_items_include_travel_price(sid):
+        return
+    r = _row(cid)
+    core = int(r["core_subscribed"]) if r else 0
+    travel = max(int(r["travel_active"]) if r else 0, 1)
+    st = (r["subscription_status"] or "") if r else ""
+    pf = int(r["payment_failed"]) if r else 0
+    fa = float(r["payment_failed_at"]) if r and r["payment_failed_at"] is not None else None
+    gu = float(r["grace_until"]) if r and r["grace_until"] is not None else None
+    _upsert_row(cid, core, travel, st, pf, fa, gu)
+
+
 def sync_from_stripe_customer(customer_id: str) -> None:
     recompute_customer(customer_id)
 
@@ -651,11 +764,15 @@ async def entitlements(customer_id: Optional[str] = None, session_id: Optional[s
 
     if sid.startswith("cs_"):
         try:
-            checkout = stripe.checkout.Session.retrieve(sid, expand=["subscription"])
-            c = getattr(checkout, "customer", None)
-            if c:
-                cid = str(c)
-                recompute_customer(cid)
+            checkout = stripe.checkout.Session.retrieve(
+                sid, expand=["customer", "payment_intent", "subscription"]
+            )
+            session_obj = _session_as_dict(checkout)
+            if session_obj.get("id"):
+                apply_checkout_session_completed(session_obj)
+                rcid = _resolve_customer_id_from_checkout(session_obj)
+                if rcid:
+                    cid = rcid
         except Exception:
             pass
 
@@ -723,9 +840,7 @@ async def billing_webhook(request: Request):
                 )
                 recompute_customer(cid)
         elif et in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
-            cid = obj.get("customer")
-            if cid:
-                recompute_customer(str(cid))
+            apply_checkout_session_completed(obj)
     except Exception as e:
         handler_err = f"{type(e).__name__}: {e}"
 
