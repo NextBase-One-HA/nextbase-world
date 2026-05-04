@@ -501,6 +501,37 @@ width:100%;max-width:400px;
 const LS_LANG = 'glb_ui_lang';
 const LS_BASE = 'glb_user_base_lang';
 const STRIPE_URL = 'https://buy.stripe.com/bJedRbefH5yogzZfuDasg09';
+/** Billing API (entitlements); GitHub Pages origin is allowed in billing_api CORS. */
+const GLB_BILLING_API_BASE = 'https://nextbase-billing-125142687526.asia-northeast1.run.app';
+
+function getCheckoutSessionIdFromUrl() {
+  try {
+    const id = new URLSearchParams(window.location.search).get('session_id');
+    return id && String(id).trim();
+  } catch (e) {
+    return '';
+  }
+}
+
+async function resolveBillingDestination(sessionId) {
+  const sid = String(sessionId || '').trim();
+  if (!sid || !/^cs_(live|test)_/.test(sid)) return '';
+  const url = GLB_BILLING_API_BASE + '/entitlements?session_id=' + encodeURIComponent(sid);
+  try {
+    const r = await fetch(url, { method: 'GET', credentials: 'omit' });
+    const data = await r.json();
+    if (data && data.status === 'PASS' && data.travel_active) {
+      return 'index.14.99.html?session_id=' + encodeURIComponent(sid);
+    }
+    if (data && data.status === 'PASS' && data.core_subscribed) {
+      return 'index.2.99.html';
+    }
+    // HOLD / insufficient / missing_customer — travel surface + purchase path (no infinite gate loop)
+    return 'index.14.99.html';
+  } catch (e) {
+    return 'index.premium.html';
+  }
+}
 
 const LANGS = [
   {c:'en',l:'English',flag:'🇬🇧',short:'EN'},
@@ -633,7 +664,7 @@ function showMoreLangs() {
   document.getElementById('gate-more').style.display = 'none';
 }
 
-function enterApp() {
+async function enterApp() {
   if (!selectedLang) return;
   currentLang = selectedLang;
   try {
@@ -644,6 +675,15 @@ function enterApp() {
     const defaultTarget = currentLang === 'en' ? 'ja' : 'en';
     localStorage.setItem('glb_user_target_lang', defaultTarget);
   } catch(e) {}
+
+  const checkoutSid = getCheckoutSessionIdFromUrl();
+  if (checkoutSid) {
+    const dest = await resolveBillingDestination(checkoutSid);
+    if (dest) {
+      window.location.replace(dest);
+      return;
+    }
+  }
 
   const gate = document.getElementById('lang-gate');
   const panel = document.getElementById('intro-panel');
@@ -706,7 +746,16 @@ function closeStripeConfirm(e) {
 }
 
 // INIT
-function init() {
+async function init() {
+  const checkoutSid = getCheckoutSessionIdFromUrl();
+  if (checkoutSid) {
+    const dest = await resolveBillingDestination(checkoutSid);
+    if (dest) {
+      window.location.replace(dest);
+      return;
+    }
+  }
+
   let stored = null;
   try { stored = localStorage.getItem(LS_LANG); } catch(e) {}
   if (stored && LANGS.find(l => l.c === stored)) {
@@ -726,7 +775,9 @@ function init() {
     }
   }
 }
-init();
+init().catch(function () {
+  buildLangGrid('lang-grid', selectGateLang);
+});
 </script>
 
 </body>
