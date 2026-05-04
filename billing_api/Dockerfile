@@ -1,8 +1,7 @@
-# Deploy from THIS directory (billing_api) — uploads only files here.
-#   gcloud run deploy nextbase-billing --source . --region asia-northeast1
-# (Use a dedicated service name; do not reuse nextbase-api unless you intend to replace that image.)
+# Deploy from THIS directory (billing_api):
+#   cd billing_api && gcloud run deploy nextbase-billing --source . --region asia-northeast1
 #
-# Build context must include ./canonical (sync: cp -r ../canonical ./canonical).
+# canonical/ is committed under billing_api/ — do not manual-cp before deploy (use git pull).
 FROM python:3.11-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -12,16 +11,16 @@ RUN apt-get update \
 
 WORKDIR /app
 
-# Single copy: whole module tree; .dockerignore strips only local junk (not canonical/).
+# Cache dependency layer when only app code changes
+COPY requirements-billing.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+  && pip install --no-cache-dir --retries 5 -r requirements-billing.txt
+
 COPY . .
 
-RUN pip install --no-cache-dir -r requirements-billing.txt
-
-RUN set -eux; \
-  ls -la; \
-  ls -la canonical/; \
-  test -f canonical/ORE_LAYER_SYNC.json; \
-  test -f canonical/ORE_LAYER_LOCK.json
+RUN test -d canonical \
+  && test -f canonical/ORE_LAYER_SYNC.json \
+  && test -f canonical/ORE_LAYER_LOCK.json
 
 ENV CANONICAL_PATH=/app/canonical
 ENV PYTHONPATH=/app
