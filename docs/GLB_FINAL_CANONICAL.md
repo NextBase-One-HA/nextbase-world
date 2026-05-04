@@ -26,6 +26,23 @@ Modes:
 - Core mode: daily communication.
 - Travel mode: no-stuck travel communication.
 
+## 0.5 Physical paths in the NextBaseWorld repository
+
+These paths are the **only** on-disk locations that define GLB in this repo. External notes or memory must not substitute fictional folders (there is **no** `apps/glb/` directory here).
+
+| Role | Path |
+|------|------|
+| GLB Core entry | `index.next.html` (deploy may also use sibling roots such as `index.2.99.html`) |
+| Travel app body | `index.14.99.html` |
+| Travel explanation / Stripe entry | `index.premium.html` |
+| Offline GLB runtime | `offline-glb/` (e.g. `glb_tomori_web.js`, `runtime_loader.js`) |
+| Maintenance control | `glb_maintenance.json` |
+| GLB room surface | `glb-room.html` (where used in the release) |
+
+**BUILT (構築済み)** for GLB here means: these files and `offline-glb/` exist at the expected paths and match the intended release—not a path that does not appear in the tree.
+
+**REALITY (実機)** for billing entitlements is validated separately (e.g. `nextbase-billing` `/entitlements` `PASS` with correct Stripe Price IDs and customer linkage)—not inferred from UI paths alone.
+
 ## 1. Product roles
 
 ### GLB Core / 2.99
