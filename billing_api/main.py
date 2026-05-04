@@ -45,56 +45,14 @@ STRIPE_TRAVEL_PRICE_IDS = {
 stripe.api_key = STRIPE_SECRET_KEY
 
 
-def _stripe_mapping(obj: Any) -> dict[str, Any]:
-    """Best-effort: StripeObject / nested → plain dict (webhook-safe)."""
-    if obj is None:
-        return {}
-    if isinstance(obj, dict):
-        return obj
-    try:
-        if hasattr(obj, "to_dict_recursive"):
-            d = obj.to_dict_recursive()
-            if isinstance(d, dict):
-                return d
-    except Exception:
-        pass
-    try:
-        if hasattr(obj, "to_dict"):
-            d = obj.to_dict()
-            if isinstance(d, dict):
-                return d
-    except Exception:
-        pass
-    try:
-        tj = getattr(obj, "to_json", None)
-        if callable(tj):
-            return json.loads(tj())
-    except Exception:
-        pass
-    try:
-        return dict(obj)
-    except Exception:
-        pass
-    try:
-        keys = getattr(obj, "keys", None)
-        if callable(keys):
-            return {str(k): obj[k] for k in keys()}
-    except Exception:
-        pass
-    return {}
-
-
 def _event_payload(raw_body: bytes, signature: str | None) -> dict[str, Any]:
-    """Normalize Stripe webhook body to a plain dict (Event vs StripeObject-safe)."""
+    """Verify signature when configured; event body is always parsed from raw JSON."""
     secret = STRIPE_WEBHOOK_SECRET or ""
     stripe.api_key = STRIPE_SECRET_KEY or ""
 
     if secret:
-        event_obj = stripe.Webhook.construct_event(raw_body, signature or "", secret)
-        d = _stripe_mapping(event_obj)
-        if d:
-            return d
-        raise ValueError("could not convert verified Stripe event to dict")
+        stripe.Webhook.construct_event(raw_body, signature or "", secret)
+        return json.loads(raw_body.decode("utf-8"))
 
     return json.loads(raw_body.decode("utf-8"))
 
@@ -728,8 +686,12 @@ async def billing_webhook(request: Request):
         raise HTTPException(400, f"invalid signature: {e}") from e
 
     et = str(event.get("type") or "")
-    data = _stripe_mapping(event.get("data"))
-    obj = _stripe_mapping(data.get("object"))
+    data = event.get("data")
+    if not isinstance(data, dict):
+        data = {}
+    obj = data.get("object")
+    if not isinstance(obj, dict):
+        obj = {}
 
     handler_err: str | None = None
     try:
