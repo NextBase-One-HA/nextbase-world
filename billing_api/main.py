@@ -558,6 +558,14 @@ def _resolve_customer_id_from_checkout(obj: dict[str, Any]) -> Optional[str]:
                 cu = getattr(customer, "id", "")
                 if isinstance(cu, str) and cu.startswith("cus_"):
                     return cu
+            # Guest checkout: no Stripe Customer yet — create cus_ for DB entitlements (SQLite key).
+            created = stripe.Customer.create(
+                email=email,
+                metadata={"glb_provisioned": "guest_checkout_email"},
+            )
+            cnew = getattr(created, "id", None)
+            if isinstance(cnew, str) and cnew.startswith("cus_"):
+                return cnew
         except Exception:
             pass
     return None
