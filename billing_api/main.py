@@ -42,6 +42,13 @@ STRIPE_TRAVEL_PRICE_IDS = {
     if x.strip()
 }
 
+# When true, GET /entitlements?diagnose=true&payment_intent_id=... returns Stripe reconciliation hints (ops only).
+ALLOW_ENTITLEMENTS_DIAGNOSIS = os.getenv("ALLOW_ENTITLEMENTS_DIAGNOSIS", "").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
 stripe.api_key = STRIPE_SECRET_KEY
 
 
@@ -600,20 +607,44 @@ def _checkout_line_items_include_travel_price(session_id: str) -> bool:
     return False
 
 
+def _checkout_session_ids_for_payment_intent(payment_intent_id: str) -> list[str]:
+    """All Checkout Session ids Stripe links to this PI, plus optional metadata hints."""
+    ids: list[str] = []
+    try:
+        lst = stripe.checkout.Session.list(payment_intent=payment_intent_id, limit=30)
+        for sess in lst.data:
+            sid = getattr(sess, "id", "") or ""
+            if sid.startswith("cs_"):
+                ids.append(sid)
+    except Exception:
+        pass
+    try:
+        pi = stripe.PaymentIntent.retrieve(payment_intent_id)
+        md = getattr(pi, "metadata", None) or {}
+        if isinstance(md, dict):
+            for key in ("checkout_session_id", "session_id", "checkout_session"):
+                v = md.get(key)
+                if isinstance(v, str) and v.startswith("cs_"):
+                    ids.append(v)
+    except Exception:
+        pass
+    seen: set[str] = set()
+    out: list[str] = []
+    for i in ids:
+        if i not in seen:
+            seen.add(i)
+            out.append(i)
+    return out
+
+
 def _payment_intent_line_items_include_travel_price(payment_intent_id: str) -> bool:
     """True if Checkout Session line items or (fallback) Invoice lines reference a configured Travel price."""
     if not STRIPE_TRAVEL_PRICE_IDS or not payment_intent_id.startswith("pi_"):
         return False
     try:
-        lst = stripe.checkout.Session.list(payment_intent=payment_intent_id, limit=20)
-        for sess in lst.data:
-            sid = getattr(sess, "id", "") or ""
-            if not sid.startswith("cs_"):
-                continue
-            if getattr(sess, "status", None) != "complete":
-                continue
-            if getattr(sess, "payment_status", None) != "paid":
-                continue
+        # If PaymentIntent succeeded, line items on any linked Checkout Session are authoritative
+        # (do not require session.status/payment_status — API versions and edge cases differ).
+        for sid in _checkout_session_ids_for_payment_intent(payment_intent_id):
             if _checkout_line_items_include_travel_price(sid):
                 return True
     except Exception:
@@ -641,6 +672,45 @@ def _payment_intent_line_items_include_travel_price(payment_intent_id: str) -> b
     except Exception:
         pass
     return False
+
+
+def gather_pi_entitlements_diagnosis(payment_intent_id: str, customer_id: str) -> dict[str, Any]:
+    """Stripe-side facts for debugging PASS/HOLD (enable with ALLOW_ENTITLEMENTS_DIAGNOSIS + diagnose=true)."""
+    out: dict[str, Any] = {"payment_intent_id": payment_intent_id, "customer_id": customer_id}
+    try:
+        pi = stripe.PaymentIntent.retrieve(payment_intent_id, expand=["customer"])
+        out["pi_status"] = getattr(pi, "status", None)
+        out["pi_customer"] = _payment_intent_customer_id(pi)
+        out["configured_travel_price_ids"] = sorted(STRIPE_TRAVEL_PRICE_IDS)
+    except Exception as e:
+        out["error"] = str(e)
+        return out
+    sessions_detail: list[dict[str, Any]] = []
+    all_price_ids: list[str] = []
+    for csid in _checkout_session_ids_for_payment_intent(payment_intent_id):
+        entry: dict[str, Any] = {"id": csid}
+        try:
+            se = stripe.checkout.Session.retrieve(csid)
+            entry["status"] = getattr(se, "status", None)
+            entry["payment_status"] = getattr(se, "payment_status", None)
+            entry["mode"] = getattr(se, "mode", None)
+            lines = stripe.checkout.Session.list_line_items(csid, limit=50)
+            spids: list[str] = []
+            for li in lines.auto_paging_iter():
+                price = getattr(li, "price", None)
+                pid = getattr(price, "id", None) if price else None
+                if pid:
+                    s = str(pid)
+                    spids.append(s)
+                    all_price_ids.append(s)
+            entry["line_item_price_ids"] = spids
+        except Exception as ex:
+            entry["error"] = str(ex)
+        sessions_detail.append(entry)
+    out["checkout_sessions"] = sessions_detail
+    out["all_line_price_ids_seen"] = sorted(set(all_price_ids))
+    out["travel_price_ids_matched"] = sorted(set(all_price_ids) & STRIPE_TRAVEL_PRICE_IDS)
+    return out
 
 
 def _stripe_checkout_session_payment_hold(session_id: str) -> Optional[str]:
@@ -914,6 +984,7 @@ async def get_entitlements(
     customer_id: Optional[str] = None,
     session_id: Optional[str] = None,
     payment_intent_id: Optional[str] = None,
+    diagnose: bool = False,
 ) -> dict[str, Any]:
     """Resolve Stripe entitlements and a gate ``status``: PASS | HOLD | INVALID."""
     if not STRIPE_SECRET_KEY:
@@ -1014,11 +1085,19 @@ async def get_entitlements(
     )
     if allowed:
         return {**data, "status": "PASS"}
-    return {
+    hold: dict[str, Any] = {
         **data,
         "status": "HOLD",
         "reason": "insufficient_entitlement",
     }
+    if (
+        diagnose
+        and ALLOW_ENTITLEMENTS_DIAGNOSIS
+        and pid.startswith("pi_")
+        and cid.startswith("cus_")
+    ):
+        hold["diagnosis"] = gather_pi_entitlements_diagnosis(pid, cid)
+    return hold
 
 
 @app.get("/entitlements")
@@ -1027,11 +1106,13 @@ async def entitlements(
     session_id: Optional[str] = None,
     payment_intent_id: Optional[str] = None,
     force_sync: bool = Query(False),
+    diagnose: bool = Query(False),
 ):
     return await get_entitlements(
         customer_id=customer_id,
         session_id=session_id,
         payment_intent_id=payment_intent_id,
+        diagnose=diagnose,
     )
 
 
