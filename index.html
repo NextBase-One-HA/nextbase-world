@@ -645,15 +645,20 @@ function enterApp() {
     localStorage.setItem('glb_user_target_lang', defaultTarget);
   } catch(e) {}
 
-  // exit gate
   const gate = document.getElementById('lang-gate');
-  gate.classList.add('exit');
-  setTimeout(() => { gate.style.display = 'none'; }, 500);
-
-  // show intro
-  applyIntroLang(currentLang);
   const panel = document.getElementById('intro-panel');
+  if (!gate || !panel) return;
+
+  // Intro must stack above the gate while it fades (#intro-panel was 9998 < #lang-gate 9999 → black screen).
+  applyIntroLang(currentLang);
+  panel.style.zIndex = '10000';
   panel.classList.add('show');
+
+  gate.classList.add('exit');
+  setTimeout(() => {
+    gate.style.display = 'none';
+    gate.style.zIndex = '';
+  }, 500);
 }
 
 function applyIntroLang(lang) {
@@ -715,8 +720,10 @@ function init() {
     // new user: show gate
     buildLangGrid('lang-grid', selectGateLang);
     const more = document.getElementById('gate-more');
-    more.textContent = 'More languages';
-    more.style.display = '';
+    if (more) {
+      more.textContent = 'More languages';
+      more.style.display = '';
+    }
   }
 }
 init();
