@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   PROJECT_PUBLIC_ROOT: https://nextbase-one-ha.github.io/nextbase-world/
-  本ファイル: .../index.premium.html（14.99 Travel Pass 専用LP・cancel 着地）。
-  Core 正本: index.2.99.html（index.next.html は無料体験導線）。index.coreflow.html 廃止。
-  PHASE_TRAVEL_MARKETING_01: ポジティブ訴求LP（#glb-travel-lp-hero）。30日買い切り・自動更新なし・Core（$2.99/月）とは別商品であることを明記。
+  本ファイル: .../index.premium.html（Travel Pass $14.99 + 30-Day Room 主役LP・cancel 着地）。
+  Core 正本: index.2.99.html（index.next.html は無料体験導線）。
+  Room UI 正本: glb-room.html（?mode=create | ?mode=join）。
   Stripe 14.99 success 正: .../index.14.99.html?session_id={CHECKOUT_SESSION_ID}&travel=1（Dashboard 絶対URL）。
 -->
 <html lang="en" class="notranslate" translate="no">
@@ -13,7 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-    <title>GLOBAL LANGUAGE BREAKER — Travel Pass</title>
+    <title>GLOBAL LANGUAGE BREAKER — 30-Day Room &amp; Travel Pass</title>
     <style>
         :root {
             --gold: #f0c93a;
@@ -194,6 +194,19 @@
         .legal-links a:hover { color: var(--gold); }
         .legal-sep { color: #444; user-select: none; }
         .footer-copy { margin-top: 12px; font-size: 11px; color: #666; }
+        .glb-lang-reset {
+            font-size: 11px;
+            background: transparent;
+            border: 1px solid #444;
+            color: #888;
+            padding: 8px 16px;
+            border-radius: 999px;
+            cursor: pointer;
+            letter-spacing: 0.04em;
+            margin: 12px auto 0;
+            display: inline-block;
+        }
+        .glb-lang-reset:hover { color: var(--gold); border-color: rgba(240, 201, 58, 0.45); }
         select.lang-select {
             width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--gold);
             background: #111; color: #fff; font-size: 14px; margin-bottom: 12px; outline: none; box-sizing: border-box;
@@ -287,6 +300,26 @@
             padding: 16px 20px;
             font-size: 15px;
             text-align: center;
+        }
+        a.glb-travel-lp-secondary {
+            display: block;
+            margin: 12px 0 0;
+            padding: 14px 20px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-align: center;
+            text-decoration: none;
+            color: var(--gold);
+            background: transparent;
+            border: 1px solid rgba(240, 201, 58, 0.45);
+            box-shadow: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        a.glb-travel-lp-secondary:hover {
+            border-color: rgba(240, 201, 58, 0.75);
+            background: rgba(240, 201, 58, 0.06);
         }
         .glb-travel-lp-en {
             display: block;
@@ -558,18 +591,19 @@
     <p id="travel-remaining-line" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
     <p id="travel-expiry-display" class="glb-travel-remaining" style="display:none;" role="status" aria-live="polite"></p>
 
-    <section id="glb-travel-lp-hero" class="glb-travel-lp-hero" aria-labelledby="glb-travel-lp-h2" lang="ja" data-phase="CORE_RELEASE_CLEANUP_01">
-        <h2 id="glb-travel-lp-h2">注文も、移動も、ちょっとした会話も。</h2>
-        <p class="glb-travel-lp-lead">旅先でそのまま見せて通じる。道に迷わず、会話をあきらめない30日間。</p>
+    <section id="glb-travel-lp-hero" class="glb-travel-lp-hero" aria-labelledby="glb-travel-lp-h2" lang="en" data-phase="ROOM_LP_30DAY_01">
+        <h2 id="glb-travel-lp-h2">Create a 30-day translation room.</h2>
+        <p class="glb-travel-lp-lead">Travel Pass unlocks a private room: you generate a 6-digit code, and <strong style="color:#fff8dc;">Core subscribers can join</strong> to chat with live translation—no contact list required.</p>
         <ul class="glb-travel-lp-merits">
-            <li><strong>[30-day pass]</strong> One payment opens full Travel mode for 30 days. No auto-renew.</li>
-            <li><strong>[Clear billing]</strong> Travel Pass is separate from Core ($2.99/mo). No hidden overlap.</li>
-            <li><strong>[Start in seconds]</strong> Finish checkout, come back here, pick your language, and go.</li>
+            <li><strong>[30-day room]</strong> Your room runs for 30 days from purchase, then closes automatically. Travel Pass is one-time; no auto-renew for Travel.</li>
+            <li><strong>[Core joins free]</strong> Share the code; GLB Core ($2.99/mo) members enter on the Join screen.</li>
+            <li><strong>[Separate products]</strong> Travel Pass and Core bill independently—no hidden bundle.</li>
         </ul>
-        <p class="glb-travel-lp-reassure">Billing is simple: one 30-day purchase. For receipts or changes, open Purchase Help in the footer anytime.</p>
+        <p class="glb-travel-lp-reassure">Receipts and Purchase Help are in the footer. Core billing uses Stripe Customer Portal when you subscribe to Core.</p>
         <a class="btn glb-travel-lp-cta" id="glb-travel-lp-cta-btn" href="javascript:void(0)" onclick="openTravelStripeConfirm(event)">Get Travel Pass — $14.99</a>
-        <p class="glb-travel-lp-en" style="margin:10px 0 0; font-size:11px; color:#a4b2ca;">One-time checkout · 30-day access · Not recurring</p>
-        <p class="glb-travel-lp-en" style="margin:6px 0 0; font-size:11px; color:#a4b2ca;">After 30 days, you return to Core mode automatically.</p>
+        <a class="btn glb-travel-lp-secondary" href="glb-room.html?mode=create">See how rooms work</a>
+        <p class="glb-travel-lp-en" style="margin:10px 0 0; font-size:11px; color:#a4b2ca;">One-time checkout · 30-day room · Not recurring</p>
+        <p class="glb-travel-lp-en" style="margin:6px 0 0; font-size:11px; color:#a4b2ca;">After 30 days, Travel room access ends; your Core subscription continues on its own terms.</p>
     </section>
 
     <div class="glb-billboard" style="display:none;" aria-hidden="true">
@@ -687,6 +721,7 @@
             <span class="legal-sep" aria-hidden="true">|</span>
             <a href="support.html" id="link-purchase-help">Purchase Help</a>
         </div>
+        <p style="margin: 12px 0 0;"><button type="button" class="glb-lang-reset" id="glb-lang-reset" onclick="localStorage.removeItem('glb_ui_lang');location.href='index.html';">Language</button></p>
         <p class="footer-copy" id="footer-copyright">&copy; 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending</p>
     </footer>
     </div>
@@ -748,28 +783,28 @@
         }
         const FAQS = [
             {
-                q: '30日間のパスとは、いわゆる「サブスク」ですか？',
-                a: 'いいえ、使い切りのチケットです。自動更新で勝手に翌月分が引き落とされる心配はありません。30日が経過すると自動的にCoreプランに戻るだけ。あなたの旅の期間だけ、贅沢に使い倒してください。'
+                q: '30日ルームとは何ですか？',
+                a: 'Travel Pass購入後、専用の「翻訳ルーム」を最大30日間使えます。あなたが発行した6桁のコードを、Core契約者に渡すと参加できます。バックエンド接続は順次拡張予定ですが、課金と権限の設計はこのルームを中心に進みます。'
             },
             {
-                q: '旅が終わった後、勝手にお金がかかることは？',
-                a: 'ありません。Travel Passは一度きりの決済です。30日後に「Coreモード（月額2.99ドル）」へ戻りますが、これは以前から継続している基本機能の維持であり、Travel Pass関連の追加請求が発生することはありません。'
+                q: 'ルームを「作る」のと「入る」の違いは？',
+                a: '作成はTravel Pass（買い切り30日）側。参加はGLB Core（月額2.99ドル）側です。同じ6桁コードを共有するだけで、連絡先交換は不要です。'
             },
             {
-                q: '空港のWi-Fiがない場所でも使えますか？',
-                a: 'はい。レストランやホテルでよく使う「定番のフレーズ」は、あらかじめアプリ内に内蔵されています。電波の届かない地下の店や移動中でも、最低限のコミュニケーションはGLBが守ります。'
+                q: '30日が終わるとどうなりますか？',
+                a: 'そのルームの有効期限が切れます。Travel Passは自動更新されません。Coreのサブスクは別契約のため、Coreを継続している限り本体の翻訳機能は従来どおり利用できます。'
             },
             {
-                q: 'Coreプラン（月額）を契約していなくても買えますか？',
-                a: 'もちろんです。Travel Pass単体で購入でき、その30日間はCoreプランの全機能（無制限翻訳）もセットで解放されます。まずは今回の旅のためだけに使ってみてください。'
+                q: 'Coreだけではルームを作れませんか？',
+                a: 'ルームの「作成」はTravel Passが正本です。Coreは「参加」に最適化されています。パスを買わずに友人のルームへ入るだけならCoreで十分です。'
+            },
+            {
+                q: 'コードを間違えた／共有し忘れた場合は？',
+                a: '作成者はルーム画面から新しいコードを再発行できます（UI上の「New Code」）。共有はコピーまたは端末の共有シートを利用してください。'
             },
             {
                 q: '領収書は発行されますか？',
-                a: 'はい。Stripeを通じて登録したメールアドレスへ即座に送信されます。経費精算や、後で旅の記録を確認する際もスムーズです。'
-            },
-            {
-                q: '13言語以外の国へ行く場合は？',
-                a: 'GLBが最も得意とするのは、英語・日本語・中国語をはじめとする主要13言語です。それ以外の言語でもテキスト翻訳は可能ですが、Travel Passの「見せて通じる」体験をフルに味わうなら、対応言語の国でのご利用を強くおすすめします。'
+                a: 'はい。Stripeに登録したメールへ送信されます。Purchase Help（フッター）から手続きの案内も確認できます。'
             }
         ];
         function mountPremiumFaq() {
@@ -1539,6 +1574,7 @@
                 linkPrivacy: 'Privacy Policy',
                 linkLegal: 'Legal',
                 linkSupport: 'Support',
+                langReset: 'Language',
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: '',
                 travelMiniLink: '$14.99',
@@ -1591,6 +1627,7 @@
                 linkPrivacy: 'プライバシーポリシー',
                 linkLegal: '法的情報',
                 linkSupport: 'サポート',
+                langReset: '言語を変更',
                 footerCopyright: '© 2026 NEXT BASE (GLB). All Rights Reserved. Patent Pending',
                 btnMonthly: '',
                 travelMiniLink: '$14.99',
@@ -2012,6 +2049,8 @@
             if (llg) llg.textContent = T('linkLegal');
             if (lsup) lsup.textContent = T('linkSupport');
             if (fcp) fcp.textContent = T('footerCopyright');
+            var langResetBtn = document.getElementById('glb-lang-reset');
+            if (langResetBtn) langResetBtn.textContent = T('langReset');
             if (flf) flf.setAttribute('lang', CURRENT_LANG);
 
             refreshFreeQuotaDisplay();
