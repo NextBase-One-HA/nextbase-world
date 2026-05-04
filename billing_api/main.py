@@ -813,16 +813,34 @@ def resolve_customer_from_payment_intent(payment_intent_id: str) -> Optional[str
     return None
 
 
+def _safe_float(v: Any, default: float = 0.0) -> float:
+    try:
+        if v is None:
+            return default
+        return float(v)
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_int(v: Any, default: int = 0) -> int:
+    try:
+        if v is None:
+            return default
+        return int(v)
+    except (TypeError, ValueError):
+        return default
+
+
 def compute_entitlement_response(customer_id: str) -> dict[str, Any]:
     row = _row(customer_id)
     if not row:
         return {"ok": True, "customer_id": customer_id, "core_subscribed": False, "travel_active": False}
 
-    core = bool(row["core_subscribed"])
-    travel = bool(row["travel_active"])
+    core = bool(_safe_int(row["core_subscribed"], 0))
+    travel = bool(_safe_int(row["travel_active"], 0))
     st = (row["subscription_status"] or "").strip()
-    grace = float(row["grace_until"] or 0)
-    failed = int(row["payment_failed"] or 0)
+    grace = _safe_float(row["grace_until"], 0.0)
+    failed = _safe_int(row["payment_failed"], 0)
 
     now = time.time()
     if st == "past_due" and failed and grace > now:
