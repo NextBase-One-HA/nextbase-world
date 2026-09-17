@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>MyWorld</title>
+<link rel="stylesheet" href="public-myworld-i18n.css">
+</head>
+<body data-page="support">
+<main class="wrap">
+  <div class="top"><div class="brand" data-i="brand">MYWORLD</div><div class="next" data-i="next">NEXTBASE</div></div>
+  <div class="langs" role="navigation" aria-label="Language"></div>
+  <nav aria-label="Legal">
+    <a data-i="privacy" href="public-stampcam-privacy.html">Privacy</a>
+    <a data-i="terms" href="public-stampcam-terms.html">Terms</a>
+    <a data-i="support" href="public-stampcam-support.html">Support</a>
+    <a data-i="legal" href="public-stampcam-legal.html">Legal</a>
+  </nav>
+  <header>
+    <div class="eyebrow" data-i="eyebrow"></div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+    <div class="meta" data-i="meta"></div>
+  </header>
+  <div data-i="sections"></div>
+  <div class="footer" data-i="footer"></div>
+</main>
+<script src="public-myworld-i18n.js"></script>
+<script>
+(function () {
+  const page = document.body.getAttribute("data-page");
+  document.querySelector('a[href="public-stampcam-' + page + '.html"]').setAttribute("aria-current", "page");
+  const bar = document.querySelector(".langs");
+  MyWorldLegal.LANGS.forEach(function (lang) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("data-lang", lang);
+    b.textContent = MyWorldLegal.LABELS[lang];
+    b.addEventListener("click", function () { MyWorldLegal.setLang(lang); });
+    bar.appendChild(b);
+  });
+  MyWorldLegal.setLang(MyWorldLegal.detect());
+})();
+</script>
+</body>
+</html>
