@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Privacy | NowCheck</title>
+<link rel="stylesheet" href="public-documentation-camera.css">
+</head>
+<body><main class="wrap">
+<div class="top"><div><div class="brand">NowCheck</div><div class="series">NEXTBASE</div></div><div class="next">NEXTBASE</div></div>
+<header><div class="eyebrow">PRIVACY</div><h1>Privacy</h1>
+<p class="sub">This page describes the NowCheck product that is running now. It does not describe a future version.</p>
+<div class="meta">One worldwide app · Updated 2026-09-24 · Operator: Norimasa Nakamura, NEXT BASE-Japan</div></header>
+
+<section class="section"><h2>Location</h2>
+<p>NowCheck asks for location only while the app is in use. That location biases place search and, when Cooperation is on, finds requests in a coarse area around the phone.</p>
+<p>The place you open is stored with a place identifier. That identifier includes the place’s coordinates and name, so the same place can be matched later. The phone’s own precise location is not written as a separate GPS-history field.</p>
+</section>
+
+<section class="section"><h2>CloudKit</h2>
+<p>Ask NOW and human answers use Apple iCloud CloudKit, public database, container <code>iCloud.com.nextbase.nowcheck</code>, production environment. Apple processes that data under Apple’s terms.</p>
+<p>A request stores a request id, the place identifier, the place name, a coarse area cell for the place, created and expiry times, a schema version, and an open or answered status. An unanswered request stays open for 30 minutes.</p>
+<p>An answer stores a response id, the request id, the place identifier, one structured state (not busy, normal, busy, or there is a line), created time, the time until which it counts as current (60 minutes), a schema version, and the iCloud creator record name of the person who posted it.</p>
+</section>
+
+<section class="section"><h2>Human observations and the short note</h2>
+<p>An answer is a human observation, not an official status. It can be missing, old, or wrong. When nothing current exists, NowCheck shows that the now is unknown.</p>
+<p>The short note is optional. When it is posted, NowCheck stores the original text and, when it can tell, the source language. The note is not rewritten on the server. On the viewer’s iPhone, Apple Translation may show it in the app’s language. If translation fails, the original note stays visible. The original can still be opened when a translation is shown.</p>
+</section>
+
+<section class="section"><h2>Moderation, report, and block</h2>
+<p>Before a short note is posted, NowCheck rejects notes that match its prohibited-content filter, and notes longer than 80 characters. A rejected note is not saved.</p>
+<p>On a visible observation, Report opens an email to <a href="mailto:info@nextbase-japan.com?subject=NOWCHECK%20report">info@nextbase-japan.com</a> with the subject NOWCHECK report and the response id. Hide on this device only hides that creator on the phone that tapped it. It does not block them for anyone else.</p>
+<p>A service block is a CloudKit record of type ServiceBlock naming a creator record. Clients that have this build will not show that creator’s observations, and that creator cannot ask or answer. The block is not the same control as hide-on-device.</p>
+</section>
+
+<section class="section"><h2>Contact</h2>
+<p>Support and privacy: <a href="mailto:info@nextbase-japan.com">info@nextbase-japan.com</a>. Support page: <a href="https://nextbase-one-ha.github.io/nextbase-world/public-nowcheck-support.html">public-nowcheck-support.html</a>.</p>
+<p>NowCheck does not ask you to create a profile, follow people, or chat. This version does not send push or local notifications. The 30-minute and 60-minute limits change what the app shows as current. They are not a promise that Apple deletes the CloudKit record at that minute.</p>
+</section>
+</main></body>
+</html>
