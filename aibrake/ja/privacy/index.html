@@ -30,10 +30,10 @@
 <section class="section"><h2>4. 個人情報</h2>
 <p>iPhone BRAKEに、NextBaseアカウントは不要です。</p>
 <p>CLOUD BRAKEは任意です。接続にはSign in with Appleを使います。NextBaseはApple IDのパスワードを受け取りません。</p>
-<p>CLOUD BRAKEを接続すると、NextBaseは、Apple subjectのハッシュ（生のsubjectではない）、そこから導いた内部アカウントID、端末の公開鍵とその指紋、クラウドのロック状態と時刻、AI BRAKEが受け付けた管理実行の状態、アカウント削除までのSign in with Apple認可コードを保持します。</p>
-<p>端末の秘密鍵と、AIとの会話内容は保持しません。</p>
-<p>マイページからそのアカウントを削除できます。削除すると、NextBaseが持つこれらのCLOUD BRAKE記録は消えます。端末の切断は、その端末からの操作を止めますが、それだけではアカウントを削除しません。</p>
-<p>Apple側でのSign in with Appleトークン失効は、現在有効ではありません。失効に必要なクライアント資格情報をサーバーが持っていないためです。削除しても、NextBaseが持つ認可コードの写しは消えます。</p></section>
+<p>CLOUD BRAKEを接続すると、NextBaseは、Apple subjectのハッシュ（生のsubjectではない）、そこから導いた内部アカウントID、端末の公開鍵とその指紋、クラウドのロック状態と時刻、AI BRAKEが受け付けた管理実行の状態を保持します。</p>
+<p>端末の秘密鍵、Apple IDのパスワード、AIとの会話内容は保持しません。</p>
+<p>Sign in with Appleの失効資格情報があるとき、NextBaseは認可コードを、その接続を失効するためのトークンに交換し、アカウント削除までそのトークンだけを保持します。削除時にAppleへ失効を送ります。認可コード自体は残しません。資格情報がないあいだは、認可コードも失効トークンも保持しません。</p>
+<p>マイページからそのアカウントを削除できます。削除すると、NextBaseが持つCLOUD BRAKEの記録は消えます。端末の切断は、その端末からの操作を止めますが、それだけではアカウントを削除しません。</p></section>
 <section class="section"><h2>5. 第三者のAIサービス</h2>
 <p>AI BRAKEは、ChatGPT、Claude、Gemini、その他の第三者サービスのプライバシー慣行を制御しません。</p>
 <p>それらのサービスとのやりとりは、各提供者のプライバシーポリシーに従います。</p></section>

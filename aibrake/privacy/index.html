@@ -30,10 +30,10 @@
 <section class="section"><h2>4. Personal Information</h2>
 <p>iPhone BRAKE does not require a NextBase account.</p>
 <p>CLOUD BRAKE is optional. Connecting it uses Sign in with Apple. NextBase does not receive your Apple ID password.</p>
-<p>When you connect CLOUD BRAKE, NextBase stores a hash of the Apple subject (not the raw subject), an internal account id derived from that hash, the device public key and its fingerprint, the cloud lock state and timestamps, the status of managed executions admitted through AI BRAKE, and the Sign in with Apple authorization code until the account is deleted.</p>
-<p>NextBase does not store the device private key or the contents of your AI conversations.</p>
-<p>My Page can delete that account. Deletion removes those CLOUD BRAKE records from NextBase. Disconnecting a device stops that device from sending commands and does not by itself delete the account.</p>
-<p>Revocation of the Sign in with Apple token at Apple is not active: the server does not currently hold the Sign in with Apple client credential required to call Apple’s revoke endpoint. Deletion still removes NextBase’s copy of the authorization code.</p></section>
+<p>When you connect CLOUD BRAKE, NextBase stores a hash of the Apple subject (not the raw subject), an internal account id derived from that hash, the device public key and its fingerprint, the cloud lock state and timestamps, and the status of managed executions admitted through AI BRAKE.</p>
+<p>NextBase does not store the device private key, your Apple ID password, or the contents of your AI conversations.</p>
+<p>When the Sign in with Apple revocation credential is configured, NextBase exchanges the authorization code for the token required to revoke that connection, keeps only that token until account deletion, and revokes it at Apple when the account is deleted. The authorization code itself is not kept. While that credential is not configured, NextBase does not keep the authorization code or the revocation token.</p>
+<p>My Page can delete that account. Deletion removes the CLOUD BRAKE records NextBase holds. Disconnecting a device stops that device from sending commands and does not by itself delete the account.</p></section>
 <section class="section"><h2>5. Third-Party AI Services</h2>
 <p>AI BRAKE does not control the privacy practices of ChatGPT, Claude, Gemini, or any other third-party service.</p>
 <p>Your interaction with those services is governed by the privacy policies of their respective providers.</p></section>
