@@ -1,43 +1,67 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Privacy | NowCheck</title>
+<title>プライバシー | NowCheck</title>
 <link rel="stylesheet" href="public-documentation-camera.css">
 </head>
 <body><main class="wrap">
 <div class="top"><div><div class="brand">NowCheck</div><div class="series">NEXTBASE</div></div><div class="next">NEXTBASE</div></div>
-<header><div class="eyebrow">PRIVACY</div><h1>Privacy</h1>
-<p class="sub">This page describes the NowCheck product that is running now. It does not describe a future version.</p>
-<div class="meta">One worldwide app · Updated 2026-09-24 · Operator: Norimasa Nakamura, NEXT BASE-Japan</div></header>
+<header><div class="eyebrow">PRIVACY</div><h1>プライバシー</h1>
+<p class="sub">このページは、現在の NowCheck が扱うデータについて説明します。</p>
+<div class="meta">全世界の1本のアプリ · 更新日: 2026-10-13 · 運営: Norimasa Nakamura, NEXT BASE-Japan</div></header>
 
-<section class="section"><h2>Location</h2>
-<p>NowCheck asks for location only while the app is in use. That location biases place search and, when Cooperation is on, finds requests in a coarse area around the phone.</p>
-<p>The place you open is stored with a place identifier. That identifier includes the place’s coordinates and name, so the same place can be matched later. The phone’s own precise location is not written as a separate GPS-history field.</p>
+<section class="section"><h2>基本方針</h2>
+<p>NowCheck は、氏名、メールアドレス、電話番号、パスワードの登録を必要としません。公開プロフィール、フォロー、チャットも前提にしません。</p>
+<p>広告目的のトラッキングは行いません。収集したデータを第三者広告や広告ターゲティングのために利用しません。</p>
 </section>
 
-<section class="section"><h2>CloudKit</h2>
-<p>Ask NOW and human answers use Apple iCloud CloudKit, public database, container <code>iCloud.com.nextbase.nowcheck</code>, production environment. Apple processes that data under Apple’s terms.</p>
-<p>A request stores a request id, the place identifier, the place name, a coarse area cell for the place, created and expiry times, a schema version, and an open or answered status. An unanswered request stays open for 30 minutes.</p>
-<p>An answer stores a response id, the request id, the place identifier, one structured state (not busy, normal, busy, or there is a line), created time, the time until which it counts as current (60 minutes), a schema version, and the iCloud creator record name of the person who posted it.</p>
+<section class="section"><h2>App Store のデータ分類</h2>
+<ul>
+<li><strong>おおよその場所:</strong> アプリの機能のために使用します。ユーザの個人情報には関連付けず、トラッキングには使用しません。</li>
+<li><strong>デバイスID:</strong> アプリの機能、セキュリティ、不正利用防止のために使用する場合があります。App Store の分類上、ユーザに関連付けられるデータとして申告しますが、氏名やメールアドレスの登録を意味するものではなく、広告トラッキングには使用しません。</li>
+<li><strong>その他のユーザコンテンツ:</strong> 状態ボタンと任意の数値・時刻など、ユーザが投稿する構造化された観測です。アプリの機能のために使用し、App Store の分類上はユーザに関連付けられるデータとして申告します。広告トラッキングには使用しません。</li>
+</ul>
 </section>
 
-<section class="section"><h2>Human observations and the short note</h2>
-<p>An answer is a human observation, not an official status. It can be missing, old, or wrong. When nothing current exists, NowCheck shows that the now is unknown.</p>
-<p>The short note is optional. When it is posted, NowCheck stores the original text and, when it can tell, the source language. The note is not rewritten on the server. On the viewer’s iPhone, Apple Translation may show it in the app’s language. If translation fails, the original note stays visible. The original can still be opened when a translation is shown.</p>
+<section class="section"><h2>場所と観測</h2>
+<p>NowCheck は、場所を識別するために場所名、場所識別子、座標などを扱います。端末の位置情報は、必要な機能でのみ、使用中の許可範囲で扱います。</p>
+<p>投稿は自由記述のSNS投稿ではありません。「混雑」「行列」「営業中」などの構造化された状態と、必要に応じて人数、残り時間、台数、開始・終了時刻などの数値を送信します。</p>
+<p>観測は人が見た内容であり、公式情報、真実の保証、予測ではありません。投稿日時を確認して判断してください。</p>
 </section>
 
-<section class="section"><h2>Moderation, report, and block</h2>
-<p>Before a short note is posted, NowCheck rejects notes that match its prohibited-content filter, and notes longer than 80 characters. A rejected note is not saved.</p>
-<p>On a visible observation, Report opens an email to <a href="mailto:info@nextbase-japan.com?subject=NOWCHECK%20report">info@nextbase-japan.com</a> with the subject NOWCHECK report and the response id. Hide on this device only hides that creator on the phone that tapped it. It does not block them for anyone else.</p>
-<p>A service block is a CloudKit record of type ServiceBlock naming a creator record. Clients that have this build will not show that creator’s observations, and that creator cannot ask or answer. The block is not the same control as hide-on-device.</p>
+<section class="section"><h2>表示と保存</h2>
+<p>結果画面では、その場所・その公開範囲について新しい観測から最大5件を表示します。観測が古いことだけを理由に60分で非表示にはしません。</p>
+<p>表示上5件から外れたことは、そのデータが直ちに削除されたことを意味しません。サービス運用、セキュリティ、不正利用対策、報告対応に必要な範囲で記録が保持されることがあります。</p>
 </section>
 
-<section class="section"><h2>Contact</h2>
-<p>Support and privacy: <a href="mailto:info@nextbase-japan.com">info@nextbase-japan.com</a>. Support page: <a href="https://nextbase-one-ha.github.io/nextbase-world/public-nowcheck-support.html">public-nowcheck-support.html</a>.</p>
-<p>NowCheck does not ask you to create a profile, follow people, or chat. This version does not send push or local notifications. The 30-minute and 60-minute limits change what the app shows as current. They are not a promise that Apple deletes the CloudKit record at that minute.</p>
+<section class="section"><h2>みんなで使う / グループで使う</h2>
+<p>「みんなで使う」の観測と「グループで使う」の観測は別の公開範囲です。グループの観測は、そのグループのアクセス情報を持つ利用者向けに扱われます。</p>
+<p>グループのアクセス情報は、意図しない公開範囲への読み書きに使われないよう分離して扱います。</p>
 </section>
+
+<section class="section"><h2>報告とサポート</h2>
+<p>表示された観測はアプリから報告できます。報告では対象の観測を特定するIDなどを使用します。</p>
+<p>サポートにメールを送る場合、メールアドレスや本文など、利用者がメールで送信した情報はサポート対応のために受領します。アプリの利用に氏名・メールアドレス・電話番号の登録は必要ありません。</p>
+</section>
+
+<section class="section"><h2>通知</h2>
+<p>現在のバージョンは、プッシュ通知またはローカル通知を送信しません。</p>
+</section>
+
+<section class="section"><h2>English summary</h2>
+<p>NowCheck does not require a name, email address, phone number, or password to use the app. It does not use collected data for advertising tracking.</p>
+<p>For App Store privacy disclosure, NowCheck declares Approximate Location as not linked and not used for tracking; Device ID and Other User Content as linked and not used for tracking. All three are used for app functionality.</p>
+<p>User posts are structured human observations, such as a status and optional numeric or time metrics. The result view shows up to the five newest observations for the selected place and scope. Age alone does not remove an observation after 60 minutes.</p>
+<p>WORLD and PRIVATE group scopes are kept separate. The current version does not send push or local notifications.</p>
+</section>
+
+<section class="section"><h2>連絡先 / Contact</h2>
+<p>Privacy and support: <a href="mailto:info@nextbase-japan.com">info@nextbase-japan.com</a></p>
+<p>Support: <a href="https://nextbase-one-ha.github.io/nextbase-world/public-nowcheck-support.html">public-nowcheck-support.html</a></p>
+</section>
+<div class="footer">© 2026 NEXT BASE-Japan · NowCheck</div>
 </main></body>
 </html>
