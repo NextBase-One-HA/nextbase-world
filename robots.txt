@@ -4,6 +4,12 @@ Allow: /
 User-agent: GPTBot
 Disallow: /
 
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
 User-agent: Google-Extended
 Disallow: /
 
